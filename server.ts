@@ -110,12 +110,136 @@ async function searchYoutube(query: string) {
 
 // REGISTER API ROUTES FIRST
 app.post("/api/youtube/search", async (req, res) => {
-  const { query } = req.body;
+  const { query, workerUrl } = req.body;
   if (!query) {
     return res.status(400).json({ error: "Missing query parameter" });
   }
+
+  // If workerUrl is active, try searching via their RapidAPI endpoint
+  if (workerUrl) {
+    try {
+      const cleanUrl = workerUrl.replace(/\/$/, "");
+      console.log(`Searching YouTube via worker: ${cleanUrl}/search?q=${encodeURIComponent(query)}`);
+      const response = await fetch(`${cleanUrl}/search?q=${encodeURIComponent(query)}`);
+      if (response.ok) {
+        const data = (await response.json()) as any;
+        let results: any[] = [];
+        
+        // Parse standard youtube138 contents array
+        if (data && data.contents && Array.isArray(data.contents)) {
+          for (const item of data.contents) {
+            if (item.video) {
+              const v = item.video;
+              results.push({
+                id: v.videoId,
+                title: v.title || "Unknown Title",
+                channelTitle: v.author?.name || "Unknown Channel",
+                thumbnailUrl: v.thumbnails?.[0]?.url || `https://i.ytimg.com/vi/${v.videoId}/hqdefault.jpg`,
+                publishedAt: v.publishedTimeText || "Recent"
+              });
+            }
+          }
+        } else if (Array.isArray(data)) {
+          results = data.map((item: any) => ({
+            id: item.id || item.videoId,
+            title: item.title,
+            channelTitle: item.channelTitle || item.author,
+            thumbnailUrl: item.thumbnailUrl || item.thumbnail,
+            publishedAt: item.publishedAt || ""
+          }));
+        }
+        
+        if (results.length > 0) {
+          return res.json({ results });
+        }
+      }
+    } catch (e: any) {
+      console.warn("Worker RapidAPI search failed, falling back to local scraper:", e.message);
+    }
+  }
+
   const results = await searchYoutube(query);
   res.json({ results });
+});
+
+// Cloudflare Worker Secure Proxy Endpoints
+app.get("/api/worker/songs", async (req, res) => {
+  const { workerUrl } = req.query;
+  if (!workerUrl) {
+    return res.status(400).json({ error: "Missing workerUrl parameter" });
+  }
+
+  try {
+    const cleanUrl = (workerUrl as string).replace(/\/$/, "");
+    console.log(`Proxying songs request to: ${cleanUrl}/songs`);
+    const response = await fetch(`${cleanUrl}/songs`);
+    if (!response.ok) {
+      throw new Error(`Worker returned status code: ${response.status}`);
+    }
+    const songs = await response.json();
+    res.json({ songs });
+  } catch (error: any) {
+    console.error("Error proxying songs from Cloudflare worker:", error);
+    res.status(500).json({ error: "Failed to fetch songs from your worker", details: error.message });
+  }
+});
+
+app.post("/api/worker/upload", async (req, res) => {
+  const { workerUrl, youtube_url, song_name } = req.body;
+  if (!workerUrl || !youtube_url || !song_name) {
+    return res.status(400).json({ error: "Missing required parameters (workerUrl, youtube_url, song_name)" });
+  }
+
+  try {
+    const cleanUrl = workerUrl.replace(/\/$/, "");
+    console.log(`Proxying workflow dispatch request to: ${cleanUrl}`);
+    const response = await fetch(cleanUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ youtube_url, song_name }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Worker returned status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    res.json(data);
+  } catch (error: any) {
+    console.error("Error proxying upload dispatch to worker:", error);
+    res.status(500).json({ error: "Failed to dispatch build via worker", details: error.message });
+  }
+});
+
+app.post("/api/worker/delete", async (req, res) => {
+  const { workerUrl, public_id } = req.body;
+  if (!workerUrl || !public_id) {
+    return res.status(400).json({ error: "Missing required parameters (workerUrl, public_id)" });
+  }
+
+  try {
+    const cleanUrl = workerUrl.replace(/\/$/, "");
+    console.log(`Proxying delete request to: ${cleanUrl}/delete`);
+    const response = await fetch(`${cleanUrl}/delete`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ public_id }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Worker returned status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    res.json(data);
+  } catch (error: any) {
+    console.error("Error proxying media deletion to worker:", error);
+    res.status(500).json({ error: "Failed to delete from remote storage", details: error.message });
+  }
 });
 
 app.post("/api/ai/recommend", async (req, res) => {

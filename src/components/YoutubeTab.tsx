@@ -10,6 +10,7 @@ interface YoutubeTabProps {
   savedYoutubeTracks: Track[];
   onAddYoutubeToCollection: (video: YouTubeVideo) => void;
   onRemoveYoutubeFromCollection: (trackId: string) => void;
+  workerUrl?: string;
 }
 
 export default function YoutubeTab({
@@ -19,6 +20,7 @@ export default function YoutubeTab({
   savedYoutubeTracks,
   onAddYoutubeToCollection,
   onRemoveYoutubeFromCollection,
+  workerUrl,
 }: YoutubeTabProps) {
   const isRTL = lang === "ar";
   const t = translations[lang];
@@ -36,7 +38,7 @@ export default function YoutubeTab({
       const response = await fetch("/api/youtube/search", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: query.trim() }),
+        body: JSON.stringify({ query: query.trim(), workerUrl: workerUrl?.trim() }),
       });
       const data = await response.json();
       if (data.results) {

@@ -44,6 +44,80 @@ export default function App() {
     return saved ? JSON.parse(saved) : [];
   });
 
+  // Cloudflare Worker settings
+  const [workerUrl, setWorkerUrl] = useState<string>(() => {
+    return localStorage.getItem("spotifyy_worker_url") || "";
+  });
+  const [workerTracks, setWorkerTracks] = useState<Track[]>([]);
+  const [isWorkerLoading, setIsWorkerLoading] = useState<boolean>(false);
+
+  // Auto fetch worker tracks when worker URL is changed or loaded
+  useEffect(() => {
+    localStorage.setItem("spotifyy_worker_url", workerUrl);
+    
+    if (workerUrl.trim()) {
+      setIsWorkerLoading(true);
+      fetch(`/api/worker/songs?workerUrl=${encodeURIComponent(workerUrl.trim())}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.songs) {
+            // Map worker songs into unified Track format
+            const mapped: Track[] = data.songs.map((song: any) => ({
+              id: `worker-${song.id}`,
+              title: song.title,
+              artist: song.source === "cloudinary" ? "Cloudinary Storage" : "Backblaze B2",
+              album: song.source.toUpperCase(),
+              coverUrl: song.source === "cloudinary"
+                ? "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&auto=format&fit=crop&q=80"
+                : "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=400&auto=format&fit=crop&q=80",
+              audioUrl: song.url,
+              duration: "Cloud",
+              genre: song.source === "cloudinary" ? "Cloudinary" : "Backblaze B2",
+            }));
+            setWorkerTracks(mapped);
+          }
+        })
+        .catch((err) => {
+          console.error("Error loading worker songs:", err);
+        })
+        .finally(() => {
+          setIsWorkerLoading(false);
+        });
+    } else {
+      setWorkerTracks([]);
+    }
+  }, [workerUrl]);
+
+  const reloadWorkerSongs = () => {
+    if (!workerUrl.trim()) return;
+    setIsWorkerLoading(true);
+    fetch(`/api/worker/songs?workerUrl=${encodeURIComponent(workerUrl.trim())}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.songs) {
+          const mapped: Track[] = data.songs.map((song: any) => ({
+            id: `worker-${song.id}`,
+            title: song.title,
+            artist: song.source === "cloudinary" ? "Cloudinary Storage" : "Backblaze B2",
+            album: song.source.toUpperCase(),
+            coverUrl: song.source === "cloudinary"
+              ? "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&auto=format&fit=crop&q=80"
+              : "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=400&auto=format&fit=crop&q=80",
+            audioUrl: song.url,
+            duration: "Cloud",
+            genre: song.source === "cloudinary" ? "Cloudinary" : "Backblaze B2",
+          }));
+          setWorkerTracks(mapped);
+        }
+      })
+      .catch((err) => {
+        console.error("Error reloading worker songs:", err);
+      })
+      .finally(() => {
+        setIsWorkerLoading(false);
+      });
+  };
+
   // HTML5 audio elements reference
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -185,7 +259,7 @@ export default function App() {
   };
 
   const handleNext = () => {
-    const allTracks = [...CURATED_TRACKS, ...customTracks];
+    const allTracks = [...CURATED_TRACKS, ...customTracks, ...workerTracks];
     if (allTracks.length === 0) return;
 
     if (shuffle) {
@@ -200,7 +274,7 @@ export default function App() {
   };
 
   const handlePrev = () => {
-    const allTracks = [...CURATED_TRACKS, ...customTracks];
+    const allTracks = [...CURATED_TRACKS, ...customTracks, ...workerTracks];
     if (allTracks.length === 0) return;
 
     const currentIdx = allTracks.findIndex((t) => t.id === currentTrack?.id);
@@ -222,10 +296,42 @@ export default function App() {
     setCustomTracks((prev) => [newTrack, ...prev]);
   };
 
-  const handleDeleteCustomTrack = (trackId: string) => {
-    setCustomTracks((prev) => prev.filter((t) => t.id !== trackId));
+  const handleDeleteCustomTrack = async (trackId: string) => {
+    if (trackId.startsWith("worker-")) {
+      const publicId = trackId.replace("worker-", "");
+      if (workerUrl.trim()) {
+        try {
+          const response = await fetch("/api/worker/delete", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ workerUrl: workerUrl.trim(), public_id: publicId }),
+          });
+          const data = await response.json();
+          if (data.ok) {
+            setWorkerTracks((prev) => prev.filter((t) => t.id !== trackId));
+          } else {
+            console.warn("Delete returned not ok:", data);
+            // Fallback: still delete from UI just in case
+            setWorkerTracks((prev) => prev.filter((t) => t.id !== trackId));
+          }
+        } catch (e) {
+          console.error("Error deleting worker track:", e);
+          // Fallback deletion
+          setWorkerTracks((prev) => prev.filter((t) => t.id !== trackId));
+        }
+      } else {
+        setWorkerTracks((prev) => prev.filter((t) => t.id !== trackId));
+      }
+    } else {
+      setCustomTracks((prev) => prev.filter((t) => t.id !== trackId));
+    }
+
     if (currentTrack?.id === trackId) {
       setCurrentTrack(null);
+      setIsPlaying(false);
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
     }
   };
 
@@ -320,7 +426,7 @@ export default function App() {
   const t = translations[lang];
 
   const combinedStations = [...CURATED_STATIONS, ...customStations];
-  const combinedTracks = [...CURATED_TRACKS, ...customTracks];
+  const combinedTracks = [...CURATED_TRACKS, ...customTracks, ...workerTracks];
 
   return (
     <div className="flex bg-[#070709] h-screen scroll-smooth overflow-hidden text-white" dir={isRTL ? "rtl" : "ltr"}>
@@ -392,7 +498,7 @@ export default function App() {
                 onSelectTrack={handleSelectTrack}
                 lang={lang}
                 translations={translations}
-                customTracks={customTracks}
+                customTracks={[...customTracks, ...workerTracks]}
               />
             )}
 
@@ -420,6 +526,11 @@ export default function App() {
                 currentTrack={currentTrack}
                 lang={lang}
                 translations={translations}
+                workerUrl={workerUrl}
+                setWorkerUrl={setWorkerUrl}
+                workerTracks={workerTracks}
+                isWorkerLoading={isWorkerLoading}
+                onReloadWorkerSongs={reloadWorkerSongs}
               />
             )}
 
@@ -447,6 +558,7 @@ export default function App() {
                 savedYoutubeTracks={savedYoutubeTracks}
                 onAddYoutubeToCollection={handleAddYoutubeToCollection}
                 onRemoveYoutubeFromCollection={handleRemoveYoutubeFromCollection}
+                workerUrl={workerUrl}
               />
             )}
 

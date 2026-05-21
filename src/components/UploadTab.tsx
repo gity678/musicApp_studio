@@ -11,6 +11,11 @@ interface UploadTabProps {
   currentTrack: Track | null;
   lang: "en" | "ar";
   translations: any;
+  workerUrl: string;
+  setWorkerUrl: (val: string) => void;
+  workerTracks: Track[];
+  isWorkerLoading: boolean;
+  onReloadWorkerSongs: () => void;
 }
 
 export default function UploadTab({
@@ -21,6 +26,11 @@ export default function UploadTab({
   currentTrack,
   lang,
   translations,
+  workerUrl,
+  setWorkerUrl,
+  workerTracks,
+  isWorkerLoading,
+  onReloadWorkerSongs,
 }: UploadTabProps) {
   const isRTL = lang === "ar";
   const t = translations[lang];
@@ -35,6 +45,70 @@ export default function UploadTab({
   const [genre, setGenre] = useState("");
   const [selectedCover, setSelectedCover] = useState("https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=400&auto=format&fit=crop&q=80");
   const [statusMessage, setStatusMessage] = useState("");
+
+  // Worker Dispatcher Form Fields
+  const [workerYoutubeUrl, setWorkerYoutubeUrl] = useState("");
+  const [workerSongName, setWorkerSongName] = useState("");
+  const [dispatchStatus, setDispatchStatus] = useState({ loading: false, msg: "", success: false });
+
+  const handleWorkerDispatchSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!workerUrl.trim()) {
+      setDispatchStatus({
+        loading: false,
+        msg: isRTL ? "يرجى إدخال عنوان خادم الـ Worker أولاً" : "Please insert a Cloudflare Worker URL first",
+        success: false
+      });
+      return;
+    }
+    if (!workerYoutubeUrl.trim() || !workerSongName.trim()) return;
+
+    setDispatchStatus({
+      loading: true,
+      msg: isRTL ? "جاري إرسال الطلب وإطلاق عملية البناء..." : "Dispatching GitHub Actions compilation workflow...",
+      success: false
+    });
+
+    try {
+      const response = await fetch("/api/worker/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          workerUrl: workerUrl.trim(),
+          youtube_url: workerYoutubeUrl.trim(),
+          song_name: workerSongName.trim()
+        })
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setDispatchStatus({
+          loading: false,
+          msg: isRTL 
+            ? "تم بدء معالجة التراك بنجاح! قد يستغرق الرفع بضع دقائق." 
+            : "Build workflow triggered successfully! Process will take a few minutes.",
+          success: true
+        });
+        setWorkerYoutubeUrl("");
+        setWorkerSongName("");
+        // Auto reload tracks list after 12s
+        setTimeout(() => {
+          onReloadWorkerSongs();
+        }, 12000);
+      } else {
+        setDispatchStatus({
+          loading: false,
+          msg: data.error || (isRTL ? "فشل إطلاق عملية البناء." : "Workflow invocation failed."),
+          success: false
+        });
+      }
+    } catch (err: any) {
+      setDispatchStatus({
+        loading: false,
+        msg: err.message || (isRTL ? "خطأ في اتصال الخادر." : "Could not communicate with your worker."),
+        success: false
+      });
+    }
+  };
 
   const coverPresets = [
     "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=400&auto=format&fit=crop&q=80",
@@ -267,6 +341,112 @@ export default function UploadTab({
               </button>
             </form>
           </div>
+
+          {/* Cloudflare Worker Integration Card */}
+          <div className="bg-[#0c0c0e]/60 border border-[#1e1e24] p-4 md:p-6 rounded-2xl backdrop-blur-md space-y-4 md:space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="font-sans font-bold text-sm md:text-lg text-white flex items-center gap-2">
+                <Sparkles className="text-[#1db954]" size={18} />
+                <span>{isRTL ? "إعدادات Cloudflare Worker والربط السحابي" : "Cloudflare Worker & Cloud Integration"}</span>
+              </h2>
+              {workerUrl.trim() && (
+                <button
+                  onClick={onReloadWorkerSongs}
+                  disabled={isWorkerLoading}
+                  className="text-[10px] font-mono font-bold uppercase text-[#1db954] hover:underline disabled:opacity-50 cursor-pointer"
+                >
+                  {isWorkerLoading ? (isRTL ? "جاري التحديث..." : "Reloading...") : (isRTL ? "Refresh Tracks" : "Refresh Tracks")}
+                </button>
+              )}
+            </div>
+
+            <div className="space-y-4">
+              <div className="space-y-1">
+                <label className="text-[9px] font-mono uppercase text-gray-400 font-bold block">
+                  {isRTL ? "رابط خادم الـ Cloudflare Worker الخاص بك" : "Cloudflare Worker Endpoint URL"}
+                </label>
+                <input
+                  type="url"
+                  placeholder="https://your-worker-name.pages.dev"
+                  value={workerUrl}
+                  onChange={(e) => setWorkerUrl(e.target.value)}
+                  className="w-full bg-[#141419] border border-[#1e1e24] rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-[#1db954] transition-colors font-mono"
+                />
+                <p className="text-[10px] text-gray-500 mt-1">
+                  {isRTL 
+                    ? "عند ملء هذا الخيار، سيتم تمكين بث ورفع التراكات من Backblaze B2 و Cloudinary الخاصة بك."
+                    : "Connecting your worker unlocks instant remote media caching in Backblaze B2 and Cloudinary."}
+                </p>
+              </div>
+
+              {workerUrl.trim() && (
+                <form onSubmit={handleWorkerDispatchSubmit} className="pt-4 border-t border-[#1e1e24] space-y-4">
+                  <h3 className="font-bold text-xs text-white flex items-center gap-1.5">
+                    <ArrowUpRight size={14} className="text-[#1db954]" />
+                    <span>{isRTL ? "استخراج وحفظ تراك جديد من يوتيوب" : "Build & Host a New Track from YouTube"}</span>
+                  </h3>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-mono uppercase text-gray-400 font-bold">
+                        {isRTL ? "رابط فيديو يوتيوب" : "YouTube Video URL"}
+                      </label>
+                      <input
+                        type="url"
+                        required
+                        placeholder="https://www.youtube.com/watch?v=..."
+                        value={workerYoutubeUrl}
+                        onChange={(e) => setWorkerYoutubeUrl(e.target.value)}
+                        className="w-full bg-[#141419] border border-[#1e1e24] rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-[#1db954] transition-colors"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[9px] font-mono uppercase text-gray-400 font-bold">
+                        {isRTL ? "اسم التراك / الأغنية" : "Desired Song Title"}
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        placeholder={isRTL ? "مثال: أغنية فيروز شادي" : "e.g., Chillwave Stream"}
+                        value={workerSongName}
+                        onChange={(e) => setWorkerSongName(e.target.value)}
+                        className="w-full bg-[#141419] border border-[#1e1e24] rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-[#1db954] transition-colors"
+                      />
+                    </div>
+                  </div>
+
+                  {dispatchStatus.msg && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className={`p-2.5 rounded-xl text-xs font-semibold flex items-center gap-2 ${
+                        dispatchStatus.success 
+                          ? "bg-[#1db954]/10 border border-[#1db954]/20 text-[#1db954]" 
+                          : "bg-red-500/10 border border-red-500/20 text-red-400"
+                      }`}
+                    >
+                      <Check size={14} />
+                      <span>{dispatchStatus.msg}</span>
+                    </motion.div>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={dispatchStatus.loading}
+                    className="w-full bg-[#1db954] text-black hover:bg-[#20cf5d] disabled:bg-gray-700 disabled:cursor-not-allowed hover:text-black font-bold py-2.5 rounded-xl text-xs transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-md active:scale-95"
+                  >
+                    {dispatchStatus.loading ? (
+                      <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Plus size={14} />
+                    )}
+                    <span>{isRTL ? "إرسال طلب البناء والرفع" : "Dispatch Remote Build & Save"}</span>
+                  </button>
+                </form>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Local Streamed Catalog List */}
@@ -332,6 +512,78 @@ export default function UploadTab({
               </div>
             )}
           </div>
+
+          {/* Cloudworker tracks list */}
+          {workerUrl.trim() && (
+            <div className="bg-[#0c0c0e]/60 border border-[#1e1e24] p-4 md:p-6 rounded-2xl backdrop-blur-md space-y-4">
+              <h3 className="font-sans font-bold text-xs md:text-sm text-white flex items-center gap-2">
+                <UploadCloud size={14} className="text-[#1db954]" />
+                <span>
+                  {isRTL ? "تراكات السحاب المستوردة" : "Cloud Worker Library"} ({workerTracks.length})
+                </span>
+              </h3>
+
+              {isWorkerLoading ? (
+                <div className="py-8 text-center text-gray-500 text-xs">
+                  <div className="w-5 h-5 border-2 border-[#1db954] border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                  <span>{isRTL ? "جاري تحميل تراكات السحاب..." : "Loading cloud library tracks..."}</span>
+                </div>
+              ) : workerTracks.length > 0 ? (
+                <div className="space-y-2 max-h-[250px] overflow-y-auto no-scrollbar pr-1">
+                  <AnimatePresence>
+                    {workerTracks.map((track) => {
+                      const isCurrent = currentTrack?.id === track.id;
+                      return (
+                        <motion.div
+                          key={track.id}
+                          initial={{ opacity: 0, x: 10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          exit={{ opacity: 0, x: -10 }}
+                          className={`p-2 bg-zinc-900/40 rounded-xl border border-[#1e1e24] hover:border-gray-700 flex items-center justify-between group gap-2 ${
+                            isCurrent ? "border-[#1db954]/40 bg-[#1db954]/5" : ""
+                          }`}
+                        >
+                          <div
+                            onClick={() => onSelectTrack(track)}
+                            className="flex items-center gap-2 min-w-0 flex-1 cursor-pointer"
+                          >
+                            <img src={track.coverUrl} className="w-8 h-8 rounded-md object-cover shrink-0" />
+                            <div className="min-w-0">
+                              <h4 className={`text-[11px] font-bold truncate ${isCurrent ? "text-[#1db954]" : "text-white"}`}>
+                                {track.title}
+                              </h4>
+                              <p className="text-[9px] text-[#1db954] font-semibold truncate mt-0.5">{track.album}</p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => onSelectTrack(track)}
+                              className="p-1 rounded bg-zinc-800 text-gray-300 hover:text-[#1db954] transition-colors cursor-pointer"
+                            >
+                              <Play size={10} className="fill-current" />
+                            </button>
+                            <button
+                              onClick={() => onDeleteCustomTrack(track.id)}
+                              className="p-1 rounded bg-zinc-800 text-gray-300 hover:text-red-500 transition-colors cursor-pointer"
+                              title={t.deleteTrack}
+                            >
+                              <Trash2 size={10} />
+                            </button>
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </AnimatePresence>
+                </div>
+              ) : (
+                <div className="text-center py-6 text-gray-500 text-[11px] italic space-y-2">
+                  <UploadCloud size={18} className="mx-auto text-gray-600 block" />
+                  <p>{isRTL ? "لا توجد تراكات في خادمك السحابي بعد." : "No cloud tracks indexed on your worker yet."}</p>
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="hidden md:block bg-[#0c0c0e]/30 border border-[#1e1e24] rounded-2xl p-5 text-center text-gray-400 space-y-2">
             <h4 className="text-white font-bold text-xs">Security Note</h4>
