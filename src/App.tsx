@@ -50,6 +50,7 @@ export default function App() {
   });
   const [workerTracks, setWorkerTracks] = useState<Track[]>([]);
   const [isWorkerLoading, setIsWorkerLoading] = useState<boolean>(false);
+  const [workerError, setWorkerError] = useState<string>("");
 
   // Auto fetch worker tracks when worker URL is changed or loaded
   useEffect(() => {
@@ -57,9 +58,20 @@ export default function App() {
     
     if (workerUrl.trim()) {
       setIsWorkerLoading(true);
+      setWorkerError("");
       fetch(`/api/worker/songs?workerUrl=${encodeURIComponent(workerUrl.trim())}`)
-        .then((res) => res.json())
+        .then((res) => {
+          if (!res.ok) {
+            throw new Error(`Worker status code: ${res.status}`);
+          }
+          return res.json();
+        })
         .then((data) => {
+          if (data.error) {
+            setWorkerError(data.error);
+            setWorkerTracks([]);
+            return;
+          }
           if (data.songs) {
             // Map worker songs into unified Track format
             const mapped: Track[] = data.songs.map((song: any) => ({
@@ -79,21 +91,35 @@ export default function App() {
         })
         .catch((err) => {
           console.error("Error loading worker songs:", err);
+          setWorkerError(err.message || "Failed to communicate with worker query.");
+          setWorkerTracks([]);
         })
         .finally(() => {
           setIsWorkerLoading(false);
         });
     } else {
       setWorkerTracks([]);
+      setWorkerError("");
     }
   }, [workerUrl]);
 
   const reloadWorkerSongs = () => {
     if (!workerUrl.trim()) return;
     setIsWorkerLoading(true);
+    setWorkerError("");
     fetch(`/api/worker/songs?workerUrl=${encodeURIComponent(workerUrl.trim())}`)
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`Worker status code: ${res.status}`);
+        }
+        return res.json();
+      })
       .then((data) => {
+        if (data.error) {
+          setWorkerError(data.error);
+          setWorkerTracks([]);
+          return;
+        }
         if (data.songs) {
           const mapped: Track[] = data.songs.map((song: any) => ({
             id: `worker-${song.id}`,
@@ -112,6 +138,8 @@ export default function App() {
       })
       .catch((err) => {
         console.error("Error reloading worker songs:", err);
+        setWorkerError(err.message || "Failed to communicate with worker query.");
+        setWorkerTracks([]);
       })
       .finally(() => {
         setIsWorkerLoading(false);
@@ -531,6 +559,7 @@ export default function App() {
                 workerTracks={workerTracks}
                 isWorkerLoading={isWorkerLoading}
                 onReloadWorkerSongs={reloadWorkerSongs}
+                workerError={workerError}
               />
             )}
 

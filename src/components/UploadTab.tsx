@@ -16,6 +16,7 @@ interface UploadTabProps {
   workerTracks: Track[];
   isWorkerLoading: boolean;
   onReloadWorkerSongs: () => void;
+  workerError?: string;
 }
 
 export default function UploadTab({
@@ -31,6 +32,7 @@ export default function UploadTab({
   workerTracks,
   isWorkerLoading,
   onReloadWorkerSongs,
+  workerError,
 }: UploadTabProps) {
   const isRTL = lang === "ar";
   const t = translations[lang];
@@ -50,6 +52,7 @@ export default function UploadTab({
   const [workerYoutubeUrl, setWorkerYoutubeUrl] = useState("");
   const [workerSongName, setWorkerSongName] = useState("");
   const [dispatchStatus, setDispatchStatus] = useState({ loading: false, msg: "", success: false });
+  const [showCloudinaryTroubleshooting, setShowCloudinaryTroubleshooting] = useState(false);
 
   const handleWorkerDispatchSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -516,12 +519,93 @@ export default function UploadTab({
           {/* Cloudworker tracks list */}
           {workerUrl.trim() && (
             <div className="bg-[#0c0c0e]/60 border border-[#1e1e24] p-4 md:p-6 rounded-2xl backdrop-blur-md space-y-4">
-              <h3 className="font-sans font-bold text-xs md:text-sm text-white flex items-center gap-2">
-                <UploadCloud size={14} className="text-[#1db954]" />
-                <span>
-                  {isRTL ? "تراكات السحاب المستوردة" : "Cloud Worker Library"} ({workerTracks.length})
-                </span>
-              </h3>
+              <div className="flex items-center justify-between">
+                <h3 className="font-sans font-bold text-xs md:text-sm text-white flex items-center gap-2">
+                  <UploadCloud size={14} className="text-[#1db954]" />
+                  <span>
+                    {isRTL ? "تراكات السحاب المستوردة" : "Cloud Worker Library"} ({workerTracks.length})
+                  </span>
+                </h3>
+                <button
+                  onClick={() => setShowCloudinaryTroubleshooting(!showCloudinaryTroubleshooting)}
+                  className="text-[10px] text-gray-400 hover:text-[#1db954] transition-colors cursor-pointer flex items-center gap-1 font-mono font-semibold"
+                >
+                  <span>{isRTL ? "تشخيص المشاكل" : "Troubleshoot Cloudinary"}</span>
+                  <Sparkles size={10} className="text-[#1db954]" />
+                </button>
+              </div>
+
+              {workerError && (
+                <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl text-xs space-y-1">
+                  <p className="font-bold flex items-center gap-1.5">
+                    <span>⚠️ {isRTL ? "خطأ في جلب ملفات السحاب:" : "Failed to fetch cloud songs:"}</span>
+                  </p>
+                  <p className="font-mono text-[10px] bg-black/40 p-2 rounded border border-red-900/30 overflow-x-auto whitespace-pre-wrap">{workerError}</p>
+                </div>
+              )}
+
+              {/* Collapsible troubleshooting diagnostics panel */}
+              {showCloudinaryTroubleshooting && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  className="p-3.5 bg-zinc-950/80 border border-[#1e1e24] rounded-xl text-[11px] space-y-3 leading-relaxed text-gray-300"
+                >
+                  <h4 className="font-bold text-white text-xs border-b border-zinc-800 pb-1.5 flex items-center gap-1.5">
+                    <Sparkles size={12} className="text-[#1db954]" />
+                    <span>{isRTL ? "لماذا لا تظهر أغاني Cloudinary في القائمة؟" : "Why are Cloudinary songs missing?"}</span>
+                  </h4>
+
+                  <ul className="list-decimal list-inside space-y-2 text-zinc-400 text-[10px]">
+                    <li>
+                      <strong className="text-white">{isRTL ? "تفقد متغيرات البيئة في Cloudflare Console:" : "Check Environment Variables inside Cloudflare console:"}</strong>
+                      <p className="mt-1 ml-4 text-zinc-400">
+                        {isRTL 
+                          ? "تأكد من ضبط المتغيرات الثلاثة التالية في لوحة تحكم Cloudflare Worker الخاصة بك:"
+                          : "Verify that the following variables are strictly bound in your Cloudflare dashboard (Settings > Variables):"}
+                        <code className="text-[#1db954] font-mono font-bold block mt-1 ml-2">
+                          CLOUDINARY_NAME, CLOUDINARY_KEY, CLOUDINARY_SECRET
+                        </code>
+                      </p>
+                    </li>
+
+                    <li>
+                      <strong className="text-white">{isRTL ? "تسمية المجلد (Folder Prefix) في Cloudinary:" : "Verify Cloudinary Folder Structure:"}</strong>
+                      <p className="mt-1 ml-4 text-zinc-400">
+                        {isRTL 
+                          ? "الكود البرمجي في الـ Worker يسحب الأغاني المرفوعة داخل مجلد باسم music (مثلاً music/song_name). إذا قمت برفع الأغاني بدون مجلد، فلن يتم العثور عليها."
+                          : "The Cloudfairy worker queries Cloudinary assets containing 'music/' folder prefix. Ensure your audio assets inside Cloudinary dashboard are uploaded into a directory/prefix folder named 'music'."}
+                      </p>
+                    </li>
+
+                    <li>
+                      <strong className="text-white">{isRTL ? "تصنيف المرفقات (Asset Resource Type):" : "Cloudinary Asset Resource Type Recognition:"}</strong>
+                      <p className="mt-1 ml-4 text-zinc-400">
+                        {isRTL 
+                          ? "يقوم Cloudinary بتصنيف الملفات المرفوعة كـ video أو raw. تأكد من رفع الملفات بصيغة صوتية مدعومة (مثل .mp3) وتأكد من أن الاستجابة لا ترجع مصفوفة فارغة بسبب خطأ في الإذن."
+                          : "Cloudinary auto-classifies media into 'video/audio' or 'raw'. Ensure your uploads are correct .mp3 or audio video files. Also verify that Admin API access is not blocked."}
+                      </p>
+                    </li>
+
+                    <li>
+                      <strong className="text-white">{isRTL ? "اختبار رابط سيرفر الـ Worker مباشرة:" : "Interactive Self-Test Endpoint:"}</strong>
+                      <p className="mt-1 ml-4 text-zinc-400">
+                        {isRTL 
+                          ? "افتح الرابط التالي في متصفحك مباشرة لترى تفاصيل الأخطاء التي يرجعها خادمك:"
+                          : "Open your active worker URL path directly in your browser tab to see raw JSON output & errors:"}
+                        <a 
+                          href={`${workerUrl.replace(/\/$/, "")}/songs`} 
+                          target="_blank" 
+                          rel="noreferrer" 
+                          className="text-[#1db954] underline block mt-1 font-mono break-all"
+                        >
+                          {workerUrl.replace(/\/$/, "")}/songs
+                        </a>
+                      </p>
+                    </li>
+                  </ul>
+                </motion.div>
+              )}
 
               {isWorkerLoading ? (
                 <div className="py-8 text-center text-gray-500 text-xs">
