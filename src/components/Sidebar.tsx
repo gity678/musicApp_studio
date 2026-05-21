@@ -30,7 +30,6 @@ export default function Sidebar({
     { id: "upload", label: t.upload, icon: UploadCloud },
     { id: "add_radio", label: t.addRadio, icon: PlusCircle },
     { id: "youtube", label: t.youtube, icon: Youtube },
-    { id: "ai", label: t.aiAssistant, icon: Sparkles },
   ];
 
   const handleToggleLang = () => {

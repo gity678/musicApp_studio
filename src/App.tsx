@@ -378,10 +378,6 @@ export default function App() {
 
             {activeTab === "home" && (
               <HomeTab
-                tracks={CURATED_TRACKS}
-                stations={combinedStations}
-                onSelectTrack={handleSelectTrack}
-                onSelectStation={handleSelectRadio}
                 lang={lang}
                 translations={translations}
                 setActiveTab={setActiveTab}
@@ -454,14 +450,7 @@ export default function App() {
               />
             )}
 
-            {activeTab === "ai" && (
-              <AiAssistantTab
-                lang={lang}
-                translations={translations}
-                onInstantPlayTrack={handleInstantPlayTrack}
-                onQueueTrack={handleQueueTrack}
-              />
-            )}
+
           </div>
         </main>
 
