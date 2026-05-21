@@ -59,35 +59,56 @@ export default function App() {
     if (workerUrl.trim()) {
       setIsWorkerLoading(true);
       setWorkerError("");
-      fetch(`/api/worker/songs?workerUrl=${encodeURIComponent(workerUrl.trim())}`)
-        .then((res) => {
-          if (!res.ok) {
-            throw new Error(`Worker status code: ${res.status}`);
+      
+      const cleanUrl = workerUrl.trim().replace(/\/$/, "");
+      
+      const fetchSongs = async () => {
+        // Try local Express proxy first
+        try {
+          const res = await fetch(`/api/worker/songs?workerUrl=${encodeURIComponent(workerUrl.trim())}`);
+          if (res.ok) {
+            const text = await res.text();
+            try {
+              const data = JSON.parse(text);
+              if (data && data.songs) return data.songs;
+              if (data && data.error) throw new Error(data.error);
+            } catch (jsonErr) {
+              console.warn("Proxy returned non-JSON, falling back to direct fetch", jsonErr);
+            }
           }
-          return res.json();
-        })
-        .then((data) => {
-          if (data.error) {
-            setWorkerError(data.error);
-            setWorkerTracks([]);
-            return;
+        } catch (proxyErr) {
+          console.warn("Local API proxy failed or is not available, trying direct fetch", proxyErr);
+        }
+
+        // Direct fetch from worker fallback for static hosting server environments (e.g., Cloudflare Pages)
+        try {
+          const directRes = await fetch(`${cleanUrl}/songs`);
+          if (!directRes.ok) {
+            throw new Error(`Direct query returned code: ${directRes.status}`);
           }
-          if (data.songs) {
-            // Map worker songs into unified Track format
-            const mapped: Track[] = data.songs.map((song: any) => ({
-              id: `worker-${song.id}`,
-              title: song.title,
-              artist: song.source === "cloudinary" ? "Cloudinary Storage" : "Backblaze B2",
-              album: song.source.toUpperCase(),
-              coverUrl: song.source === "cloudinary"
-                ? "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&auto=format&fit=crop&q=80"
-                : "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=400&auto=format&fit=crop&q=80",
-              audioUrl: song.url,
-              duration: "Cloud",
-              genre: song.source === "cloudinary" ? "Cloudinary" : "Backblaze B2",
-            }));
-            setWorkerTracks(mapped);
-          }
+          const data = await directRes.json();
+          return Array.isArray(data) ? data : (data.songs || []);
+        } catch (directErr: any) {
+          throw new Error(`Cloudflare worker offline or misconfigured: ${directErr.message}`);
+        }
+      };
+
+      fetchSongs()
+        .then((songs) => {
+          // Map worker songs into unified Track format
+          const mapped: Track[] = songs.map((song: any) => ({
+            id: `worker-${song.id}`,
+            title: song.title,
+            artist: song.source === "cloudinary" ? "Cloudinary Storage" : "Backblaze B2",
+            album: song.source ? song.source.toUpperCase() : "CLOUD",
+            coverUrl: song.source === "cloudinary"
+              ? "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&auto=format&fit=crop&q=80"
+              : "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=400&auto=format&fit=crop&q=80",
+            audioUrl: song.url,
+            duration: "Cloud",
+            genre: song.source === "cloudinary" ? "Cloudinary" : "Backblaze B2",
+          }));
+          setWorkerTracks(mapped);
         })
         .catch((err) => {
           console.error("Error loading worker songs:", err);
@@ -107,34 +128,53 @@ export default function App() {
     if (!workerUrl.trim()) return;
     setIsWorkerLoading(true);
     setWorkerError("");
-    fetch(`/api/worker/songs?workerUrl=${encodeURIComponent(workerUrl.trim())}`)
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error(`Worker status code: ${res.status}`);
+
+    const cleanUrl = workerUrl.trim().replace(/\/$/, "");
+
+    const fetchSongs = async () => {
+      try {
+        const res = await fetch(`/api/worker/songs?workerUrl=${encodeURIComponent(workerUrl.trim())}`);
+        if (res.ok) {
+          const text = await res.text();
+          try {
+            const data = JSON.parse(text);
+            if (data && data.songs) return data.songs;
+            if (data && data.error) throw new Error(data.error);
+          } catch (jsonErr) {
+            console.warn("Proxy returned non-JSON/HTML on reload, trying direct", jsonErr);
+          }
         }
-        return res.json();
-      })
-      .then((data) => {
-        if (data.error) {
-          setWorkerError(data.error);
-          setWorkerTracks([]);
-          return;
+      } catch (proxyErr) {
+        console.warn("Proxy reload failed, trying direct", proxyErr);
+      }
+
+      try {
+        const directRes = await fetch(`${cleanUrl}/songs`);
+        if (!directRes.ok) {
+          throw new Error(`Direct query returned code: ${directRes.status}`);
         }
-        if (data.songs) {
-          const mapped: Track[] = data.songs.map((song: any) => ({
-            id: `worker-${song.id}`,
-            title: song.title,
-            artist: song.source === "cloudinary" ? "Cloudinary Storage" : "Backblaze B2",
-            album: song.source.toUpperCase(),
-            coverUrl: song.source === "cloudinary"
-              ? "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&auto=format&fit=crop&q=80"
-              : "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=400&auto=format&fit=crop&q=80",
-            audioUrl: song.url,
-            duration: "Cloud",
-            genre: song.source === "cloudinary" ? "Cloudinary" : "Backblaze B2",
-          }));
-          setWorkerTracks(mapped);
-        }
+        const data = await directRes.json();
+        return Array.isArray(data) ? data : (data.songs || []);
+      } catch (directErr: any) {
+        throw new Error(`Could not load tracks directly from worker: ${directErr.message}`);
+      }
+    };
+
+    fetchSongs()
+      .then((songs) => {
+        const mapped: Track[] = songs.map((song: any) => ({
+          id: `worker-${song.id}`,
+          title: song.title,
+          artist: song.source === "cloudinary" ? "Cloudinary Storage" : "Backblaze B2",
+          album: song.source ? song.source.toUpperCase() : "CLOUD",
+          coverUrl: song.source === "cloudinary"
+            ? "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&auto=format&fit=crop&q=80"
+            : "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=400&auto=format&fit=crop&q=80",
+          audioUrl: song.url,
+          duration: "Cloud",
+          genre: song.source === "cloudinary" ? "Cloudinary" : "Backblaze B2",
+        }));
+        setWorkerTracks(mapped);
       })
       .catch((err) => {
         console.error("Error reloading worker songs:", err);
@@ -328,25 +368,48 @@ export default function App() {
     if (trackId.startsWith("worker-")) {
       const publicId = trackId.replace("worker-", "");
       if (workerUrl.trim()) {
+        let isSuccess = false;
+        
+        // 1. Try local Express proxy first
         try {
           const response = await fetch("/api/worker/delete", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ workerUrl: workerUrl.trim(), public_id: publicId }),
           });
-          const data = await response.json();
-          if (data.ok) {
-            setWorkerTracks((prev) => prev.filter((t) => t.id !== trackId));
-          } else {
-            console.warn("Delete returned not ok:", data);
-            // Fallback: still delete from UI just in case
-            setWorkerTracks((prev) => prev.filter((t) => t.id !== trackId));
+          const text = await response.text();
+          try {
+            const data = JSON.parse(text);
+            if (data.ok || data.success) {
+              isSuccess = true;
+            }
+          } catch {
+            console.warn("Proxy returned invalid non-JSON on delete, falling back to direct DELETE");
           }
         } catch (e) {
-          console.error("Error deleting worker track:", e);
-          // Fallback deletion
-          setWorkerTracks((prev) => prev.filter((t) => t.id !== trackId));
+          console.warn("Error deleting via worker proxy, trying direct", e);
         }
+
+        // 2. Fallback: Direct CORs-compliant DELETE from client browser to worker
+        if (!isSuccess) {
+          try {
+            const cleanUrl = workerUrl.trim().replace(/\/$/, "");
+            const response = await fetch(`${cleanUrl}/delete`, {
+              method: "DELETE",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ public_id: publicId }),
+            });
+            const data = await response.json();
+            if (data.ok || data.success) {
+              isSuccess = true;
+            }
+          } catch (directErr) {
+            console.error("Direct deletion failed:", directErr);
+          }
+        }
+
+        // Filter track out of local UI anyway
+        setWorkerTracks((prev) => prev.filter((t) => t.id !== trackId));
       } else {
         setWorkerTracks((prev) => prev.filter((t) => t.id !== trackId));
       }

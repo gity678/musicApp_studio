@@ -72,6 +72,10 @@ export default function UploadTab({
       success: false
     });
 
+    let isSuccess = false;
+    let errorMsg = "";
+
+    // 1. First path: Try local Express server proxy
     try {
       const response = await fetch("/api/worker/upload", {
         method: "POST",
@@ -82,32 +86,71 @@ export default function UploadTab({
           song_name: workerSongName.trim()
         })
       });
-      const data = await response.json();
       if (response.ok) {
-        setDispatchStatus({
-          loading: false,
-          msg: isRTL 
-            ? "تم بدء معالجة التراك بنجاح! قد يستغرق الرفع بضع دقائق." 
-            : "Build workflow triggered successfully! Process will take a few minutes.",
-          success: true
-        });
-        setWorkerYoutubeUrl("");
-        setWorkerSongName("");
-        // Auto reload tracks list after 12s
-        setTimeout(() => {
-          onReloadWorkerSongs();
-        }, 12000);
-      } else {
-        setDispatchStatus({
-          loading: false,
-          msg: data.error || (isRTL ? "فشل إطلاق عملية البناء." : "Workflow invocation failed."),
-          success: false
-        });
+        const text = await response.text();
+        try {
+          const data = JSON.parse(text);
+          if (data.ok || data.success || !data.error) {
+            isSuccess = true;
+          } else {
+            errorMsg = data.error;
+          }
+        } catch {
+          // Response not JSON (maybe static HTML server page), falls back to direct call
+        }
       }
     } catch (err: any) {
+      console.warn("Express proxy failed for worker upload dispatch, trying direct client-side fetch", err);
+    }
+
+    // 2. Second path: Fallback directly to worker endpoint for static hosting like Pages
+    if (!isSuccess) {
+      try {
+        const cleanUrl = workerUrl.trim().replace(/\/$/, "");
+        const response = await fetch(cleanUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            youtube_url: workerYoutubeUrl.trim(),
+            song_name: workerSongName.trim()
+          })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.ok || data.success || !data.error) {
+            isSuccess = true;
+          } else {
+            errorMsg = data.error || "Execution failed on worker.";
+          }
+        } else {
+          errorMsg = `Worker returned HTTP status ${response.status}`;
+        }
+      } catch (directErr: any) {
+        errorMsg = directErr.message || "Failed to connect to worker directly.";
+      }
+    }
+
+    if (isSuccess) {
       setDispatchStatus({
         loading: false,
-        msg: err.message || (isRTL ? "خطأ في اتصال الخادر." : "Could not communicate with your worker."),
+        msg: isRTL 
+          ? "تم بدء معالجة التراك بنجاح! قد يستغرق الرفع بضع دقائق." 
+          : "Build workflow triggered successfully! Process will take a few minutes.",
+        success: true
+      });
+      setWorkerYoutubeUrl("");
+      setWorkerSongName("");
+      // Auto reload tracks list after 12s
+      setTimeout(() => {
+        onReloadWorkerSongs();
+      }, 12000);
+    } else {
+      setDispatchStatus({
+        loading: false,
+        msg: errorMsg || (isRTL ? "فشل إطلاق عملية البناء والرفع." : "Workflow invocation failed."),
         success: false
       });
     }
