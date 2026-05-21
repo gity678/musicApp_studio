@@ -14,6 +14,11 @@ import { CURATED_TRACKS, CURATED_STATIONS } from "./data";
 import { translations } from "./locale";
 import { Disc, Menu, Sparkles, Moon, Laptop, Flame, Music, Radio, Youtube, Home, UploadCloud, PlusCircle } from "lucide-react";
 
+const isStaticEnvironment = (): boolean => {
+  const hostname = window.location.hostname;
+  return !hostname.includes("localhost") && !hostname.includes(".run.app") && !hostname.includes(".studio");
+};
+
 export default function App() {
   const [activeTab, setActiveTab] = useState<string>("home");
   const [lang, setLang] = useState<"en" | "ar">("ar"); // default to Arabic to greet Arab users, can toggle
@@ -46,7 +51,11 @@ export default function App() {
 
   // Cloudflare Worker settings
   const [workerUrl, setWorkerUrl] = useState<string>(() => {
-    return localStorage.getItem("spotifyy_worker_url") || "https://music-worker.ma68.workers.dev/";
+    const saved = localStorage.getItem("spotifyy_worker_url");
+    if (!saved || saved.trim() === "" || saved === "null" || saved === "undefined") {
+      return "https://music-worker.ma68.workers.dev/";
+    }
+    return saved;
   });
   const [workerTracks, setWorkerTracks] = useState<Track[]>([]);
   const [isWorkerLoading, setIsWorkerLoading] = useState<boolean>(false);
@@ -63,24 +72,40 @@ export default function App() {
       const cleanUrl = workerUrl.trim().replace(/\/$/, "");
       
       const fetchSongs = async () => {
-        // Try local Express proxy first
+        const useDirect = isStaticEnvironment();
+        
+        if (useDirect) {
+          try {
+            console.log("Static environment detected. Querying Cloudflare Worker directly for tracks...");
+            const directRes = await fetch(`${cleanUrl}/songs`);
+            if (directRes.ok) {
+              const data = await directRes.json();
+              return Array.isArray(data) ? data : (data.songs || []);
+            }
+          } catch (directErr) {
+            console.warn("Direct fetch from static page failed, will try proxy route as fallback", directErr);
+          }
+        }
+
+        // Try local Express proxy
         try {
           const res = await fetch(`/api/worker/songs?workerUrl=${encodeURIComponent(workerUrl.trim())}`);
           if (res.ok) {
-            const text = await res.text();
-            try {
+            const contentType = res.headers.get("content-type") || "";
+            if (contentType.includes("json")) {
+              const text = await res.text();
               const data = JSON.parse(text);
               if (data && data.songs) return data.songs;
               if (data && data.error) throw new Error(data.error);
-            } catch (jsonErr) {
-              console.warn("Proxy returned non-JSON, falling back to direct fetch", jsonErr);
+            } else {
+              console.warn("Express proxy responded with non-JSON (likely SPA routing HTML content)");
             }
           }
         } catch (proxyErr) {
-          console.warn("Local API proxy failed or is not available, trying direct fetch", proxyErr);
+          console.warn("Local API proxy failed", proxyErr);
         }
 
-        // Direct fetch from worker fallback for static hosting server environments (e.g., Cloudflare Pages)
+        // Final direct fallback if we didn't try direct yet or if proxy failed
         try {
           const directRes = await fetch(`${cleanUrl}/songs`);
           if (!directRes.ok) {
@@ -89,7 +114,7 @@ export default function App() {
           const data = await directRes.json();
           return Array.isArray(data) ? data : (data.songs || []);
         } catch (directErr: any) {
-          throw new Error(`Cloudflare worker offline or misconfigured: ${directErr.message}`);
+          throw new Error(`Could not load Cloudflare Worker tracks directly. Please verify your worker is online and has CORS active. Technical error: ${directErr.message}`);
         }
       };
 
@@ -132,20 +157,36 @@ export default function App() {
     const cleanUrl = workerUrl.trim().replace(/\/$/, "");
 
     const fetchSongs = async () => {
+      const useDirect = isStaticEnvironment();
+      
+      if (useDirect) {
+        try {
+          console.log("Static environment reload: Querying Cloudflare Worker directly...");
+          const directRes = await fetch(`${cleanUrl}/songs`);
+          if (directRes.ok) {
+            const data = await directRes.json();
+            return Array.isArray(data) ? data : (data.songs || []);
+          }
+        } catch (directErr) {
+          console.warn("Static reload directly failed, falling back to proxy search", directErr);
+        }
+      }
+
       try {
         const res = await fetch(`/api/worker/songs?workerUrl=${encodeURIComponent(workerUrl.trim())}`);
         if (res.ok) {
-          const text = await res.text();
-          try {
+          const contentType = res.headers.get("content-type") || "";
+          if (contentType.includes("json")) {
+            const text = await res.text();
             const data = JSON.parse(text);
             if (data && data.songs) return data.songs;
             if (data && data.error) throw new Error(data.error);
-          } catch (jsonErr) {
-            console.warn("Proxy returned non-JSON/HTML on reload, trying direct", jsonErr);
+          } else {
+            console.warn("Proxy reload returned non-JSON.");
           }
         }
       } catch (proxyErr) {
-        console.warn("Proxy reload failed, trying direct", proxyErr);
+        console.warn("Proxy reload failed, trying direct fallback", proxyErr);
       }
 
       try {
@@ -156,7 +197,7 @@ export default function App() {
         const data = await directRes.json();
         return Array.isArray(data) ? data : (data.songs || []);
       } catch (directErr: any) {
-        throw new Error(`Could not load tracks directly from worker: ${directErr.message}`);
+        throw new Error(`Could not reload tracks directly from worker: ${directErr.message}`);
       }
     };
 

@@ -75,36 +75,71 @@ export default function UploadTab({
     let isSuccess = false;
     let errorMsg = "";
 
-    // 1. First path: Try local Express server proxy
-    try {
-      const response = await fetch("/api/worker/upload", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          workerUrl: workerUrl.trim(),
-          youtube_url: workerYoutubeUrl.trim(),
-          song_name: workerSongName.trim()
-        })
-      });
-      if (response.ok) {
-        const text = await response.text();
-        try {
-          const data = JSON.parse(text);
+    const useDirect = !window.location.hostname.includes("localhost") && !window.location.hostname.includes(".run.app") && !window.location.hostname.includes(".studio");
+
+    // 1. If static hosting environment, try posting directly to Cloudflare Worker endpoint first
+    if (useDirect) {
+      try {
+        const cleanUrl = workerUrl.trim().replace(/\/$/, "");
+        console.log("Static environment. Dispatching upload request directly to:", cleanUrl);
+        const response = await fetch(cleanUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            youtube_url: workerYoutubeUrl.trim(),
+            song_name: workerSongName.trim()
+          })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
           if (data.ok || data.success || !data.error) {
             isSuccess = true;
           } else {
-            errorMsg = data.error;
+            errorMsg = data.error || "Execution failed on worker.";
           }
-        } catch {
-          // Response not JSON (maybe static HTML server page), falls back to direct call
+        } else {
+          errorMsg = `Worker returned HTTP status ${response.status}`;
         }
+      } catch (directErr: any) {
+        console.warn("Direct upload dispatch from static page, fall back to backend proxy:", directErr);
       }
-    } catch (err: any) {
-      console.warn("Express proxy failed for worker upload dispatch, trying direct client-side fetch", err);
     }
 
-    // 2. Second path: Fallback directly to worker endpoint for static hosting like Pages
+    // 2. Local fallback route or if direct fetch has been skipped (localhost / workspace with Express proxy)
     if (!isSuccess) {
+      try {
+        const response = await fetch("/api/worker/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            workerUrl: workerUrl.trim(),
+            youtube_url: workerYoutubeUrl.trim(),
+            song_name: workerSongName.trim()
+          })
+        });
+        if (response.ok) {
+          const text = await response.text();
+          try {
+            const data = JSON.parse(text);
+            if (data.ok || data.success || !data.error) {
+              isSuccess = true;
+            } else {
+              errorMsg = data.error;
+            }
+          } catch {
+            // Response not JSON
+          }
+        }
+      } catch (err: any) {
+        console.warn("Express proxy failed for worker upload dispatch, trying direct client-side fetch", err);
+      }
+    }
+
+    // 3. Final direct fallback if proxy failed and direct post didn't happen yet
+    if (!isSuccess && !useDirect) {
       try {
         const cleanUrl = workerUrl.trim().replace(/\/$/, "");
         const response = await fetch(cleanUrl, {
