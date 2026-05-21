@@ -1,0 +1,6 @@
+{
+  "name": "Spotifyy",
+  "description": "An immersive, supercharged Spotify-like music player, live radio stream hub, and YouTube companion featuring beautiful visualizers and an AI-powered playlist recommender.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
