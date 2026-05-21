@@ -82,13 +82,14 @@ export default function BottomPlayer({
   return (
     <AnimatePresence>
       {!isExpanded ? (
-        /* MINIMIZED MINIMALIST PLAYER - Attached flush to the bottom browser edge */
+        /* MINIMIZED MINIMALIST FLOATING CONTAINER - Sits snug at bottom of screen */
         <motion.div
           key="minimized-player"
           initial={{ opacity: 0, y: 50, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 50, scale: 0.95 }}
-          className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-[#0c1517]/95 border-t border-x border-[#192a2d] p-3 rounded-t-2xl shadow-[0_-10px_35px_rgba(0,0,0,0.85)] z-50 flex items-center justify-between gap-3 backdrop-blur-xl shrink-0 select-none pb-4 md:pb-3"
+          onClick={() => setIsExpanded(true)}
+          className="fixed bottom-2 left-1/2 -translate-x-1/2 w-[calc(100%-1.5rem)] sm:w-[calc(100%-2rem)] max-w-sm md:max-w-md bg-[#0c1517]/95 border border-[#192a2d] p-3 rounded-2xl shadow-[0_12px_35px_rgba(0,0,0,0.85)] z-50 flex items-center justify-between gap-3 backdrop-blur-xl shrink-0 select-none border-b-2 cursor-pointer hover:border-teal-950/60 transition-colors"
         >
           {/* Cover and Name details */}
           <div className="flex items-center gap-2.5 min-w-0 flex-1">
@@ -113,28 +114,40 @@ export default function BottomPlayer({
           </div>
 
           {/* Symmetrical mini buttons */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
             <button
-              onClick={onPrev}
+              onClick={(e) => {
+                e.stopPropagation();
+                onPrev();
+              }}
               className="p-1 text-gray-400 hover:text-white transition-colors cursor-pointer"
             >
               <SkipBack size={14} />
             </button>
             <button
-              onClick={onTogglePlay}
+              onClick={(e) => {
+                e.stopPropagation();
+                onTogglePlay();
+              }}
               className="p-1 rounded bg-white text-black hover:bg-zinc-200 cursor-pointer flex items-center justify-center w-6 h-6 shrink-0 active:scale-90 transition-transform"
             >
               {isPlaying ? <Pause size={12} fill="black" /> : <Play size={12} fill="black" className="ml-0.5" />}
             </button>
             <button
-              onClick={onNext}
+              onClick={(e) => {
+                e.stopPropagation();
+                onNext();
+              }}
               className="p-1 text-gray-400 hover:text-white transition-colors cursor-pointer"
             >
               <SkipForward size={14} />
             </button>
             <div className="w-[1px] h-4 bg-[#1a2d30]" />
             <button
-              onClick={() => setIsExpanded(true)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsExpanded(true);
+              }}
               className="p-1 text-teal-400 hover:text-white transition-colors cursor-pointer"
               title="Expand player card"
             >
@@ -142,10 +155,10 @@ export default function BottomPlayer({
             </button>
           </div>
 
-          {/* Thin Pink Progress Slider on the top edge of bottom bar */}
-          <div className="absolute top-0 left-0 w-full h-[3px] bg-[#102022] overflow-hidden rounded-t-2xl">
+          {/* Thin Pink Progress Slider on the edge */}
+          <div className="absolute bottom-0 left-0 w-full h-[3px] bg-[#102022] rounded-b-2xl overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-pink-500 to-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.6)]"
+              className="h-full bg-gradient-to-r from-pink-500 to-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.6)] rounded-b-2xl"
               style={{ width: `${percent}%` }}
             />
           </div>
