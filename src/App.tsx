@@ -12,7 +12,7 @@ import MusicVisualizer from "./components/MusicVisualizer";
 import { Track, RadioStation } from "./types";
 import { CURATED_TRACKS, CURATED_STATIONS } from "./data";
 import { translations } from "./locale";
-import { Disc, Menu, Sparkles, Moon, Laptop, Flame, Music, Radio, Youtube, Home, UploadCloud, PlusCircle } from "lucide-react";
+import { Disc, Menu, Sparkles, Moon, Laptop, Flame, Music, Radio, Youtube, Home, UploadCloud, PlusCircle, Search, X } from "lucide-react";
 
 const isStaticEnvironment = (): boolean => {
   const hostname = window.location.hostname;
@@ -21,7 +21,8 @@ const isStaticEnvironment = (): boolean => {
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<string>("home");
-  const [lang, setLang] = useState<"en" | "ar">("ar"); // default to Arabic to greet Arab users, can toggle
+  const lang = "en";
+  const setLang = () => {};
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
 
   // Core Playback State
@@ -34,6 +35,13 @@ export default function App() {
   const [shuffle, setShuffle] = useState<boolean>(false);
   const [themePreset, setThemePreset] = useState<string>("flat");
   const [showVisualizer, setShowVisualizer] = useState<boolean>(false);
+  const [searchTerm, setSearchTerm] = useState<string>("");
+  const [isSearchActive, setIsSearchActive] = useState<boolean>(false);
+
+  useEffect(() => {
+    setSearchTerm("");
+    setIsSearchActive(false);
+  }, [activeTab]);
 
   // Custom persistent states stored in LocalStorage
   const [customTracks, setCustomTracks] = useState<Track[]>(() => {
@@ -554,14 +562,14 @@ export default function App() {
     setCustomTracks((prev) => [...prev, placeholder]);
   };
 
-  const isRTL = lang === "ar";
+  const isRTL = false;
   const t = translations[lang];
 
   const combinedStations = [...CURATED_STATIONS, ...customStations];
   const combinedTracks = [...CURATED_TRACKS, ...customTracks, ...workerTracks];
 
   return (
-    <div className="flex bg-[#070709] h-screen scroll-smooth overflow-hidden text-white" dir={isRTL ? "rtl" : "ltr"}>
+    <div className="flex bg-zinc-50 h-screen scroll-smooth overflow-hidden text-zinc-900" dir={isRTL ? "rtl" : "ltr"}>
       {/* LEFT Navigation sidebar */}
       <Sidebar
         activeTab={activeTab}
@@ -576,30 +584,63 @@ export default function App() {
       {/* RIGHT Core Body container */}
       <div className="flex-1 flex flex-col h-full overflow-hidden relative">
         {/* Custom Header Navigation */}
-        <header className="bg-[#09090b]/80 border-b border-[#1e1e24] px-6 py-4 flex items-center justify-between z-20 backdrop-blur-md">
-          <div className="flex items-center gap-4">
+        <header className="bg-white/90 border-b border-zinc-200 px-6 py-4 flex items-center justify-between z-20 backdrop-blur-md">
+          <div className="flex items-center gap-4 flex-1 col-span-2">
             <button
               onClick={() => setIsSidebarOpen(true)}
-              className="md:hidden p-2.5 rounded-xl hover:bg-[#18181b] text-gray-400 hover:text-white transition-colors cursor-pointer"
+              className="md:hidden p-2.5 rounded-xl hover:bg-zinc-100 text-zinc-500 hover:text-zinc-950 transition-colors cursor-pointer"
             >
               <Menu size={20} />
             </button>
-            <div className="flex items-center gap-2">
-              <span className="text-lg font-bold tracking-tight uppercase flex items-center gap-2 text-white/95">
-                {activeTab === "home" && <Home size={18} className="text-[#1db954]" />}
-                {activeTab === "music" && <Music size={18} className="text-[#1db954]" />}
-                {activeTab === "radio" && <Radio size={18} className="text-teal-400" />}
-                {activeTab === "upload" && <UploadCloud size={18} className="text-[#1db954]" />}
-                {activeTab === "add_radio" && <PlusCircle size={18} className="text-[#1db954]" />}
-                {activeTab === "youtube" && <Youtube size={18} className="text-red-500" />}
-                {activeTab === "ai" && <Sparkles size={18} className="text-emerald-400" />}
-                <span>{translations[lang][activeTab as keyof typeof translations["en"]] || activeTab}</span>
-              </span>
-            </div>
+
+            {!isSearchActive ? (
+              <div className="flex items-center gap-2">
+                <span className="text-lg font-bold tracking-tight uppercase flex items-center gap-2 text-zinc-900 transition-opacity duration-300">
+                  {activeTab === "home" && <Home size={18} className="text-[#1db954]" />}
+                  {activeTab === "music" && <Music size={18} className="text-[#1db954]" />}
+                  {activeTab === "radio" && <Radio size={18} className="text-teal-400" />}
+                  {activeTab === "upload" && <UploadCloud size={18} className="text-[#1db954]" />}
+                  {activeTab === "add_radio" && <PlusCircle size={18} className="text-[#1db954]" />}
+                  {activeTab === "youtube" && <Youtube size={18} className="text-red-500" />}
+                  {activeTab === "ai" && <Sparkles size={18} className="text-emerald-400" />}
+                  <span>{translations[lang][activeTab as keyof typeof translations["en"]] || activeTab}</span>
+                </span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 flex-1 max-w-md relative">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 animate-pulse" />
+                <input
+                  autoFocus
+                  type="text"
+                  placeholder="Search tracks, artists..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full bg-zinc-100 border border-zinc-200 focus:border-[#1db954] text-zinc-900 text-xs pl-9 pr-9 py-2.5 rounded-xl focus:outline-none transition-colors"
+                />
+                <button
+                  onClick={() => {
+                    setSearchTerm("");
+                    setIsSearchActive(false);
+                  }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-900 cursor-pointer"
+                >
+                  <X size={15} />
+                </button>
+              </div>
+            )}
           </div>
 
-          <div className="flex items-center gap-4">
-            <span className="font-mono text-[10px] text-gray-500 font-extrabold uppercase tracking-widest hidden sm:inline">
+          <div className="flex items-center gap-4 shrink-0">
+            {!isSearchActive && (
+              <button
+                onClick={() => setIsSearchActive(true)}
+                className="p-2.5 bg-zinc-100 hover:bg-zinc-200 border border-zinc-200 hover:border-[#1db954]/50 rounded-xl text-zinc-600 hover:text-zinc-900 transition-all cursor-pointer flex items-center gap-1"
+                title="Search Music"
+              >
+                <Search size={15} />
+              </button>
+            )}
+            <span className="font-mono text-[10px] text-zinc-400 font-extrabold uppercase tracking-widest hidden sm:inline">
               ONLINE AUDIO PRESET: {themePreset.toUpperCase()}
             </span>
           </div>
@@ -631,6 +672,7 @@ export default function App() {
                 lang={lang}
                 translations={translations}
                 customTracks={[...customTracks, ...workerTracks]}
+                searchTerm={searchTerm}
               />
             )}
 
