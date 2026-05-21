@@ -25,17 +25,17 @@ export default function RadioTab({
   const [hoveredStation, setHoveredStation] = useState<string | null>(null);
 
   return (
-    <div className="space-y-8 pb-12">
+    <div className="space-y-4 md:space-y-8 pb-4 md:pb-12">
       {/* Radio Header banner */}
-      <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-teal-950/20 via-slate-900/30 to-black border border-teal-500/10 p-8 md:p-12">
-        <div className="relative z-10 max-w-2xl space-y-4">
-          <span className="font-mono text-xs text-teal-400 uppercase tracking-widest font-semibold">
+      <div className="relative rounded-2xl md:rounded-3xl overflow-hidden bg-gradient-to-r from-teal-950/20 via-slate-900/30 to-black border border-teal-500/10 p-4 md:p-12">
+        <div className="relative z-10 max-w-2xl space-y-3 md:space-y-4">
+          <span className="font-mono text-[10px] md:text-xs text-teal-400 uppercase tracking-widest font-semibold inline-block">
             {t.radioLive}
           </span>
-          <h1 className="font-sans font-black text-3xl md:text-5xl tracking-tight text-white leading-tight">
+          <h1 className="font-sans font-black text-2xl md:text-5xl tracking-tight text-white leading-tight">
             {isRTL ? "مذياع سبوتيفايّ المباشر" : "Global Live Radio Frequencies"}
           </h1>
-          <p className="text-gray-300 text-sm md:text-base">
+          <p className="text-gray-300 text-xs md:text-sm hidden md:block">
             {isRTL
               ? "استمتع ببث حي فائق الجودة لمحطات راديو حصرية مخصصة وموسيقى هادئة دون فواصل إعلانية."
               : "Stream live internet radio feeds tuned specifically for lo-fi beats, chill waves, classic hits, and acoustic atmospheres."}
@@ -45,40 +45,40 @@ export default function RadioTab({
       </div>
 
       {/* Retro Signal & Frequency Dial */}
-      <div className="bg-[#0c0c0e]/60 border border-[#1e1e24] rounded-2xl p-6 md:p-8 backdrop-blur-md">
-        <h2 className="font-bold text-sm text-gray-400 uppercase tracking-wider mb-6">
+      <div className="bg-[#0c0c0e]/60 border border-[#1e1e24] rounded-2xl p-4 md:p-8 backdrop-blur-md">
+        <h2 className="font-bold text-xs text-gray-400 uppercase tracking-wider mb-4">
           {t.frequencyDial}
         </h2>
 
         {/* Dial display */}
-        <div className="relative h-28 bg-[#070709] rounded-xl border border-[#1f1f26] overflow-hidden flex items-end justify-center px-4">
+        <div className="relative h-20 md:h-28 bg-[#070709] rounded-xl border border-[#1f1f26] overflow-hidden flex items-end justify-center px-4">
           {/* Signal Indicator */}
-          <div className="absolute top-4 left-6 flex items-center gap-2">
-            <Signal size={14} className={isPlaying && activeStation ? "text-teal-400 animate-pulse" : "text-gray-600"} />
-            <span className="font-mono text-[10px] text-gray-500">
+          <div className="absolute top-2 md:top-4 left-4 md:left-6 flex items-center gap-2">
+            <Signal size={12} className={isPlaying && activeStation ? "text-teal-400 animate-pulse" : "text-gray-600"} />
+            <span className="font-mono text-[9px] md:text-[10px] text-gray-500">
               {t.signalStrength}: {isPlaying && activeStation ? "EXCELLENT" : "STANDBY"}
             </span>
           </div>
 
-          <div className="absolute top-4 right-6 flex items-center gap-2">
-            <Radio size={14} className={isPlaying && activeStation ? "text-teal-400 animate-spin [animation-duration:8s]" : "text-gray-600"} />
+          <div className="absolute top-2 md:top-4 right-4 md:right-6 flex items-center gap-2">
+            <Radio size={12} className={isPlaying && activeStation ? "text-teal-400 animate-spin [animation-duration:8s]" : "text-gray-600"} />
             {activeStation && (
-              <span className="font-mono text-[12px] font-bold text-teal-400">
+              <span className="font-mono text-[10px] md:text-[12px] font-bold text-teal-400">
                 {activeStation.frequency}
               </span>
             )}
           </div>
 
           {/* Lines simulating tuner dial */}
-          <div className="w-full h-16 flex items-end justify-between px-2 overflow-hidden select-none pointer-events-none">
+          <div className="w-full h-12 md:h-16 flex items-end justify-between px-2 overflow-hidden select-none pointer-events-none">
             {Array.from({ length: 41 }).map((_, i) => {
               const matchesStation = activeStation && Math.abs(parseInt(activeStation.frequency) - (88 + i * 0.5)) < 1;
               return (
                 <div
                   key={i}
                   className={`w-0.5 rounded-t transition-all duration-300 ${
-                    i % 5 === 0 ? "h-14 bg-gray-500" : "h-8 bg-gray-700"
-                  } ${matchesStation && isPlaying ? "h-16 bg-teal-400 shadow-[0_0_10px_rgba(45,212,191,0.5)]" : ""}`}
+                    i % 5 === 0 ? "h-10 md:h-14 bg-gray-500" : "h-6 md:h-8 bg-gray-700"
+                  } ${matchesStation && isPlaying ? "h-12 md:h-16 bg-teal-400 shadow-[0_0_10px_rgba(45,212,191,0.5)]" : ""}`}
                 />
               );
             })}
@@ -90,7 +90,7 @@ export default function RadioTab({
       </div>
 
       {/* Radio grid list */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[300px] md:max-h-none overflow-y-auto no-scrollbar pb-2">
         {stations.map((station) => {
           const isCurrent = activeStation?.id === station.id;
           const isThisPlaying = isCurrent && isPlaying;

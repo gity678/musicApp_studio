@@ -1,18 +1,21 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Sidebar from "./components/Sidebar";
 import BottomPlayer from "./components/BottomPlayer";
+import HomeTab from "./components/HomeTab";
 import MusicTab from "./components/MusicTab";
 import RadioTab from "./components/RadioTab";
+import UploadTab from "./components/UploadTab";
+import AddRadioTab from "./components/AddRadioTab";
 import YoutubeTab from "./components/YoutubeTab";
 import AiAssistantTab from "./components/AiAssistantTab";
 import MusicVisualizer from "./components/MusicVisualizer";
 import { Track, RadioStation } from "./types";
 import { CURATED_TRACKS, CURATED_STATIONS } from "./data";
 import { translations } from "./locale";
-import { Disc, Menu, Sparkles, Moon, Laptop, Flame, Music, Radio, Youtube } from "lucide-react";
+import { Disc, Menu, Sparkles, Moon, Laptop, Flame, Music, Radio, Youtube, Home, UploadCloud, PlusCircle } from "lucide-react";
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<string>("music");
+  const [activeTab, setActiveTab] = useState<string>("home");
   const [lang, setLang] = useState<"en" | "ar">("ar"); // default to Arabic to greet Arab users, can toggle
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
 
@@ -30,6 +33,10 @@ export default function App() {
   // Custom persistent states stored in LocalStorage
   const [customTracks, setCustomTracks] = useState<Track[]>(() => {
     const saved = localStorage.getItem("spotifyy_custom_tracks");
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [customStations, setCustomStations] = useState<RadioStation[]>(() => {
+    const saved = localStorage.getItem("spotifyy_custom_stations");
     return saved ? JSON.parse(saved) : [];
   });
   const [savedYoutubeTracks, setSavedYoutubeTracks] = useState<Track[]>(() => {
@@ -115,6 +122,10 @@ export default function App() {
   }, [customTracks]);
 
   useEffect(() => {
+    localStorage.setItem("spotifyy_custom_stations", JSON.stringify(customStations));
+  }, [customStations]);
+
+  useEffect(() => {
     localStorage.setItem("spotifyy_youtube_bookmarks", JSON.stringify(savedYoutubeTracks));
   }, [savedYoutubeTracks]);
 
@@ -197,18 +208,36 @@ export default function App() {
     handleSelectTrack(allTracks[prevIdx]);
   };
 
-  const handleAddCustomTrack = (title: string, artist: string, url: string) => {
+  const handleAddCustomTrack = (title: string, artist: string, url: string, genre: string, cover?: string) => {
     const newTrack: Track = {
       id: `custom-${Date.now()}`,
       title,
       artist,
-      album: "User Stream",
-      coverUrl: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=400&auto=format&fit=crop&q=80",
+      album: "Local Storage Stream",
+      coverUrl: cover || "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=400&auto=format&fit=crop&q=80",
       audioUrl: url,
-      duration: "Auto",
-      genre: "Custom"
+      duration: "Direct",
+      genre: genre || "Uploaded Track"
     };
     setCustomTracks((prev) => [newTrack, ...prev]);
+  };
+
+  const handleDeleteCustomTrack = (trackId: string) => {
+    setCustomTracks((prev) => prev.filter((t) => t.id !== trackId));
+    if (currentTrack?.id === trackId) {
+      setCurrentTrack(CURATED_TRACKS[0]);
+    }
+  };
+
+  const handleAddCustomStation = (station: RadioStation) => {
+    setCustomStations((prev) => [station, ...prev]);
+  };
+
+  const handleDeleteCustomStation = (id: string) => {
+    setCustomStations((prev) => prev.filter((s) => s.id !== id));
+    if (currentTrack?.id === `radio-${id}`) {
+      setCurrentTrack(CURATED_TRACKS[0]);
+    }
   };
 
   // Play YouTube video in general bottom player and view on stream tab
@@ -290,6 +319,9 @@ export default function App() {
   const isRTL = lang === "ar";
   const t = translations[lang];
 
+  const combinedStations = [...CURATED_STATIONS, ...customStations];
+  const combinedTracks = [...CURATED_TRACKS, ...customTracks];
+
   return (
     <div className="flex bg-[#070709] h-screen scroll-smooth overflow-hidden text-white" dir={isRTL ? "rtl" : "ltr"}>
       {/* LEFT Navigation sidebar */}
@@ -316,11 +348,14 @@ export default function App() {
             </button>
             <div className="flex items-center gap-2">
               <span className="text-lg font-bold tracking-tight uppercase flex items-center gap-2 text-white/95">
+                {activeTab === "home" && <Home size={18} className="text-[#1db954]" />}
                 {activeTab === "music" && <Music size={18} className="text-[#1db954]" />}
                 {activeTab === "radio" && <Radio size={18} className="text-teal-400" />}
+                {activeTab === "upload" && <UploadCloud size={18} className="text-[#1db954]" />}
+                {activeTab === "add_radio" && <PlusCircle size={18} className="text-[#1db954]" />}
                 {activeTab === "youtube" && <Youtube size={18} className="text-red-500" />}
                 {activeTab === "ai" && <Sparkles size={18} className="text-emerald-400" />}
-                <span>{translations[lang][activeTab as keyof typeof translations["en"]]}</span>
+                <span>{translations[lang][activeTab as keyof typeof translations["en"]] || activeTab}</span>
               </span>
             </div>
           </div>
@@ -333,12 +368,24 @@ export default function App() {
         </header>
 
         {/* Content Viewer viewport */}
-        <main className="flex-1 overflow-y-auto px-6 py-8 relative z-10">
+        <main className="flex-1 overflow-y-auto px-6 py-8 relative z-10 animate-fade-in">
           <div className="max-w-7xl mx-auto space-y-6">
             
             {/* Visualizer canvas floating header */}
             {showVisualizer && (
               <MusicVisualizer isPlaying={isPlaying} themePreset={themePreset} />
+            )}
+
+            {activeTab === "home" && (
+              <HomeTab
+                tracks={CURATED_TRACKS}
+                stations={combinedStations}
+                onSelectTrack={handleSelectTrack}
+                onSelectStation={handleSelectRadio}
+                lang={lang}
+                translations={translations}
+                setActiveTab={setActiveTab}
+              />
             )}
 
             {activeTab === "music" && (
@@ -350,20 +397,47 @@ export default function App() {
                 lang={lang}
                 translations={translations}
                 customTracks={customTracks}
-                onAddCustomTrack={handleAddCustomTrack}
               />
             )}
 
             {activeTab === "radio" && (
               <RadioTab
-                stations={CURATED_STATIONS}
+                stations={combinedStations}
                 activeStation={
                   currentTrack?.genre === "Radio Feed"
-                    ? CURATED_STATIONS.find((s) => s.name === currentTrack.title) || null
+                    ? combinedStations.find((s) => s.name === currentTrack.title) || null
                     : null
                 }
                 isPlaying={isPlaying}
                 onSelectStation={handleSelectRadio}
+                lang={lang}
+                translations={translations}
+              />
+            )}
+
+            {activeTab === "upload" && (
+              <UploadTab
+                customTracks={customTracks}
+                onAddCustomTrack={handleAddCustomTrack}
+                onDeleteCustomTrack={handleDeleteCustomTrack}
+                onSelectTrack={handleSelectTrack}
+                currentTrack={currentTrack}
+                lang={lang}
+                translations={translations}
+              />
+            )}
+
+            {activeTab === "add_radio" && (
+              <AddRadioTab
+                customStations={customStations}
+                onAddCustomStation={handleAddCustomStation}
+                onDeleteCustomStation={handleDeleteCustomStation}
+                onSelectStation={handleSelectRadio}
+                currentStation={
+                  currentTrack?.genre === "Radio Feed"
+                    ? combinedStations.find((s) => s.name === currentTrack.title) || null
+                    : null
+                }
                 lang={lang}
                 translations={translations}
               />

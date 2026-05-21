@@ -96,7 +96,7 @@ export default function BottomPlayer({
   ];
 
   return (
-    <div className="bg-[#09090b]/95 border-t border-[#1e1e24] p-4 text-white flex flex-col md:flex-row items-center justify-between gap-4 select-none relative z-40 backdrop-blur-md">
+    <div className="bg-[#09090b]/95 border-t border-[#1e1e24] p-3 md:p-4 text-white flex flex-row items-center justify-between gap-4 select-none relative z-40 backdrop-blur-md shrink-0">
       {/* Wave progress bar */}
       <div className="absolute top-0 left-0 w-full h-1 bg-[#1a1a24] cursor-pointer" onClick={(e) => {
         const rect = e.currentTarget.getBoundingClientRect();
@@ -112,40 +112,40 @@ export default function BottomPlayer({
       </div>
 
       {/* LEFT: Track details */}
-      <div className="flex items-center gap-4 w-full md:w-1/4">
+      <div className="flex items-center gap-3 w-[55%] md:w-1/4 min-w-0">
         {currentTrack ? (
           <>
             <div className="relative group shrink-0">
               <img
                 src={currentTrack.coverUrl}
                 alt={currentTrack.title}
-                className="w-14 h-14 rounded-lg object-cover shadow-lg border border-[#1e1e24]"
+                className="w-10 h-10 md:w-14 md:h-14 rounded-lg object-cover shadow-lg border border-[#1e1e24]"
               />
               {isPlaying && (
                 <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-lg">
-                  <Disc size={20} className="text-[#1db954] animate-spin [animation-duration:4s]" />
+                  <Disc size={16} className="text-[#1db954] animate-spin [animation-duration:4s]" />
                 </div>
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <h4 className="font-semibold text-sm truncate text-white hover:text-[#1db954] cursor-pointer">
+              <h4 className="font-semibold text-xs md:text-sm truncate text-white hover:text-[#1db954] cursor-pointer">
                 {currentTrack.title}
               </h4>
-              <p className="text-xs text-gray-400 truncate mt-0.5">{currentTrack.artist}</p>
+              <p className="text-[10px] md:text-xs text-gray-400 truncate mt-0.5">{currentTrack.artist}</p>
             </div>
           </>
         ) : (
-          <div className="text-gray-500 text-xs italic">{t.noRadioPlaying}</div>
+          <div className="text-gray-500 text-[11px] md:text-xs italic">{t.noRadioPlaying}</div>
         )}
       </div>
 
-      {/* CENTER: Player controls & progress text */}
-      <div className="flex flex-col items-center gap-2 w-full md:w-2/4">
+      {/* CENTER: Player controls & optional timeline */}
+      <div className="flex flex-col items-center gap-1.5 w-[45%] md:w-2/4">
         {/* Playback Buttons */}
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-3 md:gap-6 justify-end w-full md:justify-center">
           <button
             onClick={onToggleShuffle}
-            className={`p-1.5 transition-colors cursor-pointer ${
+            className={`hidden md:block p-1.5 transition-colors cursor-pointer ${
               shuffle ? "text-[#1db954]" : "text-gray-400 hover:text-white"
             }`}
           >
@@ -154,28 +154,28 @@ export default function BottomPlayer({
 
           <button
             onClick={onPrev}
-            className="p-1.5 text-gray-400 hover:text-white transition-colors cursor-pointer"
+            className="p-1 text-gray-400 hover:text-white transition-colors cursor-pointer"
           >
-            <SkipBack size={20} />
+            <SkipBack size={18} />
           </button>
 
           <button
             onClick={onTogglePlay}
-            className="w-12 h-12 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 active:scale-95 transition-transform shadow-[0_4px_12px_rgba(255,255,255,0.2)] cursor-pointer"
+            className="w-9 h-9 md:w-12 md:h-12 rounded-full bg-white text-black flex items-center justify-center hover:scale-105 active:scale-95 transition-transform shadow-[0_4px_12px_rgba(255,255,255,0.2)] cursor-pointer shrink-0"
           >
-            {isPlaying ? <Pause size={22} fill="black" /> : <Play size={22} fill="black" className={isRTL ? "" : "ml-0.5" } />}
+            {isPlaying ? <Pause size={18} fill="black" /> : <Play size={18} fill="black" className={isRTL ? "" : "ml-0.5" } />}
           </button>
 
           <button
             onClick={onNext}
-            className="p-1.5 text-gray-400 hover:text-white transition-colors cursor-pointer"
+            className="p-1 text-gray-400 hover:text-white transition-colors cursor-pointer"
           >
-            <SkipForward size={20} />
+            <SkipForward size={18} />
           </button>
 
           <button
             onClick={onToggleLoop}
-            className={`p-1.5 transition-colors cursor-pointer ${
+            className={`hidden md:block p-1.5 transition-colors cursor-pointer ${
               loop ? "text-[#1db954]" : "text-gray-400 hover:text-white"
             }`}
           >
@@ -183,8 +183,8 @@ export default function BottomPlayer({
           </button>
         </div>
 
-        {/* Timeline Text */}
-        <div className="flex items-center gap-3 w-full max-w-md">
+        {/* Timeline Text - Hidden on Mobile */}
+        <div className="hidden md:flex items-center gap-3 w-full max-w-md">
           <span className="font-mono text-[10px] text-gray-500 w-10 text-right">
             {formatTime(currentTime)}
           </span>
@@ -209,8 +209,8 @@ export default function BottomPlayer({
         </div>
       </div>
 
-      {/* RIGHT: Volume & EQ Panels */}
-      <div className="flex items-center justify-end gap-4 w-full md:w-1/4">
+      {/* RIGHT: Volume & EQ Panels - Hidden on Mobile */}
+      <div className="hidden md:flex items-center justify-end gap-4 w-1/4">
         {/* Canvas Visualizer Toggle */}
         <button
           onClick={() => setShowVisualizer(!showVisualizer)}

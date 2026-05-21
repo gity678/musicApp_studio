@@ -79,7 +79,7 @@ export default function MusicVisualizer({ isPlaying, themePreset }: MusicVisuali
   }, [isPlaying, themePreset]);
 
   return (
-    <div className="w-full h-20 bg-black/40 border border-[#1e1e24] rounded-2xl overflow-hidden relative">
+    <div className="hidden md:block w-full h-20 bg-black/40 border border-[#1e1e24] rounded-2xl overflow-hidden relative">
       <div className="absolute top-2 left-3 text-[9px] font-mono text-gray-500 uppercase tracking-widest pointer-events-none select-none">
         Reactive Visualizer Core
       </div>
