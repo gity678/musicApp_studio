@@ -45,25 +45,6 @@ export default function MusicTab({
 
   return (
     <div className="space-y-4 md:space-y-8 pb-4 md:pb-12">
-      {/* Top Welcome Poster Banner */}
-      <div className="relative rounded-2xl md:rounded-3xl overflow-hidden bg-gradient-to-r from-[#1db954]/20 via-[#0a2e16]/30 to-black border border-[#1db954]/10 p-4 md:p-12 shadow-md">
-        <div className="relative z-10 max-w-2xl space-y-3 md:space-y-4">
-          <span className="font-mono text-[10px] md:text-xs text-[#1db954] uppercase tracking-widest font-semibold flex items-center gap-1.5">
-            <Disc className="animate-spin [animation-duration:5s]" size={14} />
-            <span>{t.appName} Premium Live</span>
-          </span>
-          <h1 className="font-sans font-black text-2xl md:text-5xl tracking-tight text-white leading-tight">
-            {isRTL ? "موسيقاك بجودة فائقة ونقاء تام" : "Immersive Soundscape Experience"}
-          </h1>
-          <p className="text-gray-300 text-xs md:text-sm hidden md:block">
-            {isRTL
-              ? "استكشف أروع الألحان الحرة المنسقة مع معالجة ذكية ومؤثرات صوتية فريدة من نوعها."
-              : "Discover hand-picked cinematic tunes, retro themes, and organic instrumentals integrated with high-fidelity streaming."}
-          </p>
-        </div>
-        <div className="absolute right-0 bottom-0 top-0 w-1/3 bg-radial-[circle_at_right] from-[#1db954]/10 to-transparent pointer-events-none" />
-      </div>
-
       {/* Filter Chips by Genre */}
       <div className="flex gap-2 pb-2 overflow-x-auto select-none no-scrollbar">
         {genres.map((genre) => (
@@ -190,14 +171,6 @@ export default function MusicTab({
             ) : (
               <div className="text-gray-500 text-xs py-8 italic">{t.lyricsPlaceholder}</div>
             )}
-          </div>
-
-          <div className="bg-[#0c0c0e]/40 border border-[#1e1e24] rounded-2xl p-5 text-center">
-            <SlidersHorizontal size={18} className="mx-auto text-gray-500 mb-2" />
-            <h4 className="font-bold text-xs text-white uppercase tracking-wider">{t.equalizer}</h4>
-            <p className="text-[10px] text-gray-400 mt-1">
-              {isRTL ? "يمكنك ضبط معدلات التردد الصوتي من لوحة التحكم السفلية لتخصيص النضارة والعمق البصري." : "Manage tone parameters instantly in the hardware deck below to optimize signal boost."}
-            </p>
           </div>
         </div>
       </div>

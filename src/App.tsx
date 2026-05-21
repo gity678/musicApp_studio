@@ -461,8 +461,6 @@ export default function App() {
           onTogglePlay={handleTogglePlay}
           onNext={handleNext}
           onPrev={handlePrev}
-          volume={volume}
-          onVolumeChange={setVolume}
           currentTime={currentTime}
           duration={duration}
           onSeek={handleSeek}
