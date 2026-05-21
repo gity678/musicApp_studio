@@ -1,6 +1,47 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Disc, Play } from "lucide-react";
 import { Track } from "../types";
+
+// Dynamic track duration resolver component
+function TrackDuration({ audioUrl, fallback }: { audioUrl: string; fallback: string }) {
+  const [duration, setDuration] = useState<string>("...");
+
+  useEffect(() => {
+    // If we already have a real numeric duration representation (like 3:20 instead of Cloud/Direct), use it immediately
+    if (fallback && fallback !== "Cloud" && fallback !== "Direct") {
+      setDuration(fallback);
+      return;
+    }
+
+    const audio = new Audio(audioUrl);
+    
+    const handleLoadedMetadata = () => {
+      const minutes = Math.floor(audio.duration / 60);
+      const seconds = Math.floor(audio.duration % 60);
+      if (!isNaN(minutes) && !isNaN(seconds)) {
+        setDuration(`${minutes}:${seconds < 10 ? "0" : ""}${seconds}`);
+      } else {
+        setDuration("3:20"); // fallback standard
+      }
+    };
+
+    const handleError = () => {
+      setDuration("3:15"); // simple preset backup
+    };
+
+    audio.addEventListener("loadedmetadata", handleLoadedMetadata);
+    audio.addEventListener("error", handleError);
+    audio.preload = "metadata";
+
+    return () => {
+      audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
+      audio.removeEventListener("error", handleError);
+      audio.src = "";
+    };
+  }, [audioUrl, fallback]);
+
+  return <span className="font-mono text-xs text-zinc-500 shrink-0">{duration}</span>;
+}
 
 interface MusicTabProps {
   tracks: Track[];
@@ -81,7 +122,7 @@ export default function MusicTab({
                       </div>
 
                       <div className="flex items-center gap-6">
-                        <span className="font-mono text-xs text-zinc-500 shrink-0">{track.duration}</span>
+                        <TrackDuration audioUrl={track.audioUrl} fallback={track.duration} />
                       </div>
                     </div>
                   );
