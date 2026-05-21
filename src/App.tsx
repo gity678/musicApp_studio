@@ -46,7 +46,7 @@ export default function App() {
 
   // Cloudflare Worker settings
   const [workerUrl, setWorkerUrl] = useState<string>(() => {
-    return localStorage.getItem("spotifyy_worker_url") || "";
+    return localStorage.getItem("spotifyy_worker_url") || "https://music-worker.ma68.workers.dev/";
   });
   const [workerTracks, setWorkerTracks] = useState<Track[]>([]);
   const [isWorkerLoading, setIsWorkerLoading] = useState<boolean>(false);
