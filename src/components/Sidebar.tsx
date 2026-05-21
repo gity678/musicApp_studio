@@ -125,14 +125,14 @@ export default function Sidebar({
   return (
     <>
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex h-screen shrink-0 relative z-30">
+      <aside className="hidden md:flex h-screen shrink-0 relative z-[60]">
         {navContent}
       </aside>
 
       {/* Mobile Drawer (with Backdrop) */}
       <AnimatePresence>
         {isOpen && (
-          <div className="fixed inset-0 z-50 flex md:hidden">
+          <div className="fixed inset-0 z-[100] flex md:hidden">
             {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}

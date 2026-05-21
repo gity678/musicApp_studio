@@ -20,7 +20,7 @@ export default function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
 
   // Core Playback State
-  const [currentTrack, setCurrentTrack] = useState<Track | null>(CURATED_TRACKS[0]);
+  const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [volume, setVolume] = useState<number>(0.8);
   const [currentTime, setCurrentTime] = useState<number>(0);
@@ -28,7 +28,7 @@ export default function App() {
   const [loop, setLoop] = useState<boolean>(false);
   const [shuffle, setShuffle] = useState<boolean>(false);
   const [themePreset, setThemePreset] = useState<string>("flat");
-  const [showVisualizer, setShowVisualizer] = useState<boolean>(true);
+  const [showVisualizer, setShowVisualizer] = useState<boolean>(false);
 
   // Custom persistent states stored in LocalStorage
   const [customTracks, setCustomTracks] = useState<Track[]>(() => {
@@ -225,7 +225,7 @@ export default function App() {
   const handleDeleteCustomTrack = (trackId: string) => {
     setCustomTracks((prev) => prev.filter((t) => t.id !== trackId));
     if (currentTrack?.id === trackId) {
-      setCurrentTrack(CURATED_TRACKS[0]);
+      setCurrentTrack(null);
     }
   };
 
@@ -236,7 +236,7 @@ export default function App() {
   const handleDeleteCustomStation = (id: string) => {
     setCustomStations((prev) => prev.filter((s) => s.id !== id));
     if (currentTrack?.id === `radio-${id}`) {
-      setCurrentTrack(CURATED_TRACKS[0]);
+      setCurrentTrack(null);
     }
   };
 

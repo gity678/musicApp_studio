@@ -9,12 +9,9 @@ import {
   VolumeX,
   Repeat,
   Shuffle,
-  Sliders,
   Maximize2,
   Minimize2,
-  Sparkle,
-  Disc,
-  Heart
+  Disc
 } from "lucide-react";
 import { Track } from "../types";
 
@@ -65,11 +62,9 @@ export default function BottomPlayer({
 }: BottomPlayerProps) {
   const isRTL = lang === "ar";
   const t = translations[lang];
-  const [isEqOpen, setIsEqOpen] = useState(false);
   const [isVolumeOpen, setIsVolumeOpen] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [prevVolume, setPrevVolume] = useState(1);
-  const [isLiked, setIsLiked] = useState(false);
   const [isExpanded, setIsExpanded] = useState(true);
 
   if (!currentTrack) {
@@ -95,13 +90,6 @@ export default function BottomPlayer({
   };
 
   const percent = duration > 0 ? (currentTime / duration) * 100 : 0;
-
-  const eqPresets = [
-    { id: "flat", name: t.presetFlat },
-    { id: "bass", name: t.presetBass },
-    { id: "vocal", name: t.presetVocal },
-    { id: "chill", name: t.presetChill },
-  ];
 
   const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -214,16 +202,8 @@ export default function BottomPlayer({
               </div>
             </div>
 
-            {/* HEART TOGGLE & INTERACTIVE MINIMIZE UTILS */}
+            {/* INTERACTIVE MINIMIZE UTILS */}
             <div className="flex items-center gap-1.5 shrink-0">
-              <button
-                onClick={() => setIsLiked(!isLiked)}
-                className={`p-2 rounded-xl transition-all cursor-pointer ${
-                  isLiked ? "text-pink-500 scale-110" : "text-gray-400 hover:text-white"
-                }`}
-              >
-                <Heart size={18} fill={isLiked ? "#f43f5e" : "transparent"} strokeWidth={isLiked ? 0 : 2} />
-              </button>
               <button
                 onClick={() => setIsExpanded(false)}
                 className="p-2 text-gray-400 hover:text-white transition-colors cursor-pointer rounded-xl"
@@ -308,82 +288,15 @@ export default function BottomPlayer({
             </button>
           </div>
 
-          {/* SUB-UTILITIES TOGGLE ROW: VISUALIZER, EQ, VOLUME CHANNELS */}
-          <div className="flex items-center justify-between border-t border-[#1a2d30]/50 pt-3 mt-1 text-[11px] text-gray-400">
-            {/* Visualizer Toggle */}
-            <button
-              onClick={() => setShowVisualizer(!showVisualizer)}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer ${
-                showVisualizer ? "text-pink-400 bg-pink-500/10" : "hover:text-white"
-              }`}
-            >
-              <Sparkle size={12} />
-              <span>{t.visualizer}</span>
-            </button>
-
-            {/* Equalizer Popover */}
-            <div className="relative">
-              <button
-                onClick={() => {
-                  setIsEqOpen(!isEqOpen);
-                  setIsVolumeOpen(false);
-                }}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer ${
-                  isEqOpen ? "text-teal-400 bg-teal-500/10" : "hover:text-white"
-                }`}
-              >
-                <Sliders size={12} />
-                <span>Preset</span>
-              </button>
-
-              <AnimatePresence>
-                {isEqOpen && (
-                  <>
-                    <div className="fixed inset-0 z-40" onClick={() => setIsEqOpen(false)} />
-                    <motion.div
-                      initial={{ opacity: 0, y: 15 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 15 }}
-                      className="absolute bottom-10 left-1/2 -translate-x-1/2 bg-[#0d1719] border border-[#192a2d] rounded-xl p-2.5 w-40 shadow-2xl z-50 text-white"
-                    >
-                      <h5 className="text-[9px] font-mono text-teal-400 uppercase tracking-wider mb-2 text-center">
-                        {t.equalizer}
-                      </h5>
-                      <div className="space-y-1">
-                        {eqPresets.map((preset) => (
-                          <button
-                            key={preset.id}
-                            onClick={() => {
-                              onSetThemePreset(preset.id);
-                              setIsEqOpen(false);
-                            }}
-                            className={`w-full text-center px-2 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-between transition-colors ${
-                              themePreset === preset.id
-                                ? "bg-teal-500/10 text-teal-300"
-                                : "text-gray-300 hover:bg-[#132326] hover:text-white"
-                            }`}
-                          >
-                            <span>{preset.name}</span>
-                            {themePreset === preset.id && (
-                              <div className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />
-                            )}
-                          </button>
-                        ))}
-                      </div>
-                    </motion.div>
-                  </>
-                )}
-              </AnimatePresence>
-            </div>
-
+          {/* SUB-UTILITIES TOGGLE ROW: VOLUME CHANNELS ONLY */}
+          <div className="flex items-center justify-center border-t border-[#1a2d30]/50 pt-3 mt-1 text-[11px] text-gray-400">
             {/* Volume Quick Slider Trigger */}
             <div className="relative">
               <button
                 onClick={() => {
                   setIsVolumeOpen(!isVolumeOpen);
-                  setIsEqOpen(false);
                 }}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
                   volume === 0 || isMuted ? "text-red-400" : "hover:text-white"
                 }`}
               >
