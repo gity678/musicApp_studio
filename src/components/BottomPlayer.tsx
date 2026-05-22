@@ -22,10 +22,10 @@ interface BottomPlayerProps {
   currentTime: number;
   duration: number;
   onSeek: (time: number) => void;
-  loopMode: 'none' | 'all' | 'single';
+  loopMode: 'all' | 'single';
   onToggleLoop: () => void;
-  shuffle: boolean;
-  onToggleShuffle: () => void;
+  playOrder: 'sequential' | 'random';
+  onTogglePlayOrder: () => void;
   themePreset: string;
   onSetThemePreset: (preset: string) => void;
   lang: "en" | "ar";
@@ -45,8 +45,8 @@ export default function BottomPlayer({
   onSeek,
   loopMode,
   onToggleLoop,
-  shuffle,
-  onToggleShuffle,
+  playOrder,
+  onTogglePlayOrder,
   themePreset,
   onSetThemePreset,
   lang,
@@ -234,16 +234,16 @@ export default function BottomPlayer({
 
           {/* MODERN HORIZONTAL CONTROL BAR */}
           <div className="flex items-center justify-between gap-0.5 w-full mt-0.5 px-0.5">
-            {/* SHUFFLE BUTTON */}
+            {/* PLAY ORDER (SEQUENTIAL/RANDOM) BUTTON */}
             <button
-              onClick={onToggleShuffle}
-              className={`border border-zinc-200 rounded-lg p-2 flex items-center justify-center cursor-pointer transition-all hover:border-zinc-350 bg-transparent relative ${
-                shuffle ? "text-[#1db954] border-[#1db954]/55 bg-[#1db954]/5" : "text-zinc-500 hover:text-zinc-900"
-              }`}
+              onClick={onTogglePlayOrder}
+              className="border border-zinc-200 rounded-lg p-2 flex items-center justify-center cursor-pointer transition-all hover:border-zinc-350 bg-transparent text-zinc-500 hover:text-zinc-900 group"
             >
               <div className="relative flex items-center justify-center">
-                <Shuffle size={16} className={shuffle ? "opacity-40" : "opacity-100"} />
-                <span className="absolute text-[7px] font-black uppercase pointer-events-none">R</span>
+                <Shuffle size={16} className="opacity-40" />
+                <span className="absolute text-[7px] font-black uppercase pointer-events-none text-zinc-900">
+                  {playOrder === 'sequential' ? 'S' : 'R'}
+                </span>
               </div>
             </button>
 
@@ -274,14 +274,12 @@ export default function BottomPlayer({
             {/* REPEAT LOOP BUTTON */}
             <button
               onClick={onToggleLoop}
-              className={`border border-zinc-200 rounded-lg p-2 flex items-center justify-center cursor-pointer transition-all hover:border-zinc-350 bg-transparent relative ${
-                loopMode !== 'none' ? "text-[#1db954] border-[#1db954]/55 bg-[#1db954]/5" : "text-zinc-500 hover:text-zinc-900"
-              }`}
+              className="border border-zinc-200 rounded-lg p-2 flex items-center justify-center cursor-pointer transition-all hover:border-zinc-350 bg-transparent text-zinc-500 hover:text-zinc-900 group"
             >
               <div className="relative flex items-center justify-center">
-                <Repeat size={16} className={loopMode !== 'none' ? "opacity-40" : "opacity-100"} />
-                <span className="absolute text-[7px] font-black pointer-events-none">
-                  {loopMode === 'all' ? 'A' : loopMode === 'single' ? '1' : ''}
+                <Repeat size={16} className="opacity-40" />
+                <span className="absolute text-[7px] font-black pointer-events-none text-zinc-900">
+                  {loopMode === 'all' ? 'A' : '1'}
                 </span>
               </div>
             </button>

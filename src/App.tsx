@@ -31,12 +31,12 @@ export default function App() {
   const [volume, setVolume] = useState<number>(0.8);
   const [currentTime, setCurrentTime] = useState<number>(0);
   const [duration, setDuration] = useState<number>(0);
-  const [loopMode, setLoopMode] = useState<'none' | 'all' | 'single'>('none');
+  const [loopMode, setLoopMode] = useState<'all' | 'single'>('all');
   const loopModeRef = useRef(loopMode);
   useEffect(() => {
     loopModeRef.current = loopMode;
   }, [loopMode]);
-  const [shuffle, setShuffle] = useState<boolean>(false);
+  const [playOrder, setPlayOrder] = useState<'sequential' | 'random'>('sequential');
   const [themePreset, setThemePreset] = useState<string>("flat");
   const [showVisualizer, setShowVisualizer] = useState<boolean>(false);
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -310,11 +310,11 @@ export default function App() {
     }
   }, [volume]);
   const toggleLoopMode = () => {
-    setLoopMode((prev) => {
-      if (prev === 'none') return 'all';
-      if (prev === 'all') return 'single';
-      return 'none';
-    });
+    setLoopMode((prev) => (prev === 'all' ? 'single' : 'all'));
+  };
+
+  const togglePlayOrder = () => {
+    setPlayOrder((prev) => (prev === 'sequential' ? 'random' : 'sequential'));
   };
 
   useEffect(() => {
@@ -384,21 +384,14 @@ export default function App() {
     const allTracks = [...CURATED_TRACKS, ...customTracks, ...workerTracks];
     if (allTracks.length === 0) return;
 
-    if (shuffle) {
+    if (playOrder === 'random') {
       const randIdx = Math.floor(Math.random() * allTracks.length);
       handleSelectTrack(allTracks[randIdx]);
       return;
     }
 
     const currentIdx = allTracks.findIndex((t) => t.id === currentTrack?.id);
-    let nextIdx = (currentIdx + 1) % allTracks.length;
-    
-    // If loopMode is none, stop at end
-    if (loopMode === 'none' && currentIdx === allTracks.length - 1) {
-        setIsPlaying(false);
-        audioRef.current?.pause();
-        return;
-    }
+    const nextIdx = (currentIdx + 1) % allTracks.length;
     
     handleSelectTrack(allTracks[nextIdx]);
   };
@@ -766,8 +759,8 @@ export default function App() {
           onSeek={handleSeek}
           loopMode={loopMode}
           onToggleLoop={toggleLoopMode}
-          shuffle={shuffle}
-          onToggleShuffle={() => setShuffle(!shuffle)}
+          playOrder={playOrder}
+          onTogglePlayOrder={togglePlayOrder}
           themePreset={themePreset}
           onSetThemePreset={setThemePreset}
           lang={lang}
