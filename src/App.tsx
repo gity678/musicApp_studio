@@ -21,12 +21,12 @@ const isStaticEnvironment = (): boolean => {
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<string>(() => {
-    const saved = localStorage.getItem("spotifyy_active_tab");
+    const saved = sessionStorage.getItem("spotifyy_active_tab");
     return saved || "home";
   });
 
   useEffect(() => {
-    localStorage.setItem("spotifyy_active_tab", activeTab);
+    sessionStorage.setItem("spotifyy_active_tab", activeTab);
   }, [activeTab]);
   const lang = "en";
   const setLang = () => {};
@@ -606,7 +606,7 @@ export default function App() {
               <Menu size={20} />
             </button>
 
-            {!isSearchActive ? (
+            {!isSearchActive || (activeTab !== "music" && activeTab !== "radio") ? (
               <div className="flex items-center gap-2">
                 <span className="text-lg font-bold tracking-tight uppercase flex items-center gap-2 text-zinc-900 transition-opacity duration-300">
                   {activeTab === "home" && <Home size={18} className="text-[#1db954]" />}
@@ -644,7 +644,7 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-4 shrink-0">
-            {!isSearchActive && (
+            {!isSearchActive && (activeTab === "music" || activeTab === "radio") && (
               <button
                 onClick={() => setIsSearchActive(true)}
                 className="p-2.5 bg-zinc-100 hover:bg-zinc-200 border border-zinc-200 hover:border-[#1db954]/50 rounded-xl text-zinc-600 hover:text-zinc-900 transition-all cursor-pointer flex items-center gap-1"
