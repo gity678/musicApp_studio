@@ -241,8 +241,10 @@ export default function BottomPlayer({
                 shuffle ? "text-[#1db954] border-[#1db954]/55 bg-[#1db954]/5" : "text-zinc-500 hover:text-zinc-900"
               }`}
             >
-              <Shuffle size={12} />
-              <span className="absolute text-[8px] font-bold bottom-1 right-1">R</span>
+              <div className="relative flex items-center justify-center">
+                <Shuffle size={16} className={shuffle ? "opacity-40" : "opacity-100"} />
+                <span className="absolute text-[7px] font-black uppercase pointer-events-none">R</span>
+              </div>
             </button>
 
             {/* PREV BUTTON */}
@@ -250,7 +252,7 @@ export default function BottomPlayer({
               onClick={onPrev}
               className="border border-zinc-200 rounded-lg text-zinc-500 hover:text-zinc-900 p-2 flex items-center justify-center cursor-pointer transition-all hover:border-zinc-350 bg-transparent"
             >
-              <SkipBack size={12} />
+              <SkipBack size={14} />
             </button>
 
             {/* PLAY / PAUSE EXPANDED ACTION BUTTON */}
@@ -258,7 +260,7 @@ export default function BottomPlayer({
               onClick={onTogglePlay}
               className="border border-zinc-200 rounded-xl bg-zinc-900 text-white px-5 py-2.5 flex items-center justify-center cursor-pointer transition-all hover:bg-zinc-800 active:scale-95 shadow-sm shrink-0"
             >
-              {isPlaying ? <Pause size={16} fill="white" /> : <Play size={16} fill="white" className={isRTL ? "" : "ml-0.5"} />}
+              {isPlaying ? <Pause size={18} fill="white" /> : <Play size={18} fill="white" className={isRTL ? "" : "ml-0.5"} />}
             </button>
 
             {/* NEXT BUTTON */}
@@ -266,7 +268,7 @@ export default function BottomPlayer({
               onClick={onNext}
               className="border border-zinc-200 rounded-lg text-zinc-500 hover:text-zinc-900 p-2 flex items-center justify-center cursor-pointer transition-all hover:border-zinc-350 bg-transparent"
             >
-              <SkipForward size={12} />
+              <SkipForward size={14} />
             </button>
 
             {/* REPEAT LOOP BUTTON */}
@@ -276,10 +278,12 @@ export default function BottomPlayer({
                 loopMode !== 'none' ? "text-[#1db954] border-[#1db954]/55 bg-[#1db954]/5" : "text-zinc-500 hover:text-zinc-900"
               }`}
             >
-              <Repeat size={12} />
-              <span className="absolute text-[8px] font-bold bottom-1 right-1">
-                {loopMode === 'all' ? 'A' : loopMode === 'single' ? '1' : ''}
-              </span>
+              <div className="relative flex items-center justify-center">
+                <Repeat size={16} className={loopMode !== 'none' ? "opacity-40" : "opacity-100"} />
+                <span className="absolute text-[7px] font-black pointer-events-none">
+                  {loopMode === 'all' ? 'A' : loopMode === 'single' ? '1' : ''}
+                </span>
+              </div>
             </button>
           </div>
         </motion.div>

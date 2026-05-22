@@ -32,6 +32,10 @@ export default function App() {
   const [currentTime, setCurrentTime] = useState<number>(0);
   const [duration, setDuration] = useState<number>(0);
   const [loopMode, setLoopMode] = useState<'none' | 'all' | 'single'>('none');
+  const loopModeRef = useRef(loopMode);
+  useEffect(() => {
+    loopModeRef.current = loopMode;
+  }, [loopMode]);
   const [shuffle, setShuffle] = useState<boolean>(false);
   const [themePreset, setThemePreset] = useState<string>("flat");
   const [showVisualizer, setShowVisualizer] = useState<boolean>(false);
@@ -253,7 +257,7 @@ export default function App() {
     };
 
     const onEnded = () => {
-      if (loopMode === 'single') {
+      if (loopModeRef.current === 'single') {
         audio.currentTime = 0;
         audio.play().catch(() => {});
       } else {
@@ -269,9 +273,8 @@ export default function App() {
       audio.removeEventListener("timeupdate", onTimeUpdate);
       audio.removeEventListener("durationchange", onDurationChange);
       audio.removeEventListener("ended", onEnded);
-      audio.pause();
     };
-  }, [loopMode]);
+  }, []);
 
   // Handle changes to source track
   useEffect(() => {
