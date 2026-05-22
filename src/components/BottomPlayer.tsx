@@ -22,7 +22,7 @@ interface BottomPlayerProps {
   currentTime: number;
   duration: number;
   onSeek: (time: number) => void;
-  loop: boolean;
+  loopMode: 'none' | 'all' | 'single';
   onToggleLoop: () => void;
   shuffle: boolean;
   onToggleShuffle: () => void;
@@ -43,7 +43,7 @@ export default function BottomPlayer({
   currentTime,
   duration,
   onSeek,
-  loop,
+  loopMode,
   onToggleLoop,
   shuffle,
   onToggleShuffle,
@@ -237,11 +237,12 @@ export default function BottomPlayer({
             {/* SHUFFLE BUTTON */}
             <button
               onClick={onToggleShuffle}
-              className={`border border-zinc-200 rounded-lg p-2 flex items-center justify-center cursor-pointer transition-all hover:border-zinc-350 bg-transparent ${
+              className={`border border-zinc-200 rounded-lg p-2 flex items-center justify-center cursor-pointer transition-all hover:border-zinc-350 bg-transparent relative ${
                 shuffle ? "text-[#1db954] border-[#1db954]/55 bg-[#1db954]/5" : "text-zinc-500 hover:text-zinc-900"
               }`}
             >
               <Shuffle size={12} />
+              <span className="absolute text-[8px] font-bold bottom-1 right-1">R</span>
             </button>
 
             {/* PREV BUTTON */}
@@ -271,11 +272,14 @@ export default function BottomPlayer({
             {/* REPEAT LOOP BUTTON */}
             <button
               onClick={onToggleLoop}
-              className={`border border-zinc-200 rounded-lg p-2 flex items-center justify-center cursor-pointer transition-all hover:border-zinc-350 bg-transparent ${
-                loop ? "text-[#1db954] border-[#1db954]/55 bg-[#1db954]/5" : "text-zinc-500 hover:text-zinc-900"
+              className={`border border-zinc-200 rounded-lg p-2 flex items-center justify-center cursor-pointer transition-all hover:border-zinc-350 bg-transparent relative ${
+                loopMode !== 'none' ? "text-[#1db954] border-[#1db954]/55 bg-[#1db954]/5" : "text-zinc-500 hover:text-zinc-900"
               }`}
             >
               <Repeat size={12} />
+              <span className="absolute text-[8px] font-bold bottom-1 right-1">
+                {loopMode === 'all' ? 'A' : loopMode === 'single' ? '1' : ''}
+              </span>
             </button>
           </div>
         </motion.div>

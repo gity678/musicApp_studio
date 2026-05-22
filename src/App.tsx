@@ -31,7 +31,7 @@ export default function App() {
   const [volume, setVolume] = useState<number>(0.8);
   const [currentTime, setCurrentTime] = useState<number>(0);
   const [duration, setDuration] = useState<number>(0);
-  const [loop, setLoop] = useState<boolean>(false);
+  const [loopMode, setLoopMode] = useState<'none' | 'all' | 'single'>('none');
   const [shuffle, setShuffle] = useState<boolean>(false);
   const [themePreset, setThemePreset] = useState<string>("flat");
   const [showVisualizer, setShowVisualizer] = useState<boolean>(false);
@@ -253,7 +253,7 @@ export default function App() {
     };
 
     const onEnded = () => {
-      if (loop) {
+      if (loopMode === 'single') {
         audio.currentTime = 0;
         audio.play().catch(() => {});
       } else {
@@ -271,7 +271,7 @@ export default function App() {
       audio.removeEventListener("ended", onEnded);
       audio.pause();
     };
-  }, [loop]);
+  }, [loopMode]);
 
   // Handle changes to source track
   useEffect(() => {
@@ -306,11 +306,13 @@ export default function App() {
       audioRef.current.volume = volume;
     }
   }, [volume]);
-
-  // Local storage binding
-  useEffect(() => {
-    localStorage.setItem("spotifyy_custom_tracks", JSON.stringify(customTracks));
-  }, [customTracks]);
+  const toggleLoopMode = () => {
+    setLoopMode((prev) => {
+      if (prev === 'none') return 'all';
+      if (prev === 'all') return 'single';
+      return 'none';
+    });
+  };
 
   useEffect(() => {
     localStorage.setItem("spotifyy_custom_stations", JSON.stringify(customStations));
@@ -386,7 +388,15 @@ export default function App() {
     }
 
     const currentIdx = allTracks.findIndex((t) => t.id === currentTrack?.id);
-    const nextIdx = (currentIdx + 1) % allTracks.length;
+    let nextIdx = (currentIdx + 1) % allTracks.length;
+    
+    // If loopMode is none, stop at end
+    if (loopMode === 'none' && currentIdx === allTracks.length - 1) {
+        setIsPlaying(false);
+        audioRef.current?.pause();
+        return;
+    }
+    
     handleSelectTrack(allTracks[nextIdx]);
   };
 
@@ -751,8 +761,8 @@ export default function App() {
           currentTime={currentTime}
           duration={duration}
           onSeek={handleSeek}
-          loop={loop}
-          onToggleLoop={() => setLoop(!loop)}
+          loopMode={loopMode}
+          onToggleLoop={toggleLoopMode}
           shuffle={shuffle}
           onToggleShuffle={() => setShuffle(!shuffle)}
           themePreset={themePreset}
