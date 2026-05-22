@@ -237,11 +237,11 @@ export default function BottomPlayer({
             {/* PLAY ORDER (SEQUENTIAL/RANDOM) BUTTON */}
             <button
               onClick={onTogglePlayOrder}
-              className="border border-zinc-200 rounded-lg p-2 flex items-center justify-center cursor-pointer transition-all hover:border-zinc-350 bg-transparent text-zinc-500 hover:text-zinc-900 group"
+              className="border border-zinc-200 rounded-lg p-2 py-2.5 flex items-center justify-center cursor-pointer transition-all hover:border-zinc-300 bg-transparent text-zinc-500 hover:text-zinc-900 group"
             >
-              <div className="relative flex items-center justify-center">
-                <Shuffle size={16} className="opacity-40" />
-                <span className="absolute text-[7px] font-black uppercase pointer-events-none text-zinc-900">
+              <div className="flex items-center gap-1">
+                <Shuffle size={14} className="text-zinc-400 group-hover:text-zinc-600 transition-colors" />
+                <span className="text-[9px] font-bold uppercase pointer-events-none text-zinc-900 leading-none">
                   {playOrder === 'sequential' ? 'S' : 'R'}
                 </span>
               </div>
@@ -250,7 +250,7 @@ export default function BottomPlayer({
             {/* PREV BUTTON */}
             <button
               onClick={onPrev}
-              className="border border-zinc-200 rounded-lg text-zinc-500 hover:text-zinc-900 p-2 flex items-center justify-center cursor-pointer transition-all hover:border-zinc-350 bg-transparent"
+              className="border border-zinc-200 rounded-lg text-zinc-500 hover:text-zinc-900 p-2 flex items-center justify-center cursor-pointer transition-all hover:border-zinc-300 bg-transparent"
             >
               <SkipBack size={14} />
             </button>
@@ -266,7 +266,7 @@ export default function BottomPlayer({
             {/* NEXT BUTTON */}
             <button
               onClick={onNext}
-              className="border border-zinc-200 rounded-lg text-zinc-500 hover:text-zinc-900 p-2 flex items-center justify-center cursor-pointer transition-all hover:border-zinc-350 bg-transparent"
+              className="border border-zinc-200 rounded-lg text-zinc-500 hover:text-zinc-900 p-2 flex items-center justify-center cursor-pointer transition-all hover:border-zinc-300 bg-transparent"
             >
               <SkipForward size={14} />
             </button>
@@ -274,11 +274,11 @@ export default function BottomPlayer({
             {/* REPEAT LOOP BUTTON */}
             <button
               onClick={onToggleLoop}
-              className="border border-zinc-200 rounded-lg p-2 flex items-center justify-center cursor-pointer transition-all hover:border-zinc-350 bg-transparent text-zinc-500 hover:text-zinc-900 group"
+              className="border border-zinc-200 rounded-lg p-2 px-3 flex items-center justify-center cursor-pointer transition-all hover:border-zinc-300 bg-transparent text-zinc-500 hover:text-zinc-900 group"
             >
               <div className="relative flex items-center justify-center">
-                <Repeat size={16} className="opacity-40" />
-                <span className="absolute text-[7px] font-black pointer-events-none text-zinc-900">
+                <Repeat size={18} className="text-zinc-400 group-hover:text-zinc-600 transition-colors" />
+                <span className="absolute text-[8px] font-bold pointer-events-none text-zinc-900 mb-0.5">
                   {loopMode === 'all' ? 'A' : '1'}
                 </span>
               </div>
