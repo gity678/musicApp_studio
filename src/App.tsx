@@ -20,7 +20,14 @@ const isStaticEnvironment = (): boolean => {
 };
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<string>("home");
+  const [activeTab, setActiveTab] = useState<string>(() => {
+    const saved = localStorage.getItem("spotifyy_active_tab");
+    return saved || "home";
+  });
+
+  useEffect(() => {
+    localStorage.setItem("spotifyy_active_tab", activeTab);
+  }, [activeTab]);
   const lang = "en";
   const setLang = () => {};
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
