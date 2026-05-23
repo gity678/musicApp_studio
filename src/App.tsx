@@ -694,16 +694,13 @@ export default function App() {
 
             {activeTab === "radio" && (
               <RadioTab
-                stations={combinedStations}
                 activeStation={
                   currentTrack?.genre === "Radio Feed"
                     ? combinedStations.find((s) => s.name === currentTrack.title) || null
                     : null
                 }
-                isPlaying={isPlaying}
                 onSelectStation={handleSelectRadio}
                 lang={lang}
-                translations={translations}
               />
             )}
 
@@ -728,19 +725,7 @@ export default function App() {
             )}
 
             {activeTab === "add_radio" && (
-              <AddRadioTab
-                customStations={customStations}
-                onAddCustomStation={handleAddCustomStation}
-                onDeleteCustomStation={handleDeleteCustomStation}
-                onSelectStation={handleSelectRadio}
-                currentStation={
-                  currentTrack?.genre === "Radio Feed"
-                    ? combinedStations.find((s) => s.name === currentTrack.title) || null
-                    : null
-                }
-                lang={lang}
-                translations={translations}
-              />
+              <AddRadioTab lang={lang} />
             )}
 
             {activeTab === "youtube" && (

@@ -1,28 +1,332 @@
+import React, { useState, useEffect } from "react";
+import { 
+  Plus, 
+  Edit2, 
+  FileJson, 
+  Save, 
+  Copy, 
+  CheckCircle2, 
+  AlertCircle, 
+  Loader2,
+  ChevronDown
+} from "lucide-react";
 import { RadioStation } from "../types";
 
+const WORKER = 'https://radio-worker.ma68.workers.dev';
+
 interface AddRadioTabProps {
-  customStations: RadioStation[];
-  onAddCustomStation: (station: RadioStation) => void;
-  onDeleteCustomStation: (id: string) => void;
-  onSelectStation: (station: RadioStation) => void;
   lang: "en" | "ar";
-  translations: any;
-  currentStation: RadioStation | null;
 }
 
-export default function AddRadioTab({
-  lang,
-}: AddRadioTabProps) {
+export default function AddRadioTab({ lang }: AddRadioTabProps) {
   const isRTL = lang === "ar";
   
+  // App State
+  const [mode, setMode] = useState<'modifier' | 'ajouter' | 'json'>('modifier');
+  const [radios, setRadios] = useState<any[]>([]);
+  const [originalName, setOriginalName] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [status, setStatus] = useState<{ msg: string; type: 'success' | 'error' | 'loading' } | null>(null);
+
+  // Form State
+  const [radioName, setRadioName] = useState("");
+  const [radioStream, setRadioStream] = useState("");
+  const [radioPhoto, setRadioPhoto] = useState("");
+  const [jsonInput, setJsonInput] = useState("");
+
+  const loadRadios = async () => {
+    try {
+      const res = await fetch(WORKER + '/radios');
+      const data = await res.json();
+      setRadios(data);
+    } catch (e) {
+      console.error("Error loading radios:", e);
+    }
+  };
+
+  useEffect(() => {
+    loadRadios();
+  }, []);
+
+  const clearForm = () => {
+    setRadioName("");
+    setRadioStream("");
+    setRadioPhoto("");
+    setOriginalName("");
+    setJsonInput("");
+    setStatus(null);
+  };
+
+  const handleFillForm = (index: string) => {
+    if (index === "") {
+      clearForm();
+      return;
+    }
+    const r = radios[parseInt(index)];
+    setOriginalName(r.name);
+    setRadioName(r.name);
+    setRadioStream(r.url || r.streamUrl || "");
+    setRadioPhoto(r.logo || "");
+  };
+
+  const copyPrompt = () => {
+    const text = document.getElementById("promptText")?.innerText.trim() || "";
+    navigator.clipboard.writeText(text);
+    setStatus({ msg: isRTL ? "تم النسخ!" : "JSON prompt copied!", type: 'success' });
+    setTimeout(() => setStatus(null), 2000);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (mode === 'json') {
+      await submitJSON();
+      return;
+    }
+
+    if (!radioName.trim() || !radioStream.trim()) {
+      setStatus({ msg: isRTL ? "الاسم والرابط مطلوبان" : "Name and URL are required", type: 'error' });
+      return;
+    }
+
+    setIsLoading(true);
+    setStatus({ msg: isRTL ? "جاري الحفظ..." : "Saving...", type: 'loading' });
+
+    try {
+      if (mode === 'ajouter') {
+        const res = await fetch(WORKER + '/radios', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: radioName, url: radioStream, logo: radioPhoto })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          setStatus({ msg: isRTL ? "✅ تم إضافة المحطة!" : "✅ Station added!", type: 'success' });
+          clearForm();
+          loadRadios();
+        } else {
+          setStatus({ msg: `Error: ${data.error || 'Unknown'}`, type: 'error' });
+        }
+      } else {
+        if (!originalName) {
+          setStatus({ msg: isRTL ? "يرجى اختيار محطة" : "Select a station first", type: 'error' });
+          setIsLoading(false);
+          return;
+        }
+        // Worker pattern from snippet: DELETE then POST
+        await fetch(WORKER + '/radios', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: originalName })
+        });
+        const res = await fetch(WORKER + '/radios', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: radioName, url: radioStream, logo: radioPhoto })
+        });
+        const data = await res.json();
+        if (data.ok) {
+          setStatus({ msg: isRTL ? "✅ تم التعديل!" : "✅ Station modified!", type: 'success' });
+          loadRadios();
+        } else {
+          setStatus({ msg: "Error modifying station", type: 'error' });
+        }
+      }
+    } catch (e) {
+      setStatus({ msg: "Connection error", type: 'error' });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const submitJSON = async () => {
+    const raw = jsonInput.trim();
+    if (!raw) return;
+
+    let data;
+    try {
+      data = JSON.parse(raw);
+      if (!Array.isArray(data)) data = [data];
+      const invalid = data.filter((r: any) => !r.name || !r.url);
+      if (invalid.length > 0) {
+        setStatus({ msg: "Missing 'name' or 'url' in components", type: 'error' });
+        return;
+      }
+    } catch (e: any) {
+      setStatus({ msg: `Invalid JSON: ${e.message}`, type: 'error' });
+      return;
+    }
+
+    setIsLoading(true);
+    setStatus({ msg: isRTL ? "جاري الاستيراد..." : "Importing...", type: 'loading' });
+
+    try {
+      const res = await fetch(WORKER + '/radios/batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      const result = await res.json();
+      if (result.ok) {
+        setStatus({ msg: `✅ ${data.length} stations imported!`, type: 'success' });
+        setJsonInput("");
+        loadRadios();
+      } else {
+        setStatus({ msg: `Error: ${result.error || 'Unknown'}`, type: 'error' });
+      }
+    } catch (e) {
+      setStatus({ msg: "Connection error", type: 'error' });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <div className="flex flex-col items-center justify-center h-full text-zinc-400 space-y-2 py-20">
-      <h2 className="text-xl font-bold tracking-tight uppercase">
-        {isRTL ? "قريباً" : "Coming Soon"}
-      </h2>
-      <p className="text-xs font-mono opacity-50 uppercase tracking-widest">
-        {isRTL ? "سيتم تحديث صفحة إضافة الراديو قريباً" : "Radio configuration interface update pending"}
-      </p>
+    <div className="max-w-2xl mx-auto space-y-6 pb-20 p-2 sm:p-4">
+      {/* Tab Switcher */}
+      <div className="bg-zinc-100 p-1.5 rounded-2xl flex gap-1 shadow-inner border border-zinc-200">
+        <button 
+          onClick={() => { setMode('modifier'); clearForm(); }}
+          className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-bold transition-all uppercase tracking-tight ${mode === 'modifier' ? 'bg-zinc-900 text-white shadow-lg' : 'text-zinc-500 hover:bg-zinc-200'}`}
+        >
+          <Edit2 size={14} />
+          <span>{isRTL ? "تعديل" : "Modifier"}</span>
+        </button>
+        <button 
+          onClick={() => { setMode('ajouter'); clearForm(); }}
+          className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-bold transition-all uppercase tracking-tight ${mode === 'ajouter' ? 'bg-[#e91e63] text-white shadow-lg' : 'text-zinc-500 hover:bg-zinc-200'}`}
+        >
+          <Plus size={14} />
+          <span>{isRTL ? "إضافة" : "Ajouter"}</span>
+        </button>
+        <button 
+          onClick={() => { setMode('json'); clearForm(); }}
+          className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-bold transition-all uppercase tracking-tight ${mode === 'json' ? 'bg-orange-500 text-white shadow-lg' : 'text-zinc-500 hover:bg-zinc-200'}`}
+        >
+          <FileJson size={14} />
+          <span>JSON</span>
+        </button>
+      </div>
+
+      <div className="bg-white border border-zinc-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6 animate-fade-in">
+        <div className="text-center space-y-1">
+          <h2 className="text-xl font-black tracking-tight text-zinc-900 flex items-center justify-center gap-2 uppercase">
+            {mode === 'modifier' && <Edit2 size={20} className="text-zinc-400" />}
+            {mode === 'ajouter' && <Plus size={20} className="text-[#e91e63]" />}
+            {mode === 'json' && <FileJson size={20} className="text-orange-500" />}
+            <span>
+              {mode === 'modifier' && (isRTL ? "تعديل محطة" : "Modifier la station")}
+              {mode === 'ajouter' && (isRTL ? "إضافة محطة جديدة" : "Ajouter une station")}
+              {mode === 'json' && (isRTL ? "استيراد JSON" : "Importer via JSON")}
+            </span>
+          </h2>
+        </div>
+
+        {mode === 'modifier' && (
+          <div className="space-y-2">
+            <label className="text-[10px] font-mono font-black uppercase text-zinc-400 tracking-widest">{isRTL ? "اختر المحطة" : "Select station"}</label>
+            <div className="relative">
+              <select 
+                className="w-full h-12 bg-zinc-50 border border-zinc-200 rounded-2xl px-5 text-sm appearance-none outline-none focus:border-zinc-900 transition-colors"
+                onChange={(e) => handleFillForm(e.target.value)}
+              >
+                <option value="">-- {isRTL ? "اختر من القائمة" : "Selectionner"} --</option>
+                {radios.map((r, i) => <option key={i} value={i}>{r.name}</option>)}
+              </select>
+              <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" size={16} />
+            </div>
+          </div>
+        )}
+
+        {(mode === 'modifier' || mode === 'ajouter') && (
+          <form className="space-y-4" onSubmit={handleSubmit}>
+            <div className="space-y-2">
+              <label className="text-[10px] font-mono font-black uppercase text-zinc-400 tracking-widest">{isRTL ? "اسم المحطة" : "Station Name"}</label>
+              <input 
+                type="text" 
+                value={radioName}
+                onChange={(e) => setRadioName(e.target.value)}
+                placeholder="Ex: BBC Arabic" 
+                className="w-full h-12 bg-zinc-50 border border-zinc-200 rounded-2xl px-5 text-sm outline-none focus:border-zinc-900 transition-colors"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-mono font-black uppercase text-zinc-400 tracking-widest">{isRTL ? "رابط البث" : "Stream URL"}</label>
+              <input 
+                type="text" 
+                value={radioStream}
+                onChange={(e) => setRadioStream(e.target.value)}
+                placeholder="https://..." 
+                className="w-full h-12 bg-zinc-50 border border-zinc-200 rounded-2xl px-5 text-sm outline-none focus:border-zinc-900 transition-colors placeholder:text-zinc-300"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-mono font-black uppercase text-zinc-400 tracking-widest">{isRTL ? "رابط الصورة (اختياري)" : "Photo Link (Optional)"}</label>
+              <input 
+                type="text" 
+                value={radioPhoto}
+                onChange={(e) => setRadioPhoto(e.target.value)}
+                placeholder="https://..." 
+                className="w-full h-12 bg-zinc-50 border border-zinc-200 rounded-2xl px-5 text-sm outline-none focus:border-zinc-900 transition-colors placeholder:text-zinc-300"
+              />
+            </div>
+
+            <button 
+              disabled={isLoading}
+              className={`w-full py-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${mode === 'modifier' ? 'bg-zinc-900 text-white' : 'bg-[#e91e63] text-white'} active:scale-95 disabled:opacity-50`}
+            >
+              {isLoading ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
+              <span>{mode === 'modifier' ? (isRTL ? "حفظ التعديلات" : "Sauvegarder") : (isRTL ? "تأكيد الإضافة" : "Confirmer")}</span>
+            </button>
+          </form>
+        )}
+
+        {mode === 'json' && (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-[10px] font-mono font-black uppercase text-zinc-400 tracking-widest">JSON Input</label>
+              <textarea 
+                value={jsonInput}
+                onChange={(e) => setJsonInput(e.target.value)}
+                placeholder='[{"name": "...", "url": "...", "logo": "..."}]'
+                className="w-full h-48 bg-zinc-50 border border-zinc-200 rounded-2xl p-4 text-xs font-mono outline-none focus:border-orange-500 transition-colors resize-none overflow-y-auto no-scrollbar"
+              />
+            </div>
+
+            <div className="p-4 bg-orange-50 border border-orange-100 rounded-2xl space-y-3">
+              <p id="promptText" className="text-[10px] text-orange-800 leading-relaxed font-mono whitespace-pre-wrap opacity-80">
+                {"Génère une liste de stations de radio en JSON : [{\"name\": \"...\", \"url\": \"...\", \"logo\": \"...\"}]"}
+              </p>
+              <button 
+                onClick={copyPrompt}
+                className="w-full py-2 bg-orange-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2"
+              >
+                <Copy size={12} />
+                <span>{isRTL ? "نسخ مطالبة الـ AI" : "Copy AI Prompt"}</span>
+              </button>
+            </div>
+
+            <button 
+              disabled={isLoading || !jsonInput}
+              onClick={submitJSON}
+              className="w-full py-4 bg-zinc-900 text-white rounded-2xl font-bold flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50"
+            >
+              {isLoading ? <Loader2 className="animate-spin" size={18} /> : <FileJson size={18} />}
+              <span>{isRTL ? "بدء الاستيراد" : "Importer JSON"}</span>
+            </button>
+          </div>
+        )}
+
+        {status && (
+          <div className={`p-4 rounded-2xl flex items-center gap-3 animate-slide-up ${
+            status.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' :
+            status.type === 'error' ? 'bg-rose-50 text-rose-700 border border-rose-100' :
+            'bg-zinc-50 text-zinc-500'
+          }`}>
+            {status.type === 'success' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+            <span className="text-xs font-bold uppercase tracking-tight">{status.msg}</span>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

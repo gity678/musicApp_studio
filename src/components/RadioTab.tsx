@@ -5,12 +5,9 @@ import { MoreVertical, X, Edit2, Trash2 } from "lucide-react";
 const WORKER = 'https://radio-worker.ma68.workers.dev';
 
 interface RadioTabProps {
-  stations: RadioStation[];
   activeStation: RadioStation | null;
-  isPlaying: boolean;
   onSelectStation: (station: RadioStation) => void;
   lang: "en" | "ar";
-  translations: any;
 }
 
 export default function RadioTab({
