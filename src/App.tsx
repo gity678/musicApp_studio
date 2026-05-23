@@ -251,6 +251,7 @@ export default function App() {
 
   useEffect(() => {
     audioRef.current = new Audio();
+    audioRef.current.preload = "none";
     audioRef.current.volume = volume;
 
     const audio = audioRef.current;
