@@ -25,9 +25,9 @@ export default function RadioTab({
   const [hoveredStation, setHoveredStation] = useState<string | null>(null);
 
   return (
-    <div className="space-y-4 md:space-y-8 pb-4 md:pb-12">
+    <div className="space-y-4 md:space-y-6 flex flex-col h-full overflow-hidden min-h-0">
       {/* Radio Header banner */}
-      <div className="relative rounded-2xl md:rounded-3xl overflow-hidden bg-gradient-to-r from-teal-950/20 via-slate-900/30 to-black border border-teal-500/10 p-4 md:p-12">
+      <div className="relative rounded-2xl md:rounded-3xl overflow-hidden bg-gradient-to-r from-teal-950/20 via-slate-900/30 to-black border border-teal-500/10 p-4 md:p-8 shrink-0">
         <div className="relative z-10 max-w-2xl space-y-3 md:space-y-4">
           <span className="font-mono text-[10px] md:text-xs text-teal-400 uppercase tracking-widest font-semibold inline-block">
             {t.radioLive}
@@ -90,7 +90,7 @@ export default function RadioTab({
       </div>
 
       {/* Radio grid list */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 overflow-y-auto no-scrollbar pb-2">
+      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 overflow-y-auto no-scrollbar pb-2 min-h-0">
         {stations.map((station) => {
           const isCurrent = activeStation?.id === station.id;
           const isThisPlaying = isCurrent && isPlaying;

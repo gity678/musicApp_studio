@@ -661,8 +661,8 @@ export default function App() {
         </header>
 
         {/* Content Viewer viewport */}
-        <main className="flex-1 overflow-y-auto px-4 py-2 relative z-10 animate-fade-in overscroll-contain">
-          <div className="max-w-7xl mx-auto space-y-6 pb-24">
+        <main className="flex-1 overflow-hidden px-4 py-2 relative z-10 animate-fade-in flex flex-col">
+          <div className="max-w-7xl mx-auto space-y-6 w-full flex-1 flex flex-col min-h-0 pb-4">
             
             {/* Visualizer canvas floating header */}
             {showVisualizer && (
@@ -670,11 +670,13 @@ export default function App() {
             )}
 
             {activeTab === "home" && (
-              <HomeTab
-                lang={lang}
-                translations={translations}
-                setActiveTab={setActiveTab}
-              />
+              <div className="flex-1 overflow-y-auto no-scrollbar">
+                <HomeTab
+                  lang={lang}
+                  translations={translations}
+                  setActiveTab={setActiveTab}
+                />
+              </div>
             )}
 
             {activeTab === "music" && (
@@ -706,21 +708,23 @@ export default function App() {
             )}
 
             {activeTab === "upload" && (
-              <UploadTab
-                customTracks={customTracks}
-                onAddCustomTrack={handleAddCustomTrack}
-                onDeleteCustomTrack={handleDeleteCustomTrack}
-                onSelectTrack={handleSelectTrack}
-                currentTrack={currentTrack}
-                lang={lang}
-                translations={translations}
-                workerUrl={workerUrl}
-                setWorkerUrl={setWorkerUrl}
-                workerTracks={workerTracks}
-                isWorkerLoading={isWorkerLoading}
-                onReloadWorkerSongs={reloadWorkerSongs}
-                workerError={workerError}
-              />
+              <div className="flex-1 overflow-y-auto no-scrollbar">
+                <UploadTab
+                  customTracks={customTracks}
+                  onAddCustomTrack={handleAddCustomTrack}
+                  onDeleteCustomTrack={handleDeleteCustomTrack}
+                  onSelectTrack={handleSelectTrack}
+                  currentTrack={currentTrack}
+                  lang={lang}
+                  translations={translations}
+                  workerUrl={workerUrl}
+                  setWorkerUrl={setWorkerUrl}
+                  workerTracks={workerTracks}
+                  isWorkerLoading={isWorkerLoading}
+                  onReloadWorkerSongs={reloadWorkerSongs}
+                  workerError={workerError}
+                />
+              </div>
             )}
 
             {activeTab === "add_radio" && (
@@ -740,15 +744,17 @@ export default function App() {
             )}
 
             {activeTab === "youtube" && (
-              <YoutubeTab
-                lang={lang}
-                translations={translations}
-                onPlayYoutube={handlePlayYoutube}
-                savedYoutubeTracks={savedYoutubeTracks}
-                onAddYoutubeToCollection={handleAddYoutubeToCollection}
-                onRemoveYoutubeFromCollection={handleRemoveYoutubeFromCollection}
-                workerUrl={workerUrl}
-              />
+              <div className="flex-1 overflow-y-auto no-scrollbar">
+                <YoutubeTab
+                  lang={lang}
+                  translations={translations}
+                  onPlayYoutube={handlePlayYoutube}
+                  savedYoutubeTracks={savedYoutubeTracks}
+                  onAddYoutubeToCollection={handleAddYoutubeToCollection}
+                  onRemoveYoutubeFromCollection={handleRemoveYoutubeFromCollection}
+                  workerUrl={workerUrl}
+                />
+              </div>
             )}
 
 

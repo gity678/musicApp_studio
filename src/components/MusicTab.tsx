@@ -62,16 +62,16 @@ export default function MusicTab({
   });
 
   return (
-    <div className="space-y-4 md:space-y-8 pb-4 md:pb-12 text-zinc-800">
+    <div className="flex flex-col h-full space-y-4 text-zinc-800 overflow-hidden">
       {/* Grid: Main library & Info detail */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-8 min-h-0">
         {/* Main Track Library */}
-        <div className="lg:col-span-2 space-y-4">
+        <div className="lg:col-span-2 flex flex-col min-h-0 space-y-4">
           
           {/* Table List of tracks */}
-          <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-sm overflow-y-auto no-scrollbar">
+          <div className="flex-1 bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-sm flex flex-col min-h-0">
             {filteredTracks.length > 0 ? (
-              <div className="divide-y divide-zinc-100">
+              <div className="flex-1 overflow-y-auto no-scrollbar divide-y divide-zinc-100">
                 {filteredTracks.map((track, idx) => {
                   const isCurrent = currentTrack?.id === track.id;
                   return (
