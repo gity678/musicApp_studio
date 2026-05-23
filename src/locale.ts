@@ -4,7 +4,7 @@ export const translations = {
     home: "Home Dashboard",
     music: "Music Library",
     radio: "Live Radio",
-    upload: "Load & Upload Sound Tracks",
+    upload: "add music",
     addRadio: "Configure Live Radio",
     youtube: "YouTube Companion",
     aiAssistant: "AI Music Conductor",

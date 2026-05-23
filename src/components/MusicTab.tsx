@@ -78,25 +78,25 @@ export default function MusicTab({
                     <div
                       key={track.id}
                       onClick={() => onSelectTrack(track)}
-                      className={`flex items-center justify-between p-5 md:p-6 hover:bg-zinc-50 transition-all duration-300 cursor-pointer group ${
+                      className={`flex items-center justify-between p-4 hover:bg-zinc-50 transition-all duration-300 cursor-pointer group ${
                         isCurrent ? "bg-[#1db954]/10" : ""
                       }`}
                     >
-                      <div className="flex items-center gap-5 min-w-0">
-                        <span className="font-mono text-sm text-zinc-400 w-6 text-center group-hover:hidden">
+                      <div className="flex items-center gap-4 min-w-0">
+                        <span className="font-mono text-xs text-zinc-400 w-5 text-center group-hover:hidden">
                           {idx + 1}
                         </span>
-                        <div className="hidden group-hover:flex w-6 items-center justify-center animate-pulse">
-                          <Play size={14} className={isCurrent ? "text-[#1db954]" : "text-zinc-600"} />
+                        <div className="hidden group-hover:flex w-5 items-center justify-center animate-pulse">
+                          <Play size={12} className={isCurrent ? "text-[#1db954]" : "text-zinc-600"} />
                         </div>
                         <img
                           src={track.coverUrl}
                           alt={track.title}
-                          className="w-12 h-12 md:w-14 md:h-14 rounded-lg object-cover shadow-sm border border-zinc-100 group-hover:scale-105 transition-transform"
+                          className="w-10 h-10 rounded-lg object-cover shadow-sm border border-zinc-100 group-hover:scale-105 transition-transform"
                         />
                         <div className="min-w-0">
                           <h4
-                            className={`font-semibold text-sm md:text-base truncate transition-colors ${
+                            className={`font-semibold text-xs truncate transition-colors ${
                               isCurrent ? "text-[#1db954] font-bold" : "text-zinc-800 group-hover:text-[#1db954]"
                             }`}
                           >

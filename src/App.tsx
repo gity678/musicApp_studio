@@ -598,25 +598,25 @@ export default function App() {
       {/* RIGHT Core Body container */}
       <div className="flex-1 flex flex-col h-full overflow-hidden relative">
         {/* Custom Header Navigation */}
-        <header className="bg-white/90 border-b border-zinc-200 px-6 py-4 flex items-center justify-between z-20 backdrop-blur-md">
+        <header className="bg-white/90 border-b border-zinc-200 px-4 py-2 flex items-center justify-between z-20 backdrop-blur-md">
           <div className="flex items-center gap-4 flex-1 col-span-2">
             <button
               onClick={() => setIsSidebarOpen(true)}
-              className="md:hidden p-2.5 rounded-xl hover:bg-zinc-100 text-zinc-500 hover:text-zinc-950 transition-colors cursor-pointer"
+              className="md:hidden p-2 rounded-xl hover:bg-zinc-100 text-zinc-500 hover:text-zinc-950 transition-colors cursor-pointer"
             >
-              <Menu size={20} />
+              <Menu size={18} />
             </button>
 
             {!isSearchActive || (activeTab !== "music" && activeTab !== "radio") ? (
               <div className="flex items-center gap-2">
-                <span className="text-lg font-bold tracking-tight uppercase flex items-center gap-2 text-zinc-900 transition-opacity duration-300">
-                  {activeTab === "home" && <Home size={18} className="text-[#1db954]" />}
-                  {activeTab === "music" && <Music size={18} className="text-[#1db954]" />}
-                  {activeTab === "radio" && <Radio size={18} className="text-teal-400" />}
-                  {activeTab === "upload" && <UploadCloud size={18} className="text-[#1db954]" />}
-                  {activeTab === "add_radio" && <PlusCircle size={18} className="text-[#1db954]" />}
-                  {activeTab === "youtube" && <Youtube size={18} className="text-red-500" />}
-                  {activeTab === "ai" && <Sparkles size={18} className="text-emerald-400" />}
+                <span className="text-sm font-bold tracking-tight uppercase flex items-center gap-2 text-zinc-900 transition-opacity duration-300">
+                  {activeTab === "home" && <Home size={16} className="text-[#1db954]" />}
+                  {activeTab === "music" && <Music size={16} className="text-[#1db954]" />}
+                  {activeTab === "radio" && <Radio size={16} className="text-teal-400" />}
+                  {activeTab === "upload" && <UploadCloud size={16} className="text-[#1db954]" />}
+                  {activeTab === "add_radio" && <PlusCircle size={16} className="text-[#1db954]" />}
+                  {activeTab === "youtube" && <Youtube size={16} className="text-red-500" />}
+                  {activeTab === "ai" && <Sparkles size={16} className="text-emerald-400" />}
                   <span>{translations[lang][activeTab as keyof typeof translations["en"]] || activeTab}</span>
                 </span>
               </div>
@@ -629,7 +629,7 @@ export default function App() {
                   placeholder="Search tracks, artists..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full bg-zinc-100 border border-zinc-200 focus:border-[#1db954] text-zinc-900 text-xs pl-9 pr-9 py-2.5 rounded-xl focus:outline-none transition-colors"
+                  className="w-full bg-zinc-100 border border-zinc-200 focus:border-[#1db954] text-zinc-900 text-xs pl-9 pr-9 py-2 rounded-xl focus:outline-none transition-colors"
                 />
                 <button
                   onClick={() => {
@@ -638,7 +638,7 @@ export default function App() {
                   }}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-900 cursor-pointer"
                 >
-                  <X size={15} />
+                  <X size={14} />
                 </button>
               </div>
             )}
@@ -648,20 +648,20 @@ export default function App() {
             {!isSearchActive && (activeTab === "music" || activeTab === "radio") && (
               <button
                 onClick={() => setIsSearchActive(true)}
-                className="p-2.5 bg-zinc-100 hover:bg-zinc-200 border border-zinc-200 hover:border-[#1db954]/50 rounded-xl text-zinc-600 hover:text-zinc-900 transition-all cursor-pointer flex items-center gap-1"
+                className="p-2 bg-zinc-100 hover:bg-zinc-200 border border-zinc-200 hover:border-[#1db954]/50 rounded-xl text-zinc-600 hover:text-zinc-900 transition-all cursor-pointer flex items-center gap-1"
                 title="Search Music"
               >
-                <Search size={15} />
+                <Search size={14} />
               </button>
             )}
-            <span className="font-mono text-[10px] text-zinc-400 font-extrabold uppercase tracking-widest hidden sm:inline">
+            <span className="font-mono text-[9px] text-zinc-400 font-extrabold uppercase tracking-widest hidden sm:inline">
               ONLINE AUDIO PRESET: {themePreset.toUpperCase()}
             </span>
           </div>
         </header>
 
         {/* Content Viewer viewport */}
-        <main className="flex-1 overflow-y-auto px-6 py-8 relative z-10 animate-fade-in">
+        <main className="flex-1 overflow-y-auto px-4 py-2 relative z-10 animate-fade-in">
           <div className="max-w-7xl mx-auto space-y-6">
             
             {/* Visualizer canvas floating header */}
