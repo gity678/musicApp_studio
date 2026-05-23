@@ -90,7 +90,7 @@ export default function RadioTab({
       </div>
 
       {/* Radio grid list */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[300px] md:max-h-none overflow-y-auto no-scrollbar pb-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 overflow-y-auto no-scrollbar pb-2">
         {stations.map((station) => {
           const isCurrent = activeStation?.id === station.id;
           const isThisPlaying = isCurrent && isPlaying;

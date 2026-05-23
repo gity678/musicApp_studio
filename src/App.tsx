@@ -583,7 +583,7 @@ export default function App() {
   const combinedTracks = [...CURATED_TRACKS, ...customTracks, ...workerTracks];
 
   return (
-    <div className="flex bg-zinc-50 h-screen scroll-smooth overflow-hidden text-zinc-900" dir={isRTL ? "rtl" : "ltr"}>
+    <div className="flex bg-zinc-50 h-[100dvh] overflow-hidden text-zinc-900 overscroll-none touch-pan-y shadow-inner" dir={isRTL ? "rtl" : "ltr"}>
       {/* LEFT Navigation sidebar */}
       <Sidebar
         activeTab={activeTab}
@@ -598,7 +598,7 @@ export default function App() {
       {/* RIGHT Core Body container */}
       <div className="flex-1 flex flex-col h-full overflow-hidden relative">
         {/* Custom Header Navigation */}
-        <header className="bg-white/90 border-b border-zinc-200 px-4 py-2 flex items-center justify-between z-20 backdrop-blur-md">
+        <header className="bg-white/90 border-b border-zinc-200 px-4 py-2 flex items-center justify-between z-20 backdrop-blur-md shrink-0">
           <div className="flex items-center gap-4 flex-1 col-span-2">
             <button
               onClick={() => setIsSidebarOpen(true)}
@@ -661,8 +661,8 @@ export default function App() {
         </header>
 
         {/* Content Viewer viewport */}
-        <main className="flex-1 overflow-y-auto px-4 py-2 relative z-10 animate-fade-in">
-          <div className="max-w-7xl mx-auto space-y-6">
+        <main className="flex-1 overflow-y-auto px-4 py-2 relative z-10 animate-fade-in overscroll-contain">
+          <div className="max-w-7xl mx-auto space-y-6 pb-24">
             
             {/* Visualizer canvas floating header */}
             {showVisualizer && (

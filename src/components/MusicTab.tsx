@@ -69,7 +69,7 @@ export default function MusicTab({
         <div className="lg:col-span-2 space-y-4">
           
           {/* Table List of tracks */}
-          <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-sm max-h-[500px] md:max-h-none overflow-y-auto no-scrollbar">
+          <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-sm overflow-y-auto no-scrollbar">
             {filteredTracks.length > 0 ? (
               <div className="divide-y divide-zinc-100">
                 {filteredTracks.map((track, idx) => {
