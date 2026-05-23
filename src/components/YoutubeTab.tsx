@@ -116,9 +116,8 @@ export default function YoutubeTab({
             >
               <iframe
                 id="yt-player"
-                src={`https://www.youtube.com/embed/${activeVideoId}?autoplay=1&rel=0&modestbranding=1&enablejsapi=1&origin=${window.location.origin}`}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowFullScreen
+                src={`https://www.youtube.com/embed/${activeVideoId}?autoplay=1&enablejsapi=1&origin=${window.location.origin}`}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 style={{ width: "100%", height: "100%", border: "none" }}
               />
             </motion.div>

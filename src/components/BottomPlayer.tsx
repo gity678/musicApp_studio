@@ -85,11 +85,11 @@ export default function BottomPlayer({
         /* MINIMIZED MINIMALIST FLOATING CONTAINER - Sits snug at bottom of screen */
         <motion.div
           key="minimized-player"
-          initial={{ opacity: 0, y: 50, scale: 0.95 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 50, scale: 0.95 }}
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 50 }}
           onClick={() => setIsExpanded(true)}
-          className="fixed bottom-2 left-1/2 -translate-x-1/2 w-[calc(100%-1.5rem)] sm:w-[calc(100%-2rem)] max-w-sm md:max-w-md bg-white/95 border border-zinc-200 p-3 rounded-2xl shadow-[0_12px_35px_rgba(0,0,0,0.15)] z-50 flex items-center justify-between gap-3 backdrop-blur-xl shrink-0 select-none border-b-2 cursor-pointer hover:border-[#1db954]/50 transition-colors"
+          className="fixed bottom-0 left-0 w-full bg-white/95 border-t border-zinc-200 p-3 shadow-[0_-4px_15px_rgba(0,0,0,0.05)] z-50 flex items-center justify-between gap-3 backdrop-blur-xl shrink-0 select-none cursor-pointer hover:bg-zinc-50 transition-colors"
         >
           {/* Cover and Name details */}
           <div className="flex items-center gap-2.5 min-w-0 flex-1">
@@ -155,9 +155,9 @@ export default function BottomPlayer({
           </div>
 
           {/* Thin Progress Slider on the edge */}
-          <div className="absolute bottom-0 left-0 w-full h-[3px] bg-zinc-100 rounded-b-2xl overflow-hidden">
+          <div className="absolute bottom-0 left-0 w-full h-[2px] bg-zinc-100 overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-[#1db954] to-[#20cf5d] shadow-[0_0_8px_rgba(29,185,84,0.4)] rounded-b-2xl"
+              className="h-full bg-[#1db954]"
               style={{ width: `${percent}%` }}
             />
           </div>

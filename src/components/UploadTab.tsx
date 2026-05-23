@@ -394,30 +394,29 @@ export default function UploadTab({
               </div>
 
               {/* Search Bar Input */}
-              <form onSubmit={handleSearchSubmit} className="space-y-3">
-                <div className="relative">
-                  <Search className={`absolute ${isRTL ? "right-4" : "left-4"} top-1/2 -translate-y-1/2 text-zinc-400`} size={16} />
+              <form onSubmit={handleSearchSubmit} className="flex gap-2">
+                <div className="relative flex-1">
+                  <Search className={`absolute ${isRTL ? "right-3" : "left-3"} top-3 text-zinc-400`} size={14} />
                   <input
                     type="text"
                     placeholder={isRTL ? "ادخل اسم الأغنية أو اسم الفنان..." : "Enter song name, artist..."}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className={`w-full bg-zinc-50 border border-zinc-200 ${isRTL ? "pr-11 pl-4" : "pl-11 pr-4"} py-4 rounded-2xl text-sm text-zinc-800 font-bold focus:outline-none focus:border-[#1db954] transition-all shadow-inner`}
+                    className={`w-full bg-zinc-50 border border-zinc-200 ${isRTL ? "pr-9 pl-4" : "pl-9 pr-4"} py-2.5 rounded-xl text-xs text-zinc-800 focus:outline-none focus:border-[#1db954] transition-colors`}
                   />
                 </div>
                 <button
                   type="submit"
                   disabled={searchLoading}
-                  className="w-full bg-[#1db954] text-white hover:bg-[#20cf5d] active:scale-[0.98] disabled:opacity-50 py-4 rounded-2xl text-sm font-black transition-all cursor-pointer flex items-center justify-center gap-2 shadow-sm"
+                  className="bg-[#1db954] text-white hover:bg-[#20cf5d] active:scale-95 disabled:opacity-50 px-5 rounded-xl text-xs font-bold font-sans transition-all cursor-pointer flex items-center gap-1.5"
                 >
-                  {searchLoading ? <RefreshCw size={16} className="animate-spin" /> : <Search size={16} />}
+                  {searchLoading ? <RefreshCw size={12} className="animate-spin" /> : null}
                   <span>{isRTL ? "ابحث" : "Search"}</span>
                 </button>
               </form>
 
               {searchError && (
-                <div className="p-4 bg-red-50 text-red-500 rounded-2xl text-xs flex items-center gap-2 border border-red-100">
-                  <AlertCircle size={14} />
+                <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-500 rounded-xl text-xs">
                   {searchError}
                 </div>
               )}
@@ -425,51 +424,53 @@ export default function UploadTab({
               {/* Embedded YouTube preview player block */}
               {playVideoId && (
                 <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="space-y-4 pt-2"
+                  initial={{ opacity: 0, scale: 0.98 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="p-3 bg-zinc-50 rounded-xl border border-zinc-200 space-y-2.5"
                 >
-                  <div className="aspect-video w-full rounded-2xl overflow-hidden border border-zinc-200 bg-black shadow-xl relative group">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] text-zinc-500 flex items-center gap-1 font-sans">
+                      <Video size={12} className="text-[#1db954]" />
+                      <span>{isRTL ? "معاينة الفيديو النشطة:" : "Active Video Preview:"} <strong className="text-zinc-800 font-semibold">{playVideoTitle}</strong></span>
+                    </span>
+                    <button
+                      onClick={closeVideoPreview}
+                      className="text-zinc-400 hover:text-zinc-800 p-1 rounded-md hover:bg-zinc-100 cursor-pointer"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+
+                  <div className="aspect-video w-full rounded-lg overflow-hidden border border-zinc-200 bg-black">
                     <iframe
-                      src={`https://www.youtube.com/embed/${playVideoId}?autoplay=1&rel=0&modestbranding=1&enablejsapi=1&origin=${window.location.origin}`}
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      src={`https://www.youtube.com/embed/${playVideoId}?autoplay=1`}
+                      allow="autoplay; encrypted-media"
                       allowFullScreen
                       className="w-full h-full border-none"
                     />
                   </div>
 
-                  <div className="flex gap-3">
-                    <button
-                      onClick={closeVideoPreview}
-                      className="flex-1 bg-zinc-100 text-zinc-800 hover:bg-zinc-200 py-4 rounded-2xl text-sm font-black cursor-pointer transition-all flex items-center justify-center gap-2 border border-zinc-200"
-                    >
-                      <span>{isRTL ? "← رجوع" : "← Retour"}</span>
-                    </button>
+                  <div className="flex items-center gap-2">
                     <button
                       onClick={() => handleAddSongFromSearch(playVideoId, playVideoTitle)}
                       disabled={songAddStates[playVideoId]?.loading}
-                      className="flex-[1.5] bg-[#1db954] text-white hover:bg-[#20cf5d] disabled:opacity-50 py-4 rounded-2xl text-sm font-black cursor-pointer transition-all shadow-md flex items-center justify-center gap-2"
+                      className="flex-1 bg-[#1db954] text-white hover:bg-[#20cf5d] disabled:opacity-50 py-2 rounded-lg text-xs font-black cursor-pointer transition-all"
                     >
-                      {songAddStates[playVideoId]?.loading ? (
-                        <RefreshCw size={16} className="animate-spin" />
-                      ) : (
-                        <Check size={16} />
-                      )}
-                      <span>
-                        {songAddStates[playVideoId]?.loading 
-                          ? (isRTL ? "جاري الإرسال..." : "Envoi...") 
-                          : songAddStates[playVideoId]?.success 
-                          ? (isRTL ? "تم بنجاح!" : "Succès!")
-                          : (isRTL ? "إضافة للقائمة" : "Ajouter")}
-                      </span>
+                      {songAddStates[playVideoId]?.loading 
+                        ? (isRTL ? "⏳ جاري إرسال الطلب..." : "⏳ Transmitting request...") 
+                        : songAddStates[playVideoId]?.success 
+                        ? (isRTL ? "✅ تم إضافة الأغنية للتحميل!" : "✅ Song Dispatched!")
+                        : songAddStates[playVideoId]?.error 
+                        ? (isRTL ? "❌ فشل الرفع" : "❌ Process Failed")
+                        : (isRTL ? "تنزيل وإضافة التراك لمعرض السحابة" : "Download & Save Track")}
                     </button>
                   </div>
                 </motion.div>
               )}
 
               {/* Search Results list rendered beautifully */}
-              {searchResults.length > 0 && !playVideoId && (
-                <div className="space-y-3 pt-2">
+              {searchResults.length > 0 && (
+                <div className="space-y-2.5 max-h-[360px] overflow-y-auto no-scrollbar pr-1 pt-2">
                   {searchResults.map((item) => {
                     const v = item.video;
                     const isCurrentPreview = playVideoId === v.videoId;
