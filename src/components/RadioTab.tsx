@@ -1,7 +1,8 @@
-import { useState } from "react";
-import { motion } from "motion/react";
-import { Radio, Signal, Disc, Play, HelpCircle, RadioTower } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
 import { RadioStation } from "../types";
+import { MoreVertical, X, Edit2, Trash2 } from "lucide-react";
+
+const WORKER = 'https://radio-worker.ma68.workers.dev';
 
 interface RadioTabProps {
   stations: RadioStation[];
@@ -13,139 +14,199 @@ interface RadioTabProps {
 }
 
 export default function RadioTab({
-  stations,
   activeStation,
-  isPlaying,
   onSelectStation,
   lang,
-  translations,
 }: RadioTabProps) {
   const isRTL = lang === "ar";
-  const t = translations[lang];
-  const [hoveredStation, setHoveredStation] = useState<string | null>(null);
+  const [radios, setRadios] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [menuIndex, setMenuIndex] = useState<number>(-1);
+  const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0 });
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const loadRadios = async () => {
+    setIsLoading(true);
+    try {
+      const res = await fetch(WORKER + '/radios');
+      const data = await res.json();
+      setRadios(data);
+    } catch (e) {
+      console.error("Error loading radios:", e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadRadios();
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        closeMenu();
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const playStation = (i: number) => {
+    const r = radios[i];
+    // Map worker radio to RadioStation type expected by App
+    const station: RadioStation = {
+      id: `worker-radio-${i}`,
+      name: r.name,
+      genre: "Worker Radio",
+      streamUrl: r.url || r.streamUrl, // depending on worker schema
+      logoUrl: r.logo || "",
+      frequency: "Live",
+      description: ""
+    };
+    onSelectStation(station);
+  };
+
+  const openMenu = (i: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setMenuIndex(i);
+    const rect = (e.target as HTMLElement).getBoundingClientRect();
+    // Position dropdown (simplified logic from snippet)
+    setDropdownPos({
+      top: rect.top - 80, // roughly
+      left: rect.left - 120
+    });
+  };
+
+  const closeMenu = () => {
+    setMenuIndex(-1);
+  };
+
+  const modifierFromMenu = () => {
+    if (menuIndex === -1) return;
+    const r = radios[menuIndex];
+    closeMenu();
+    // In this app, we'll just alert or if we had a proper route we'd use it.
+    // The snippet used window.location.href. 
+    // We can potentially notify the user or perform some other action.
+    alert(isRTL ? `تعديل: ${r.name}` : `Modify: ${r.name}`);
+  };
+
+  const supprimerFromMenu = async () => {
+    if (menuIndex === -1) return;
+    const r = radios[menuIndex];
+    closeMenu();
+    if (!confirm(isRTL ? `هل متأكد من حذف "${r.name}"؟` : `Delete "${r.name}"?`)) return;
+    try {
+      const res = await fetch(WORKER + '/radios', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: r.name })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        loadRadios();
+      } else {
+        alert(isRTL ? 'خطأ في الحذف' : 'Deletion error');
+      }
+    } catch (e) {
+      alert(isRTL ? 'خطأ في الاتصال' : 'Connection error');
+    }
+  };
 
   return (
-    <div className="space-y-4 md:space-y-6 flex flex-col h-full overflow-hidden min-h-0">
-      {/* Radio Header banner */}
-      <div className="relative rounded-2xl md:rounded-3xl overflow-hidden bg-gradient-to-r from-teal-950/20 via-slate-900/30 to-black border border-teal-500/10 p-4 md:p-8 shrink-0">
-        <div className="relative z-10 max-w-2xl space-y-3 md:space-y-4">
-          <span className="font-mono text-[10px] md:text-xs text-teal-400 uppercase tracking-widest font-semibold inline-block">
-            {t.radioLive}
-          </span>
-          <h1 className="font-sans font-black text-2xl md:text-5xl tracking-tight text-white leading-tight">
-            {isRTL ? "مذياع سبوتيفايّ المباشر" : "Global Live Radio Frequencies"}
-          </h1>
-          <p className="text-gray-300 text-xs md:text-sm hidden md:block">
-            {isRTL
-              ? "استمتع ببث حي فائق الجودة لمحطات راديو حصرية مخصصة وموسيقى هادئة دون فواصل إعلانية."
-              : "Stream live internet radio feeds tuned specifically for lo-fi beats, chill waves, classic hits, and acoustic atmospheres."}
-          </p>
-        </div>
-        <div className="absolute right-0 bottom-0 top-0 w-1/3 bg-radial-[circle_at_right] from-teal-500/10 to-transparent pointer-events-none" />
-      </div>
-
-      {/* Retro Signal & Frequency Dial */}
-      <div className="bg-[#0c0c0e]/60 border border-[#1e1e24] rounded-2xl p-4 md:p-8 backdrop-blur-md">
-        <h2 className="font-bold text-xs text-gray-400 uppercase tracking-wider mb-4">
-          {t.frequencyDial}
-        </h2>
-
-        {/* Dial display */}
-        <div className="relative h-20 md:h-28 bg-[#070709] rounded-xl border border-[#1f1f26] overflow-hidden flex items-end justify-center px-4">
-          {/* Signal Indicator */}
-          <div className="absolute top-2 md:top-4 left-4 md:left-6 flex items-center gap-2">
-            <Signal size={12} className={isPlaying && activeStation ? "text-teal-400 animate-pulse" : "text-gray-600"} />
-            <span className="font-mono text-[9px] md:text-[10px] text-gray-500">
-              {t.signalStrength}: {isPlaying && activeStation ? "EXCELLENT" : "STANDBY"}
-            </span>
+    <div className="flex flex-col h-full overflow-hidden">
+      <div className="flex-1 overflow-y-auto no-scrollbar pb-32">
+        {isLoading ? (
+          <div className="flex items-center justify-center py-20 text-zinc-500 animate-pulse text-xs font-mono uppercase tracking-widest">
+            {isRTL ? "جاري تحميل المحطات..." : "Synchronizing Radio Frequencies..."}
           </div>
-
-          <div className="absolute top-2 md:top-4 right-4 md:right-6 flex items-center gap-2">
-            <Radio size={12} className={isPlaying && activeStation ? "text-teal-400 animate-spin [animation-duration:8s]" : "text-gray-600"} />
-            {activeStation && (
-              <span className="font-mono text-[10px] md:text-[12px] font-bold text-teal-400">
-                {activeStation.frequency}
-              </span>
-            )}
+        ) : radios.length === 0 ? (
+          <div className="flex items-center justify-center py-20 text-zinc-500 text-xs font-mono uppercase tracking-widest">
+            {isRTL ? "❌ فشل التحميل أو لا توجد محطات" : "❌ No stations detected"}
           </div>
-
-          {/* Lines simulating tuner dial */}
-          <div className="w-full h-12 md:h-16 flex items-end justify-between px-2 overflow-hidden select-none pointer-events-none">
-            {Array.from({ length: 41 }).map((_, i) => {
-              const matchesStation = activeStation && Math.abs(parseInt(activeStation.frequency) - (88 + i * 0.5)) < 1;
+        ) : (
+          <div className="grid grid-cols-2 gap-2 p-2">
+            {radios.map((r, i) => {
+              const isActive = activeStation?.name === r.name;
               return (
                 <div
                   key={i}
-                  className={`w-0.5 rounded-t transition-all duration-300 ${
-                    i % 5 === 0 ? "h-10 md:h-14 bg-gray-500" : "h-6 md:h-8 bg-gray-700"
-                  } ${matchesStation && isPlaying ? "h-12 md:h-16 bg-teal-400 shadow-[0_0_10px_rgba(45,212,191,0.5)]" : ""}`}
-                />
+                  className={`flex items-center gap-2 p-2 rounded-xl border border-transparent transition-all cursor-pointer group min-w-0 overflow-hidden ${
+                    isActive 
+                      ? "bg-[#e91e63]/20 border-[#e91e63]/50" 
+                      : "bg-black/10 hover:bg-black/20"
+                  }`}
+                >
+                  <div 
+                    className="w-10 h-10 rounded-lg bg-white/10 shrink-0 overflow-hidden flex items-center justify-center text-lg"
+                    onClick={() => playStation(i)}
+                  >
+                    {r.logo ? (
+                      <img 
+                        src={r.logo} 
+                        alt={r.name} 
+                        className="w-full h-full object-contain p-0.5 bg-white rounded-lg"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.hidden = true;
+                          target.parentElement!.textContent = '📻';
+                        }}
+                      />
+                    ) : (
+                      '📻'
+                    )}
+                  </div>
+                  <div 
+                    className="flex-1 min-w-0"
+                    onClick={() => playStation(i)}
+                  >
+                    <div className={`text-[11px] font-medium truncate ${isActive ? "text-[#e91e63]" : "text-zinc-800"}`}>
+                      {r.name}
+                    </div>
+                  </div>
+                  <button 
+                    className="shrink-0 p-1 text-zinc-400 hover:text-zinc-900 transition-colors"
+                    onClick={(e) => openMenu(i, e)}
+                  >
+                    <MoreVertical size={14} />
+                  </button>
+                </div>
               );
             })}
           </div>
+        )}
+      </div>
 
-          {/* Orange Tuner Line */}
-          <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-0.5 bg-orange-500 shadow-[0_0_5px_rgba(249,115,22,0.8)] z-15 pointer-events-none" />
+      {menuIndex !== -1 && (
+        <div 
+          ref={dropdownRef}
+          className="fixed bg-[#1a1a2e] border border-white/10 rounded-xl overflow-hidden z-[100] min-w-[160px] shadow-2xl animate-fade-in"
+          style={{ 
+            top: `${dropdownPos.top}px`, 
+            left: `${dropdownPos.left}px` 
+          }}
+        >
+          <button 
+            className="flex justify-between items-center w-full px-4 py-3 hover:bg-white/10 text-white text-sm transition-colors text-left"
+            onClick={modifierFromMenu}
+          >
+            <span className="flex items-center gap-2">
+              <Edit2 size={14} />
+              {isRTL ? "تعديل" : "Modifier"}
+            </span>
+            <X size={12} className="text-zinc-500" onClick={(e) => { e.stopPropagation(); closeMenu(); }} />
+          </button>
+          <button 
+            className="flex items-center gap-2 w-full px-4 py-3 hover:bg-white/10 text-red-500 text-sm transition-colors text-left"
+            onClick={supprimerFromMenu}
+          >
+            <Trash2 size={14} />
+            {isRTL ? "حذف" : "Supprimer"}
+          </button>
         </div>
-      </div>
-
-      {/* Radio grid list */}
-      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 overflow-y-auto no-scrollbar pb-2 min-h-0">
-        {stations.map((station) => {
-          const isCurrent = activeStation?.id === station.id;
-          const isThisPlaying = isCurrent && isPlaying;
-          return (
-            <div
-              key={station.id}
-              onClick={() => onSelectStation(station)}
-              onMouseEnter={() => setHoveredStation(station.id)}
-              onMouseLeave={() => setHoveredStation(null)}
-              className={`bg-[#0c0c0e]/60 border rounded-2xl p-6 flex gap-5 items-start cursor-pointer hover:bg-[#121216]/90 group transition-all duration-300 ${
-                isCurrent ? "border-teal-500/30 bg-teal-500/5" : "border-[#1e1e24]"
-              }`}
-            >
-              {/* Cover Art layout */}
-              <div className="relative shrink-0 w-20 h-20 rounded-xl overflow-hidden border border-[#23232e]">
-                <img
-                  src={station.logoUrl}
-                  alt={station.name}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-                <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Play size={24} className="text-white fill-white" />
-                </div>
-                {isThisPlaying && (
-                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
-                    <RadioTower size={24} className="text-teal-400 animate-bounce" />
-                  </div>
-                )}
-              </div>
-
-              {/* Station details */}
-              <div className="space-y-2 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="font-mono text-xs text-teal-400 bg-teal-500/10 border border-teal-500/20 px-2.5 py-0.5 rounded-full font-bold">
-                    {station.frequency}
-                  </span>
-                  <span className="text-[10px] font-mono text-gray-500 uppercase tracking-widest truncate">
-                    {station.genre}
-                  </span>
-                </div>
-                <h3
-                  className={`font-bold text-sm truncate uppercase tracking-tight text-white ${
-                    isCurrent ? "text-teal-400" : "group-hover:text-teal-400"
-                  }`}
-                >
-                  {station.name}
-                </h3>
-                <p className="text-xs text-gray-400 leading-relaxed truncate-2-lines line-clamp-2">
-                  {station.description}
-                </p>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+      )}
     </div>
   );
 }
+
