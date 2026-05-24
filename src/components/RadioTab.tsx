@@ -120,7 +120,8 @@ export default function RadioTab({
     closeMenu();
     if (!confirm(isRTL ? `هل متأكد من حذف "${r.name}"؟` : `Delete "${r.name}"?`)) return;
     try {
-      const res = await fetch(WORKER + '/radios', {
+      const cleanUrl = workerUrl.trim().replace(/\/$/, "");
+      const res = await fetch(cleanUrl + '/radios', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: r.name })

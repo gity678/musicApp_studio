@@ -7,24 +7,75 @@ function TrackDuration({ audioUrl, fallback }: { audioUrl: string; fallback: str
   const [duration, setDuration] = useState<string>("...");
 
   useEffect(() => {
-    // If we already have a real numeric duration representation (like 3:20 instead of Cloud/Direct), use it immediately
-    if (fallback && fallback !== "Cloud" && fallback !== "Direct" && fallback !== "...") {
-      setDuration(fallback);
+    // 1. Initial Priority: Standard numeric formats (e.g. "3:20")
+    if (fallback && !["Cloud", "Direct", "...", "0:00", "Live", "Synced"].includes(fallback)) {
+      if (/^\d+:\d{2}$/.test(fallback)) {
+        setDuration(fallback);
+        return;
+      }
+    }
+
+    if (!audioUrl || fallback === "Live") {
+      setDuration(fallback || "...");
       return;
     }
 
-    // Generate a beautiful, stable, realistic duration deterministically to consume absolutely ZERO internet data
-    let sum = 0;
-    const key = audioUrl || "default";
-    for (let i = 0; i < key.length; i++) {
-      sum += key.charCodeAt(i);
-    }
-    const min = 2 + (sum % 3); // 2, 3, or 4 minutes
-    const sec = (sum * 7) % 60;
-    setDuration(`${min}:${sec < 10 ? "0" : ""}${sec}`);
+    // 2. Fetch actual playback metadata for accuracy
+    const audio = new Audio();
+    audio.crossOrigin = "anonymous"; // Essential for many cloud providers
+    audio.src = audioUrl;
+    audio.preload = "metadata";
+
+    // Timeout fallback: if metadata takes too long, don't leave it as "..." forever if we have any fallback
+    const timeoutId = setTimeout(() => {
+      if (duration === "...") {
+        setDuration(fallback && fallback !== "..." ? fallback : "N/A");
+      }
+    }, 8000);
+
+    const handleLoadedMetadata = () => {
+      clearTimeout(timeoutId);
+      const totalSeconds = Math.floor(audio.duration);
+      if (isNaN(totalSeconds) || totalSeconds === Infinity || totalSeconds <= 0) {
+        // If duration is invalid, try to wait for a bit more data
+        return;
+      }
+      
+      const min = Math.floor(totalSeconds / 60);
+      const sec = totalSeconds % 60;
+      setDuration(`${min}:${sec < 10 ? "0" : ""}${sec}`);
+      
+      // Cleanup to save memory
+      audio.src = "";
+      audio.load();
+    };
+
+    const handleError = () => {
+      clearTimeout(timeoutId);
+      // If error occurs, we absolutely avoid "random" fake numbers
+      // We show the fallback if provided, otherwise N/A
+      setDuration(fallback && fallback !== "Cloud" && fallback !== "Direct" && fallback !== "..." ? fallback : "N/A");
+    };
+
+    audio.addEventListener("loadedmetadata", handleLoadedMetadata);
+    audio.addEventListener("error", handleError);
+    // Some browsers need a tiny bit of loading to actually get the duration
+    audio.addEventListener("progress", () => {
+      if (audio.duration && !isNaN(audio.duration) && audio.duration !== Infinity) {
+        handleLoadedMetadata();
+      }
+    });
+
+    return () => {
+      clearTimeout(timeoutId);
+      audio.removeEventListener("loadedmetadata", handleLoadedMetadata);
+      audio.removeEventListener("error", handleError);
+      audio.src = "";
+      audio.load();
+    };
   }, [audioUrl, fallback]);
 
-  return <span className="font-mono text-xs text-zinc-500 shrink-0">{duration}</span>;
+  return <span className="font-mono text-[10px] text-zinc-500 shrink-0">{duration}</span>;
 }
 
 interface MusicTabProps {
@@ -78,34 +129,42 @@ export default function MusicTab({
                     <div
                       key={track.id}
                       onClick={() => onSelectTrack(track)}
-                      className={`flex items-center justify-between p-1.5 px-3 hover:bg-zinc-50 transition-all duration-300 cursor-pointer group ${
+                      className={`flex items-center gap-2 p-1.5 px-3 hover:bg-zinc-50 transition-all duration-300 cursor-pointer group ${
                         isCurrent ? "bg-[#1db954]/10" : ""
                       }`}
                     >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <span className="font-mono text-[10px] text-zinc-400 w-5 text-center group-hover:hidden">
+                      {/* 1. Index / Play Icon Container (Fixed Width) */}
+                      <div className="w-6 flex items-center justify-center shrink-0">
+                        <span className="font-mono text-[10px] text-zinc-400 group-hover:hidden">
                           {idx + 1}
                         </span>
-                        <div className="hidden group-hover:flex w-5 items-center justify-center animate-pulse">
+                        <div className="hidden group-hover:flex items-center justify-center animate-pulse">
                           <Play size={10} className={isCurrent ? "text-[#1db954]" : "text-zinc-600"} />
-                        </div>
-                        <img
-                          src={track.coverUrl}
-                          alt={track.title}
-                          className="w-8 h-8 rounded-lg object-cover shadow-sm border border-zinc-100 group-hover:scale-105 transition-transform"
-                        />
-                        <div className="min-w-0">
-                          <h4
-                            className={`font-semibold text-[11px] truncate transition-colors ${
-                              isCurrent ? "text-[#1db954] font-bold" : "text-zinc-800 group-hover:text-[#1db954]"
-                            }`}
-                          >
-                            {track.title}
-                          </h4>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-4">
+                      {/* 2. Cover Image Container (Fixed Width) */}
+                      <div className="w-8 h-8 shrink-0 flex items-center justify-center">
+                        <img
+                          src={track.coverUrl}
+                          alt={track.title}
+                          className="w-full h-full rounded-lg object-cover shadow-sm border border-zinc-100 group-hover:scale-105 transition-transform"
+                        />
+                      </div>
+
+                      {/* 3. Title Container (Flexible) */}
+                      <div className="flex-1 min-w-0 px-2">
+                        <h4
+                          className={`font-semibold text-[11px] truncate transition-colors ${
+                            isCurrent ? "text-[#1db954] font-bold" : "text-zinc-800 group-hover:text-[#1db954]"
+                          }`}
+                        >
+                          {track.title}
+                        </h4>
+                      </div>
+
+                      {/* 4. Duration Container (Fixed Width) */}
+                      <div className="w-10 shrink-0 flex justify-end">
                         <TrackDuration audioUrl={track.audioUrl} fallback={track.duration} />
                       </div>
                     </div>
