@@ -278,6 +278,7 @@ export default function App() {
 
   // HTML5 audio elements reference
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const handleNextRef = useRef<() => void>(() => {});
 
   useEffect(() => {
     audioRef.current = new Audio();
@@ -299,7 +300,7 @@ export default function App() {
         audio.currentTime = 0;
         audio.play().catch(() => {});
       } else {
-        handleNext();
+        handleNextRef.current();
       }
     };
 
@@ -433,6 +434,9 @@ export default function App() {
     
     handleSelectTrack(allTracks[nextIdx]);
   };
+
+  // Keep the reference to handleNext completely fresh on every render
+  handleNextRef.current = handleNext;
 
   const handlePrev = () => {
     const allTracks = [...CURATED_TRACKS, ...customTracks, ...workerTracks];
