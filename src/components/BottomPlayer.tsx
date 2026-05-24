@@ -32,6 +32,8 @@ interface BottomPlayerProps {
   translations: any;
   showVisualizer: boolean;
   setShowVisualizer: (val: boolean) => void;
+  isExpanded: boolean;
+  setIsExpanded: (val: boolean) => void;
 }
 
 export default function BottomPlayer({
@@ -53,10 +55,11 @@ export default function BottomPlayer({
   translations,
   showVisualizer,
   setShowVisualizer,
+  isExpanded,
+  setIsExpanded,
 }: BottomPlayerProps) {
   const isRTL = lang === "ar";
   const t = translations[lang];
-  const [isExpanded, setIsExpanded] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
   const [dragPercent, setDragPercent] = useState(0);
 
@@ -223,7 +226,7 @@ export default function BottomPlayer({
           initial={{ opacity: 0, y: 60, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 60, scale: 0.95 }}
-          className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-sm md:max-w-md bg-white rounded-3xl border border-zinc-200 p-4 shadow-[0_15px_50px_rgba(0,0,0,0.1)] z-50 flex flex-col gap-3 text-zinc-800 hover:border-zinc-300 transition-colors backdrop-blur-2xl select-none"
+          className="fixed bottom-px left-1/2 -translate-x-1/2 w-[calc(100%-1.25rem)] sm:w-[calc(100%-2.5rem)] max-w-sm md:max-w-md bg-white rounded-2xl border border-zinc-200 p-4 shadow-[0_15px_50px_rgba(0,0,0,0.1)] z-50 flex flex-col gap-3 text-zinc-800 hover:border-zinc-300 transition-colors backdrop-blur-2xl select-none"
         >
           {/* HEADER ROW */}
           <div className="flex items-center justify-between w-full">

@@ -48,6 +48,7 @@ export default function App() {
   const [showVisualizer, setShowVisualizer] = useState<boolean>(false);
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [isSearchActive, setIsSearchActive] = useState<boolean>(false);
+  const [isPlayerExpanded, setIsPlayerExpanded] = useState<boolean>(true);
 
   useEffect(() => {
     setSearchTerm("");
@@ -664,7 +665,11 @@ export default function App() {
 
         {/* Content Viewer viewport */}
         <main className="flex-1 overflow-hidden px-2.5 sm:px-5 relative z-10 animate-fade-in flex flex-col">
-          <div className="max-w-sm md:max-w-md mx-auto space-y-6 w-full flex-1 flex flex-col min-h-0 pb-[90px]">
+          <div 
+            className={`max-w-sm md:max-w-md mx-auto space-y-6 w-full flex-1 flex flex-col min-h-0 transition-all duration-300 ${
+              !currentTrack ? 'pb-4' : (isPlayerExpanded ? 'pb-[210px]' : 'pb-[84px]')
+            }`}
+          >
             
             {/* Visualizer canvas floating header */}
             {showVisualizer && (
@@ -768,6 +773,8 @@ export default function App() {
           translations={translations}
           showVisualizer={showVisualizer}
           setShowVisualizer={setShowVisualizer}
+          isExpanded={isPlayerExpanded}
+          setIsExpanded={setIsPlayerExpanded}
         />
       </div>
     </div>
