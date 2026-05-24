@@ -100,8 +100,14 @@ export default function App() {
             console.log("Static environment detected. Querying Cloudflare Worker directly for tracks...");
             const directRes = await fetch(`${cleanUrl}/songs`);
             if (directRes.ok) {
-              const data = await directRes.json();
-              return Array.isArray(data) ? data : (data.songs || []);
+              const contentType = directRes.headers.get("content-type") || "";
+              if (contentType.includes("json")) {
+                const data = await directRes.json();
+                return Array.isArray(data) ? data : (data.songs || []);
+              } else {
+                const text = await directRes.text();
+                if (text.trim() === "OK") return [];
+              }
             }
           } catch (directErr) {
             console.warn("Direct fetch from static page failed, will try proxy route as fallback", directErr);
@@ -117,6 +123,7 @@ export default function App() {
               const text = await res.text();
               const data = JSON.parse(text);
               if (data && data.songs) return data.songs;
+              if (data && Array.isArray(data)) return data;
               if (data && data.error) throw new Error(data.error);
             } else {
               console.warn("Express proxy responded with non-JSON (likely SPA routing HTML content)");
@@ -132,8 +139,15 @@ export default function App() {
           if (!directRes.ok) {
             throw new Error(`Direct query returned code: ${directRes.status}`);
           }
-          const data = await directRes.json();
-          return Array.isArray(data) ? data : (data.songs || []);
+          const contentType = directRes.headers.get("content-type") || "";
+          if (contentType.includes("json")) {
+            const data = await directRes.json();
+            return Array.isArray(data) ? data : (data.songs || []);
+          } else {
+            const text = await directRes.text();
+            if (text.trim() === "OK") return [];
+            throw new Error(`Non-JSON response: ${text.slice(0, 50)}`);
+          }
         } catch (directErr: any) {
           throw new Error(`Could not load Cloudflare Worker tracks directly. Please verify your worker is online and has CORS active. Technical error: ${directErr.message}`);
         }
@@ -151,7 +165,7 @@ export default function App() {
               ? "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&auto=format&fit=crop&q=80"
               : "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=400&auto=format&fit=crop&q=80",
             audioUrl: song.url,
-            duration: "Cloud",
+            duration: "...",
             genre: song.source === "cloudinary" ? "Cloudinary" : "Backblaze B2",
           }));
           setWorkerTracks(mapped);
@@ -185,8 +199,14 @@ export default function App() {
           console.log("Static environment reload: Querying Cloudflare Worker directly...");
           const directRes = await fetch(`${cleanUrl}/songs`);
           if (directRes.ok) {
-            const data = await directRes.json();
-            return Array.isArray(data) ? data : (data.songs || []);
+            const contentType = directRes.headers.get("content-type") || "";
+            if (contentType.includes("json")) {
+              const data = await directRes.json();
+              return Array.isArray(data) ? data : (data.songs || []);
+            } else {
+              const text = await directRes.text();
+              if (text.trim() === "OK") return [];
+            }
           }
         } catch (directErr) {
           console.warn("Static reload directly failed, falling back to proxy search", directErr);
@@ -201,6 +221,7 @@ export default function App() {
             const text = await res.text();
             const data = JSON.parse(text);
             if (data && data.songs) return data.songs;
+            if (data && Array.isArray(data)) return data;
             if (data && data.error) throw new Error(data.error);
           } else {
             console.warn("Proxy reload returned non-JSON.");
@@ -215,8 +236,15 @@ export default function App() {
         if (!directRes.ok) {
           throw new Error(`Direct query returned code: ${directRes.status}`);
         }
-        const data = await directRes.json();
-        return Array.isArray(data) ? data : (data.songs || []);
+        const contentType = directRes.headers.get("content-type") || "";
+        if (contentType.includes("json")) {
+          const data = await directRes.json();
+          return Array.isArray(data) ? data : (data.songs || []);
+        } else {
+          const text = await directRes.text();
+          if (text.trim() === "OK") return [];
+          throw new Error(`Non-JSON response: ${text.slice(0, 50)}`);
+        }
       } catch (directErr: any) {
         throw new Error(`Could not reload tracks directly from worker: ${directErr.message}`);
       }
@@ -233,7 +261,7 @@ export default function App() {
             ? "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&auto=format&fit=crop&q=80"
             : "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=400&auto=format&fit=crop&q=80",
           audioUrl: song.url,
-          duration: "Cloud",
+          duration: "...",
           genre: song.source === "cloudinary" ? "Cloudinary" : "Backblaze B2",
         }));
         setWorkerTracks(mapped);

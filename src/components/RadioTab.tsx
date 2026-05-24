@@ -46,13 +46,30 @@ export default function RadioTab({
       if (!data) {
         const res = await fetch(cleanUrl + '/radios');
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-        data = await res.json();
+        
+        const contentType = res.headers.get("content-type") || "";
+        if (contentType.includes("application/json")) {
+          data = await res.json();
+        } else {
+          const text = await res.text();
+          if (text.trim() === "OK") {
+            data = [];
+          } else {
+            throw new Error(isRTL ? "تنسيق غير مدعوم من الخادم" : "Unsupported response format from worker");
+          }
+        }
       }
 
-      setRadios(data);
+      setRadios(data || []);
     } catch (e: any) {
       console.error("Error loading radios:", e);
-      setError(e.message || "Failed to fetch");
+      let errMsg = e.message || "Failed to fetch";
+      if (errMsg === "Failed to fetch") {
+        errMsg = isRTL 
+          ? "فشل في الاتصال بالخادم. يرجى التحقق من اتصال الإنترنت أو رابط Worker."
+          : "Could not connect to the worker. Check your Internet or Worker URL.";
+      }
+      setError(errMsg);
     } finally {
       setIsLoading(false);
     }

@@ -176,8 +176,20 @@ app.get("/api/worker/songs", async (req, res) => {
     if (!response.ok) {
       throw new Error(`Worker returned status code: ${response.status}`);
     }
-    const songs = await response.json();
-    res.json({ songs });
+    
+    const contentType = response.headers.get("content-type") || "";
+    if (contentType.includes("application/json")) {
+      const data = await response.json();
+      // Handle both {songs:[]} and plain [] formats
+      const songs = Array.isArray(data) ? data : (data.songs || []);
+      res.json({ songs });
+    } else {
+      const text = await response.text();
+      if (text.trim() === "OK") {
+        return res.json({ songs: [] });
+      }
+      throw new Error(`Worker returned non-JSON response: ${text.slice(0, 100)}`);
+    }
   } catch (error: any) {
     console.error("Error proxying songs from Cloudflare worker:", error);
     res.status(500).json({ error: "Failed to fetch songs from your worker", details: error.message });
@@ -194,11 +206,23 @@ app.get("/api/worker/radios", async (req, res) => {
     const cleanUrl = (workerUrl as string).replace(/\/$/, "");
     console.log(`Proxying radios request to: ${cleanUrl}/radios`);
     const response = await fetch(`${cleanUrl}/radios`);
+    
     if (!response.ok) {
       throw new Error(`Worker returned status code: ${response.status}`);
     }
-    const radios = await response.json();
-    res.json(radios);
+
+    const contentType = response.headers.get("content-type") || "";
+    if (contentType.includes("application/json")) {
+      const radios = await response.json();
+      res.json(radios);
+    } else {
+      const text = await response.text();
+      if (text.trim() === "OK") {
+        // Many workers return "OK" if route exists but has no data
+        return res.json([]);
+      }
+      throw new Error(`Worker returned non-JSON response: ${text.slice(0, 100)}`);
+    }
   } catch (error: any) {
     console.error("Error proxying radios from Cloudflare worker:", error);
     res.status(500).json({ error: "Failed to fetch radios from your worker", details: error.message });
