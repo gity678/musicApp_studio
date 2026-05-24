@@ -35,6 +35,7 @@ interface BottomPlayerProps {
   isExpanded: boolean;
   setIsExpanded: (val: boolean) => void;
   onHeightChange: (height: number) => void;
+  liveSong?: string;
 }
 
 export default function BottomPlayer({
@@ -59,6 +60,7 @@ export default function BottomPlayer({
   isExpanded,
   setIsExpanded,
   onHeightChange,
+  liveSong = "",
 }: BottomPlayerProps) {
   const isRTL = lang === "ar";
   const t = translations[lang];
@@ -157,6 +159,8 @@ export default function BottomPlayer({
     setDragPercent(progress);
   };
 
+  const isLive = currentTrack?.duration === "Live" || currentTrack?.id.startsWith("radio-");
+
   return (
     <AnimatePresence>
       {!isExpanded ? (
@@ -185,13 +189,30 @@ export default function BottomPlayer({
                   </div>
                 )}
               </div>
-              <div className="min-w-0">
-                <h4 className="font-bold text-[12px] md:text-sm truncate text-zinc-900 group-hover:text-[#1db954] transition-colors">
+              <div className="min-w-0 flex-1">
+                <h4 className="font-bold text-[13px] md:text-sm truncate text-zinc-900 group-hover:text-[#1db954] transition-colors leading-tight">
                   {currentTrack.title}
                 </h4>
-                <p className="text-[9px] text-zinc-400 font-medium truncate uppercase tracking-tighter opacity-70">
-                  {currentTrack.genre || "Music"}
-                </p>
+                {isLive ? (
+                  <div className="flex flex-col gap-0.5 mt-0.5">
+                    <p className="text-[11px] text-zinc-600 font-medium truncate max-w-[200px]">
+                      {liveSong || currentTrack.artist || currentTrack.album || (isRTL ? "جاري الاتصال..." : "Connecting...")}
+                    </p>
+                    <div className="flex items-center gap-1">
+                      <span className="relative flex h-1.5 w-1.5 shrink-0">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-pink-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-pink-500"></span>
+                      </span>
+                      <span className="text-[9px] font-bold text-pink-500 uppercase tracking-wider font-sans leading-none">
+                        {isRTL ? "مباشر" : "LIVE"}
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-[10px] text-zinc-400 font-medium truncate uppercase tracking-tighter opacity-75 mt-0.5">
+                    {currentTrack.artist || currentTrack.genre || "Music"}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -238,35 +259,37 @@ export default function BottomPlayer({
             </div>
           </div>
 
-          {/* TIMELINE SLIDER - EXACT MATCH TO EXPANDED DESIGN */}
-          <div className="flex flex-col gap-1 w-full mt-0.5">
-            <div className="flex items-center justify-between gap-2 w-full px-0.5">
-              <span className="font-mono text-[9px] text-zinc-500 w-8 text-right shrink-0">
-                {formatTime(currentTime)}
-              </span>
-              
-              <div 
-                ref={progressBarRefMin}
-                className="flex-1 relative h-1.5 bg-zinc-100 rounded-full group cursor-pointer touch-none" 
-                onMouseDown={(e) => handleStartDragging(e, progressBarRefMin)}
-                onTouchStart={(e) => handleStartDragging(e, progressBarRefMin)}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div
-                  className="absolute top-0 left-0 h-full bg-gradient-to-r from-[#1db954] to-[#20cf5d] rounded-full shadow-[0_0_8px_rgba(29,185,84,0.2)]"
-                  style={{ width: `${displayPercent}%` }}
-                />
-                <div
-                  className="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 bg-white rounded-full border-2 border-[#1db954] shadow-md transition-transform group-hover:scale-110 active:scale-95"
-                  style={{ left: `calc(${displayPercent}% - 7px)` }}
-                />
-              </div>
+          {/* TIMELINE SLIDER OR LIVE RADIO INDICATOR */}
+          {!isLive && (
+            <div className="flex flex-col gap-1 w-full mt-0.5">
+              <div className="flex items-center justify-between gap-2 w-full px-0.5">
+                <span className="font-mono text-[9px] text-zinc-500 w-8 text-right shrink-0">
+                  {formatTime(currentTime)}
+                </span>
+                
+                <div 
+                  ref={progressBarRefMin}
+                  className="flex-1 relative h-1.5 bg-zinc-100 rounded-full group cursor-pointer touch-none" 
+                  onMouseDown={(e) => handleStartDragging(e, progressBarRefMin)}
+                  onTouchStart={(e) => handleStartDragging(e, progressBarRefMin)}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div
+                    className="absolute top-0 left-0 h-full bg-gradient-to-r from-[#1db954] to-[#20cf5d] rounded-full shadow-[0_0_8px_rgba(29,185,84,0.2)]"
+                    style={{ width: `${displayPercent}%` }}
+                  />
+                  <div
+                    className="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 bg-white rounded-full border-2 border-[#1db954] shadow-md transition-transform group-hover:scale-110 active:scale-95"
+                    style={{ left: `calc(${displayPercent}% - 7px)` }}
+                  />
+                </div>
 
-              <span className="font-mono text-[9px] text-zinc-500 w-8 text-left shrink-0">
-                {formatTime(duration)}
-              </span>
+                <span className="font-mono text-[9px] text-zinc-500 w-8 text-left shrink-0">
+                  {formatTime(duration)}
+                </span>
+              </div>
             </div>
-          </div>
+          )}
         </motion.div>
       ) : (
         /* EXPANDED FULL SYSTEM CARD PLAYER - FLOATS ON SCREEN */
@@ -293,10 +316,30 @@ export default function BottomPlayer({
                   </div>
                 )}
               </div>
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <h4 className="font-bold text-xs md:text-sm text-zinc-900 truncate">
                   {currentTrack.title}
                 </h4>
+                {isLive ? (
+                  <div className="flex flex-col gap-0.5 mt-0.5">
+                    <p className="text-[11px] text-zinc-600 font-medium truncate max-w-[200px]">
+                      {liveSong || currentTrack.artist || currentTrack.album || (isRTL ? "جاري الاتصال..." : "Connecting...")}
+                    </p>
+                    <div className="flex items-center gap-1">
+                      <span className="relative flex h-1.5 w-1.5 shrink-0">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-pink-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-pink-500"></span>
+                      </span>
+                      <span className="text-[9px] font-bold text-pink-500 uppercase tracking-wider font-sans leading-none">
+                        {isRTL ? "مباشر" : "LIVE"}
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-[10px] text-zinc-400 font-medium truncate uppercase tracking-tighter opacity-75 mt-0.5">
+                    {currentTrack.artist || currentTrack.genre || "Music"}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -312,34 +355,36 @@ export default function BottomPlayer({
             </div>
           </div>
 
-          {/* TIMELINE SLIDER */}
-          <div className="flex flex-col gap-1 w-full mt-0.5">
-            <div className="flex items-center justify-between gap-2 w-full">
-              <span className="font-mono text-[9px] text-zinc-500 w-8 text-right">
-                {formatTime(currentTime)}
-              </span>
-              
-              <div
-                ref={progressBarRefExp}
-                className="flex-1 relative h-1.5 bg-zinc-100 rounded-full group cursor-pointer touch-none"
-                onMouseDown={(e) => handleStartDragging(e, progressBarRefExp)}
-                onTouchStart={(e) => handleStartDragging(e, progressBarRefExp)}
-              >
+          {/* TIMELINE SLIDER OR LIVE RADIO INDICATOR */}
+          {!isLive && (
+            <div className="flex flex-col gap-1 w-full mt-0.5">
+              <div className="flex items-center justify-between gap-2 w-full">
+                <span className="font-mono text-[9px] text-zinc-500 w-8 text-right">
+                  {formatTime(currentTime)}
+                </span>
+                
                 <div
-                  className="absolute top-0 left-0 h-full bg-gradient-to-r from-[#1db954] to-[#20cf5d] rounded-full shadow-[0_0_8px_rgba(29,185,84,0.2)]"
-                  style={{ width: `${displayPercent}%` }}
-                />
-                <div
-                  className="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 bg-white rounded-full border-2 border-[#1db954] shadow-md transition-transform group-hover:scale-110 active:scale-95"
-                  style={{ left: `calc(${displayPercent}% - 7px)` }}
-                />
-              </div>
+                  ref={progressBarRefExp}
+                  className="flex-1 relative h-1.5 bg-zinc-100 rounded-full group cursor-pointer touch-none"
+                  onMouseDown={(e) => handleStartDragging(e, progressBarRefExp)}
+                  onTouchStart={(e) => handleStartDragging(e, progressBarRefExp)}
+                >
+                  <div
+                    className="absolute top-0 left-0 h-full bg-gradient-to-r from-[#1db954] to-[#20cf5d] rounded-full shadow-[0_0_8px_rgba(29,185,84,0.2)]"
+                    style={{ width: `${displayPercent}%` }}
+                  />
+                  <div
+                    className="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 bg-white rounded-full border-2 border-[#1db954] shadow-md transition-transform group-hover:scale-110 active:scale-95"
+                    style={{ left: `calc(${displayPercent}% - 7px)` }}
+                  />
+                </div>
 
-              <span className="font-mono text-[9px] text-zinc-500 w-8 text-left">
-                {formatTime(duration)}
-              </span>
+                <span className="font-mono text-[9px] text-zinc-500 w-8 text-left">
+                  {formatTime(duration)}
+                </span>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* MODERN HORIZONTAL CONTROL BAR */}
           <div className="flex items-center justify-between gap-0.5 w-full mt-0.5 px-0.5">

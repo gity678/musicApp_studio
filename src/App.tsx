@@ -79,8 +79,10 @@ export default function App() {
     return saved;
   });
   const [workerTracks, setWorkerTracks] = useState<Track[]>([]);
+  const [workerRadios, setWorkerRadios] = useState<RadioStation[]>([]);
   const [isWorkerLoading, setIsWorkerLoading] = useState<boolean>(false);
   const [workerError, setWorkerError] = useState<string>("");
+  const [liveSong, setLiveSong] = useState<string>("");
 
   // Auto fetch worker tracks when worker URL is changed or loaded
   useEffect(() => {
@@ -92,71 +94,42 @@ export default function App() {
       
       const cleanUrl = workerUrl.trim().replace(/\/$/, "");
       
-      const fetchSongs = async () => {
+      const fetchSongsAndRadios = async () => {
         const useDirect = isStaticEnvironment();
         
-        if (useDirect) {
-          try {
-            console.log("Static environment detected. Querying Cloudflare Worker directly for tracks...");
-            const directRes = await fetch(`${cleanUrl}/songs`);
-            if (directRes.ok) {
-              const contentType = directRes.headers.get("content-type") || "";
-              if (contentType.includes("json")) {
-                const data = await directRes.json();
-                return Array.isArray(data) ? data : (data.songs || []);
-              } else {
-                const text = await directRes.text();
-                if (text.trim() === "OK") return [];
-              }
-            }
-          } catch (directErr) {
-            console.warn("Direct fetch from static page failed, will try proxy route as fallback", directErr);
-          }
-        }
-
-        // Try local Express proxy
+        // 1. Load Tracks
+        let songs: any[] = [];
         try {
           const res = await fetch(`/api/worker/songs?workerUrl=${encodeURIComponent(workerUrl.trim())}`);
           if (res.ok) {
-            const contentType = res.headers.get("content-type") || "";
-            if (contentType.includes("json")) {
-              const text = await res.text();
-              const data = JSON.parse(text);
-              if (data && data.songs) return data.songs;
-              if (data && Array.isArray(data)) return data;
-              if (data && data.error) throw new Error(data.error);
-            } else {
-              console.warn("Express proxy responded with non-JSON (likely SPA routing HTML content)");
-            }
+            const data = await res.json();
+            songs = Array.isArray(data) ? data : (data.songs || []);
           }
-        } catch (proxyErr) {
-          console.warn("Local API proxy failed", proxyErr);
+        } catch (e) {
+          console.warn("Proxy songs fetch failed", e);
         }
 
-        // Final direct fallback if we didn't try direct yet or if proxy failed
+        // 2. Load Radios
+        let radios: any[] = [];
         try {
-          const directRes = await fetch(`${cleanUrl}/songs`);
-          if (!directRes.ok) {
-            throw new Error(`Direct query returned code: ${directRes.status}`);
+          let radioWorkerUrl = cleanUrl;
+          if (cleanUrl.includes("music-worker")) radioWorkerUrl = "https://radio-worker.ma68.workers.dev";
+          const res = await fetch(`/api/worker/radios?workerUrl=${encodeURIComponent(radioWorkerUrl)}`);
+          if (res.ok) {
+            const data = await res.json();
+            radios = Array.isArray(data) ? data : [];
           }
-          const contentType = directRes.headers.get("content-type") || "";
-          if (contentType.includes("json")) {
-            const data = await directRes.json();
-            return Array.isArray(data) ? data : (data.songs || []);
-          } else {
-            const text = await directRes.text();
-            if (text.trim() === "OK") return [];
-            throw new Error(`Non-JSON response: ${text.slice(0, 50)}`);
-          }
-        } catch (directErr: any) {
-          throw new Error(`Could not load Cloudflare Worker tracks directly. Please verify your worker is online and has CORS active. Technical error: ${directErr.message}`);
+        } catch (e) {
+          console.warn("Proxy radios fetch failed", e);
         }
+
+        return { songs, radios };
       };
 
-      fetchSongs()
-        .then((songs) => {
+      fetchSongsAndRadios()
+        .then(({ songs, radios }) => {
           // Map worker songs into unified Track format
-          const mapped: Track[] = songs.map((song: any) => ({
+          const mappedSongs: Track[] = songs.map((song: any) => ({
             id: `worker-${song.id}`,
             title: song.title,
             artist: song.source === "cloudinary" ? "Cloudinary Storage" : "Backblaze B2",
@@ -168,12 +141,23 @@ export default function App() {
             duration: "...",
             genre: song.source === "cloudinary" ? "Cloudinary" : "Backblaze B2",
           }));
-          setWorkerTracks(mapped);
+          setWorkerTracks(mappedSongs);
+
+          // Map worker radios
+          const mappedRadios: RadioStation[] = radios.map((r: any, i: number) => ({
+            id: r.id || `worker-radio-${i}`,
+            name: r.name,
+            frequency: r.genre || "Global",
+            genre: r.genre || "Radio Feed",
+            logoUrl: r.logo || r.logoUrl || "https://images.unsplash.com/photo-1590602847861-f357a9332bbc?w=400",
+            streamUrl: r.url || r.streamUrl,
+            description: r.description || ""
+          }));
+          setWorkerRadios(mappedRadios);
         })
         .catch((err) => {
-          console.error("Error loading worker songs:", err);
-          setWorkerError(err.message || "Failed to communicate with worker query.");
-          setWorkerTracks([]);
+          console.error("Error loading worker data:", err);
+          setWorkerError(err.message || "Failed to communicate with worker.");
         })
         .finally(() => {
           setIsWorkerLoading(false);
@@ -364,6 +348,51 @@ export default function App() {
     localStorage.setItem("spotifyy_youtube_bookmarks", JSON.stringify(savedYoutubeTracks));
   }, [savedYoutubeTracks]);
 
+  // Poll currently playing song for live radio feeds
+  useEffect(() => {
+    if (!currentTrack || !currentTrack.id.includes("radio")) {
+      setLiveSong("");
+      return;
+    }
+
+    const fetchNowPlaying = async () => {
+      // Try local Express proxy first
+      try {
+        const res = await fetch(`/api/worker/nowplaying?workerUrl=${encodeURIComponent(workerUrl)}&url=${encodeURIComponent(currentTrack.audioUrl)}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.ok && data.song) {
+            setLiveSong(data.song);
+            return;
+          }
+        }
+      } catch (e) {
+        console.warn("Express proxy failed to fetch now playing, trying direct...", e);
+      }
+
+      // Fallback: fetch directly from worker
+      try {
+        let cleanUrl = workerUrl.trim().replace(/\/$/, "");
+        if (cleanUrl.includes("music-worker")) {
+          cleanUrl = "https://radio-worker.ma68.workers.dev";
+        }
+        const res = await fetch(`${cleanUrl}/nowplaying?url=${encodeURIComponent(currentTrack.audioUrl)}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.ok && data.song) {
+            setLiveSong(data.song);
+          }
+        }
+      } catch (e) {
+        console.warn("Direct fetch of now playing info failed:", e);
+      }
+    };
+
+    fetchNowPlaying();
+    const interval = setInterval(fetchNowPlaying, 10000); // Poll every 10 seconds for real-time meta update
+    return () => clearInterval(interval);
+  }, [currentTrack, workerUrl]);
+
   const handleTogglePlay = () => {
     if (!audioRef.current || !currentTrack) return;
 
@@ -420,6 +449,17 @@ export default function App() {
   };
 
   const handleNext = () => {
+    // Check if we are playing a radio station
+    if (currentTrack?.id.includes("radio")) {
+      const allStations = [...CURATED_STATIONS, ...customStations, ...workerRadios];
+      if (allStations.length === 0) return;
+
+      const currentIdx = allStations.findIndex((s) => `radio-${s.id}` === currentTrack.id);
+      const nextIdx = (currentIdx + 1) % allStations.length;
+      handleSelectRadio(allStations[nextIdx]);
+      return;
+    }
+
     const allTracks = [...CURATED_TRACKS, ...customTracks, ...workerTracks];
     if (allTracks.length === 0) return;
 
@@ -439,6 +479,17 @@ export default function App() {
   handleNextRef.current = handleNext;
 
   const handlePrev = () => {
+    // Check if we are playing a radio station
+    if (currentTrack?.id.includes("radio")) {
+      const allStations = [...CURATED_STATIONS, ...customStations, ...workerRadios];
+      if (allStations.length === 0) return;
+
+      const currentIdx = allStations.findIndex((s) => `radio-${s.id}` === currentTrack.id);
+      const prevIdx = (currentIdx - 1 + allStations.length) % allStations.length;
+      handleSelectRadio(allStations[prevIdx]);
+      return;
+    }
+
     const allTracks = [...CURATED_TRACKS, ...customTracks, ...workerTracks];
     if (allTracks.length === 0) return;
 
@@ -613,7 +664,7 @@ export default function App() {
   const isRTL = false;
   const t = translations[lang];
 
-  const combinedStations = [...CURATED_STATIONS, ...customStations];
+  const combinedStations = [...CURATED_STATIONS, ...customStations, ...workerRadios];
   const combinedTracks = [...CURATED_TRACKS, ...customTracks, ...workerTracks];
 
   return (
@@ -745,6 +796,7 @@ export default function App() {
                 onSelectStation={handleSelectRadio}
                 lang={lang}
                 workerUrl={workerUrl}
+                workerRadios={workerRadios}
               />
             )}
 
@@ -811,6 +863,7 @@ export default function App() {
           isExpanded={isPlayerExpanded}
           setIsExpanded={setIsPlayerExpanded}
           onHeightChange={setPlayerHeight}
+          liveSong={liveSong}
         />
       </div>
     </div>

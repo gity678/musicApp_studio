@@ -7,6 +7,7 @@ interface RadioTabProps {
   onSelectStation: (station: RadioStation) => void;
   lang: "en" | "ar";
   workerUrl: string;
+  workerRadios: RadioStation[];
 }
 
 export default function RadioTab({
@@ -14,6 +15,7 @@ export default function RadioTab({
   onSelectStation,
   lang,
   workerUrl,
+  workerRadios,
 }: RadioTabProps) {
   const isRTL = lang === "ar";
   const [radios, setRadios] = useState<any[]>([]);
@@ -22,6 +24,11 @@ export default function RadioTab({
   const [menuIndex, setMenuIndex] = useState<number>(-1);
   const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0 });
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setRadios(workerRadios);
+    setIsLoading(false);
+  }, [workerRadios]);
 
   const loadRadios = async () => {
     setIsLoading(true);
@@ -79,10 +86,11 @@ export default function RadioTab({
   };
 
   useEffect(() => {
-    if (workerUrl) {
-      loadRadios();
+    // We already receive workerRadios via props from App
+    if (!workerRadios || workerRadios.length === 0) {
+      if (workerUrl) loadRadios();
     }
-  }, [workerUrl]);
+  }, [workerUrl, workerRadios]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -95,18 +103,7 @@ export default function RadioTab({
   }, []);
 
   const playStation = (i: number) => {
-    const r = radios[i];
-    // Map worker radio to RadioStation type expected by App
-    const station: RadioStation = {
-      id: `worker-radio-${i}`,
-      name: r.name,
-      genre: "Worker Radio",
-      streamUrl: r.url || r.streamUrl, // depending on worker schema
-      logoUrl: r.logo || "",
-      frequency: "Live",
-      description: ""
-    };
-    onSelectStation(station);
+    onSelectStation(radios[i]);
   };
 
   const openMenu = (i: number, e: React.MouseEvent) => {

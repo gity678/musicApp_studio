@@ -232,6 +232,32 @@ app.get("/api/worker/radios", async (req, res) => {
   }
 });
 
+app.get("/api/worker/nowplaying", async (req, res) => {
+  const { workerUrl, url } = req.query;
+  if (!workerUrl || !url) {
+    return res.status(400).json({ error: "Missing workerUrl or url parameters" });
+  }
+
+  try {
+    let cleanUrl = (workerUrl as string).replace(/\/$/, "");
+    if (cleanUrl.includes("music-worker")) {
+      cleanUrl = "https://radio-worker.ma68.workers.dev";
+    }
+    console.log(`Proxying nowplaying request to: ${cleanUrl}/nowplaying?url=${encodeURIComponent(url as string)}`);
+    const response = await fetch(`${cleanUrl}/nowplaying?url=${encodeURIComponent(url as string)}`);
+    
+    if (!response.ok) {
+      throw new Error(`Worker returned status code: ${response.status}`);
+    }
+
+    const data = await response.json();
+    res.json(data);
+  } catch (error: any) {
+    console.error("Error proxying nowplaying from Cloudflare worker:", error);
+    res.status(500).json({ error: "Failed to fetch nowplaying from your worker", details: error.message });
+  }
+});
+
 app.post("/api/worker/upload", async (req, res) => {
   const { workerUrl, youtube_url, song_name } = req.body;
   if (!workerUrl || !youtube_url || !song_name) {
