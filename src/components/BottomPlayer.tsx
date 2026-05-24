@@ -89,78 +89,80 @@ export default function BottomPlayer({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 50 }}
           onClick={() => setIsExpanded(true)}
-          className="fixed bottom-1 left-1/2 -translate-x-1/2 w-[calc(100%-1rem)] sm:w-[calc(100%-2rem)] max-w-sm md:max-w-md bg-white/95 border border-zinc-200 p-3.5 rounded-[1.75rem] shadow-[0_10px_40px_rgba(0,0,0,0.12)] z-50 flex items-center justify-between gap-3 backdrop-blur-2xl shrink-0 select-none cursor-pointer hover:bg-zinc-50 transition-all group"
+          className="fixed bottom-2 left-1/2 -translate-x-1/2 w-[calc(100%-1.25rem)] sm:w-[calc(100%-2.5rem)] max-w-sm md:max-w-md bg-white/95 border border-zinc-200 p-3.5 rounded-3xl shadow-[0_12px_45px_rgba(0,0,0,0.15)] z-50 flex flex-col gap-2 backdrop-blur-2xl shrink-0 select-none cursor-pointer hover:bg-zinc-50 transition-all group"
         >
-          {/* Cover and Name details */}
-          <div className="flex items-center gap-3 min-w-0 flex-1">
-            <div className="relative shrink-0 group-hover:scale-105 transition-transform">
-              <img
-                src={currentTrack.coverUrl}
-                alt={currentTrack.title}
-                className="w-9 h-9 rounded-xl object-cover border border-zinc-100 shadow-sm"
-              />
-              {isPlaying && (
-                <div className="absolute inset-0 bg-black/10 flex items-center justify-center rounded-xl">
-                  <Disc size={14} className="text-[#1db954] animate-spin [animation-duration:3s]" />
-                </div>
-              )}
+          <div className="flex items-center justify-between gap-3 w-full">
+            {/* Cover and Name details */}
+            <div className="flex items-center gap-3 min-w-0 flex-1">
+              <div className="relative shrink-0 group-hover:scale-105 transition-transform">
+                <img
+                  src={currentTrack.coverUrl}
+                  alt={currentTrack.title}
+                  className="w-10 h-10 rounded-xl object-cover border border-zinc-100 shadow-sm"
+                />
+                {isPlaying && (
+                  <div className="absolute inset-0 bg-black/10 flex items-center justify-center rounded-xl">
+                    <Disc size={14} className="text-[#1db954] animate-spin [animation-duration:3s]" />
+                  </div>
+                )}
+              </div>
+              <div className="min-w-0">
+                <h4 className="font-bold text-[12px] md:text-sm truncate text-zinc-900 group-hover:text-[#1db954] transition-colors">
+                  {currentTrack.title}
+                </h4>
+                <p className="text-[9px] text-zinc-400 font-medium truncate uppercase tracking-tighter opacity-70">
+                  {currentTrack.genre || "Music"}
+                </p>
+              </div>
             </div>
-            <div className="min-w-0">
-              <h4 className="font-bold text-[11px] md:text-sm truncate text-zinc-900 group-hover:text-[#1db954] transition-colors">
-                {currentTrack.title}
-              </h4>
-              <p className="text-[9px] text-zinc-400 font-medium truncate uppercase tracking-tighter opacity-70">
-                {currentTrack.genre || "Music"}
-              </p>
+
+            {/* Symmetrical mini buttons */}
+            <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onPrev();
+                }}
+                className="hidden sm:flex p-1.5 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg transition-all cursor-pointer active:scale-90"
+              >
+                <SkipBack size={16} />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onTogglePlay();
+                }}
+                className="p-2 rounded-xl bg-zinc-900 text-white hover:bg-[#1db954] cursor-pointer flex items-center justify-center w-9 h-9 shrink-0 active:scale-90 transition-all shadow-md"
+              >
+                {isPlaying ? <Pause size={16} fill="white" /> : <Play size={16} fill="white" className="ml-0.5" />}
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onNext();
+                }}
+                className="p-1.5 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg transition-all cursor-pointer active:scale-90"
+              >
+                <SkipForward size={16} />
+              </button>
+              <div className="w-[1px] h-5 bg-zinc-200 mx-0.5" />
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsExpanded(true);
+                }}
+                className="p-1.5 text-[#1db954] hover:bg-[#1db954]/10 rounded-lg transition-all cursor-pointer"
+                title="Expand player card"
+              >
+                <Maximize2 size={16} />
+              </button>
             </div>
           </div>
 
-          {/* Symmetrical mini buttons */}
-          <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onPrev();
-              }}
-              className="p-1.5 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg transition-all cursor-pointer active:scale-90"
-            >
-              <SkipBack size={16} />
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onTogglePlay();
-              }}
-              className="p-1.5 rounded-xl bg-zinc-900 text-white hover:bg-[#1db954] cursor-pointer flex items-center justify-center w-8 h-8 shrink-0 active:scale-90 transition-all shadow-md"
-            >
-              {isPlaying ? <Pause size={14} fill="white" /> : <Play size={14} fill="white" className="ml-0.5" />}
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onNext();
-              }}
-              className="p-1.5 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg transition-all cursor-pointer active:scale-90"
-            >
-              <SkipForward size={16} />
-            </button>
-            <div className="w-[1px] h-5 bg-zinc-200 mx-0.5" />
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setIsExpanded(true);
-              }}
-              className="p-1.5 text-[#1db954] hover:bg-[#1db954]/10 rounded-lg transition-all cursor-pointer"
-              title="Expand player card"
-            >
-              <Maximize2 size={16} />
-            </button>
-          </div>
-
-          {/* Thin Progress Slider on the edge - stylized rounded bottom border */}
-          <div className="absolute bottom-0 left-0 w-full h-[3px] bg-zinc-100 rounded-b-[1.75rem] overflow-hidden">
+          {/* Integrated Internal Progress Bar */}
+          <div className="w-full h-1 bg-zinc-100/80 rounded-full overflow-hidden mt-0.5">
             <div
-              className="h-full bg-gradient-to-r from-[#1db954] to-[#20cf5d] rounded-b-[1.75rem]"
+              className="h-full bg-gradient-to-r from-[#1db954] to-[#20cf5d] shadow-[0_0_8px_rgba(29,185,84,0.3)] transition-all"
               style={{ width: `${percent}%` }}
             />
           </div>
@@ -172,7 +174,7 @@ export default function BottomPlayer({
           initial={{ opacity: 0, y: 60, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 60, scale: 0.95 }}
-          className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-xs md:max-w-[340px] bg-white rounded-[1.75rem] border border-zinc-200 p-4 shadow-[0_15px_50px_rgba(0,0,0,0.1)] z-50 flex flex-col gap-3 text-zinc-800 hover:border-zinc-300 transition-colors backdrop-blur-2xl select-none"
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-xs md:max-w-[340px] bg-white rounded-3xl border border-zinc-200 p-4 shadow-[0_15px_50px_rgba(0,0,0,0.1)] z-50 flex flex-col gap-3 text-zinc-800 hover:border-zinc-300 transition-colors backdrop-blur-2xl select-none"
         >
           {/* HEADER ROW */}
           <div className="flex items-center justify-between w-full">
