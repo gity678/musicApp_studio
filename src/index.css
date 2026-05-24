@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+:root { --reader-gap: clamp(12px, 2vw, 20px); }
+
 @layer utilities {
   .no-scrollbar::-webkit-scrollbar {
     display: none;
@@ -12,5 +14,15 @@
   /* Robust spacing that handles the player height dynamically */
   .dynamic-bottom-spacing {
     padding-bottom: calc(var(--player-height, 0px) + 12px) !important;
+  }
+
+  /* Ensure both minimized and expanded player have identical horizontal gap to container */
+  .consistent-player-position {
+    left: var(--reader-gap);
+    right: var(--reader-gap);
+    transform: none !important;
+    width: auto !important;
+    margin-left: auto;
+    margin-right: auto;
   }
 }

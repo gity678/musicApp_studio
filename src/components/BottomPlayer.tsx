@@ -157,7 +157,7 @@ export default function BottomPlayer({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 50 }}
           onClick={() => setIsExpanded(true)}
-          className="fixed bottom-px left-1/2 -translate-x-1/2 w-[calc(100%-1.25rem)] sm:w-[calc(100%-2.5rem)] max-w-sm md:max-w-md bg-white/95 border border-zinc-200 p-3.5 rounded-2xl shadow-[0_12px_45px_rgba(0,0,0,0.15)] z-50 flex flex-col gap-2 backdrop-blur-2xl shrink-0 select-none cursor-pointer hover:bg-zinc-50 transition-all group"
+          className="fixed bottom-px consistent-player-position max-w-sm md:max-w-md bg-white/95 border border-zinc-200 p-3.5 rounded-2xl shadow-[0_6px_30px_rgba(10,10,10,0.06)]"
         >
           <div className="flex items-center justify-between gap-3 w-full">
             {/* Cover and Name details */}
@@ -251,7 +251,7 @@ export default function BottomPlayer({
           initial={{ opacity: 0, y: 60, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 60, scale: 0.95 }}
-          className="fixed bottom-px left-1/2 -translate-x-1/2 w-[calc(100%-1.25rem)] sm:w-[calc(100%-2.5rem)] max-w-sm md:max-w-md bg-white rounded-2xl border border-zinc-200 p-4 shadow-[0_15px_50px_rgba(0,0,0,0.1)] z-50 flex flex-col gap-3 text-zinc-800 hover:border-zinc-300 transition-colors backdrop-blur-2xl select-none"
+          className="fixed bottom-px consistent-player-position max-w-sm md:max-w-md bg-white rounded-2xl border border-zinc-200 p-4 shadow-[0_15px_30px_rgba(10,10,10,0.08)]"
         >
           {/* HEADER ROW */}
           <div className="flex items-center justify-between w-full">
@@ -321,7 +321,7 @@ export default function BottomPlayer({
             {/* PLAY ORDER (SEQUENTIAL/RANDOM) BUTTON */}
             <button
               onClick={onTogglePlayOrder}
-              className="border border-zinc-200 rounded-lg p-2 py-2.5 flex items-center justify-center cursor-pointer transition-all hover:border-zinc-300 bg-transparent text-zinc-500 hover:text-zinc-900 group"
+              className="border border-zinc-200 rounded-lg p-2 py-2.5 flex items-center justify-center cursor-pointer transition-all hover:border-zinc-300 bg-transparent text-zinc-500 hover:text-zinc-600"
             >
               <div className="flex items-center gap-1">
                 <Shuffle size={14} className="text-zinc-400 group-hover:text-zinc-600 transition-colors" />
@@ -342,7 +342,7 @@ export default function BottomPlayer({
             {/* PLAY / PAUSE EXPANDED ACTION BUTTON */}
             <button
               onClick={onTogglePlay}
-              className="border border-zinc-200 rounded-xl bg-zinc-900 text-white px-5 py-2.5 flex items-center justify-center cursor-pointer transition-all hover:bg-zinc-800 active:scale-95 shadow-sm shrink-0"
+              className="border border-zinc-200 rounded-xl bg-zinc-900 text-white px-5 py-2.5 flex items-center justify-center cursor-pointer transition-all hover:bg-zinc-800 active:scale-95 shadow-md"
             >
               {isPlaying ? <Pause size={18} fill="white" /> : <Play size={18} fill="white" className={isRTL ? "" : "ml-0.5"} />}
             </button>
@@ -358,7 +358,7 @@ export default function BottomPlayer({
             {/* REPEAT LOOP BUTTON */}
             <button
               onClick={onToggleLoop}
-              className="border border-zinc-200 rounded-lg p-2 px-3 flex items-center justify-center cursor-pointer transition-all hover:border-zinc-300 bg-transparent text-zinc-500 hover:text-zinc-900 group"
+              className="border border-zinc-200 rounded-lg p-2 px-3 flex items-center justify-center cursor-pointer transition-all hover:border-zinc-300 bg-transparent text-zinc-500 hover:text-zinc-600"
             >
               <div className="relative flex items-center justify-center">
                 <Repeat size={18} className="text-zinc-400 group-hover:text-zinc-600 transition-colors" />
