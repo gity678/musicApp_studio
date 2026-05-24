@@ -72,6 +72,7 @@ export default function BottomPlayer({
   const percent = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.stopPropagation();
     const rect = e.currentTarget.getBoundingClientRect();
     const clickX = e.clientX - rect.left;
     const width = rect.width;
@@ -159,12 +160,17 @@ export default function BottomPlayer({
             </div>
           </div>
 
-          {/* Integrated Internal Progress Bar */}
-          <div className="w-full h-1 bg-zinc-100/80 rounded-full overflow-hidden mt-0.5">
-            <div
-              className="h-full bg-gradient-to-r from-[#1db954] to-[#20cf5d] shadow-[0_0_8px_rgba(29,185,84,0.3)] transition-all"
-              style={{ width: `${percent}%` }}
-            />
+          {/* Integrated Internal Progress Bar - Now Clickable */}
+          <div 
+            className="w-full h-2 flex items-center cursor-pointer group/progress" 
+            onClick={handleProgressClick}
+          >
+            <div className="w-full h-1 bg-zinc-100/80 rounded-full overflow-hidden transition-all group-hover/progress:h-1.5">
+              <div
+                className="h-full bg-gradient-to-r from-[#1db954] to-[#20cf5d] shadow-[0_0_8px_rgba(29,185,84,0.3)]"
+                style={{ width: `${percent}%` }}
+              />
+            </div>
           </div>
         </motion.div>
       ) : (
