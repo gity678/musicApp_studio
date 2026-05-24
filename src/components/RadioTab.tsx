@@ -2,42 +2,67 @@ import React, { useState, useEffect, useRef } from "react";
 import { RadioStation } from "../types";
 import { MoreVertical, X, Edit2, Trash2 } from "lucide-react";
 
-const WORKER = 'https://radio-worker.ma68.workers.dev';
-
 interface RadioTabProps {
   activeStation: RadioStation | null;
   onSelectStation: (station: RadioStation) => void;
   lang: "en" | "ar";
+  workerUrl: string;
 }
 
 export default function RadioTab({
   activeStation,
   onSelectStation,
   lang,
+  workerUrl,
 }: RadioTabProps) {
   const isRTL = lang === "ar";
   const [radios, setRadios] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [menuIndex, setMenuIndex] = useState<number>(-1);
   const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0 });
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const loadRadios = async () => {
     setIsLoading(true);
+    setError(null);
     try {
-      const res = await fetch(WORKER + '/radios');
-      const data = await res.json();
+      const cleanUrl = workerUrl.trim().replace(/\/$/, "");
+      let data;
+
+      // Try local Express proxy first if available
+      try {
+        const res = await fetch(`/api/worker/radios?workerUrl=${encodeURIComponent(cleanUrl)}`);
+        if (res.ok) {
+          data = await res.json();
+        } else {
+          console.warn("Proxy fetch failed, trying direct fetch...");
+        }
+      } catch (proxyErr) {
+        console.warn("Proxy fetch threw error, trying direct fetch...", proxyErr);
+      }
+
+      // Fallback to direct fetch
+      if (!data) {
+        const res = await fetch(cleanUrl + '/radios');
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        data = await res.json();
+      }
+
       setRadios(data);
-    } catch (e) {
+    } catch (e: any) {
       console.error("Error loading radios:", e);
+      setError(e.message || "Failed to fetch");
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    loadRadios();
-  }, []);
+    if (workerUrl) {
+      loadRadios();
+    }
+  }, [workerUrl]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -113,10 +138,21 @@ export default function RadioTab({
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <div className="flex-1 overflow-y-auto no-scrollbar dynamic-bottom-spacing">
+      <div className="flex-1 overflow-y-auto no-scrollbar pb-32">
         {isLoading ? (
           <div className="flex items-center justify-center py-20 text-zinc-500 animate-pulse text-xs font-mono uppercase tracking-widest">
             {isRTL ? "جاري تحميل المحطات..." : "Synchronizing Radio Frequencies..."}
+          </div>
+        ) : error ? (
+          <div className="flex flex-col items-center justify-center py-20 text-red-500 text-xs font-mono uppercase tracking-widest gap-2">
+            <div>❌ {isRTL ? "فشل التحميل" : "Error loading radios"}</div>
+            <div className="text-[10px] text-zinc-400 normal-case">{error}</div>
+            <button 
+              onClick={loadRadios}
+              className="mt-4 px-4 py-2 bg-zinc-800 text-white rounded-lg hover:bg-zinc-700 transition-colors"
+            >
+              {isRTL ? "إعادة المحاولة" : "Retry"}
+            </button>
           </div>
         ) : radios.length === 0 ? (
           <div className="flex items-center justify-center py-20 text-zinc-500 text-xs font-mono uppercase tracking-widest">

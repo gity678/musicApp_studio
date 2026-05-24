@@ -581,11 +581,6 @@ export default function App() {
   const isRTL = false;
   const t = translations[lang];
 
-  useEffect(() => {
-    const targetHeight = currentTrack ? playerHeight : 0;
-    document.documentElement.style.setProperty('--player-height', `${targetHeight}px`);
-  }, [playerHeight, currentTrack]);
-
   const combinedStations = [...CURATED_STATIONS, ...customStations];
   const combinedTracks = [...CURATED_TRACKS, ...customTracks, ...workerTracks];
 
@@ -672,7 +667,12 @@ export default function App() {
         {/* Content Viewer viewport */}
         <main className="flex-1 overflow-hidden px-2.5 sm:px-5 relative z-10 animate-fade-in flex flex-col">
           <div 
-            className="max-w-sm md:max-w-md mx-auto space-y-6 w-full flex-1 flex flex-col min-h-0 transition-all duration-300 dynamic-bottom-spacing"
+            className="max-w-sm md:max-w-md mx-auto space-y-6 w-full flex-1 flex flex-col min-h-0 transition-all duration-300"
+            style={{ 
+              paddingBottom: currentTrack 
+                ? `${playerHeight + 8}px` 
+                : '0px' 
+            }}
           >
             
             {/* Visualizer canvas floating header */}
@@ -681,7 +681,7 @@ export default function App() {
             )}
 
             {activeTab === "home" && (
-              <div className="flex-1 overflow-y-auto no-scrollbar dynamic-bottom-spacing">
+              <div className="flex-1 overflow-y-auto no-scrollbar">
                 <HomeTab
                   lang={lang}
                   translations={translations}
@@ -712,11 +712,12 @@ export default function App() {
                 }
                 onSelectStation={handleSelectRadio}
                 lang={lang}
+                workerUrl={workerUrl}
               />
             )}
 
             {activeTab === "upload" && (
-              <div className="flex-1 overflow-y-auto no-scrollbar dynamic-bottom-spacing">
+              <div className="flex-1 overflow-y-auto no-scrollbar">
                 <UploadTab
                   customTracks={customTracks}
                   onAddCustomTrack={handleAddCustomTrack}
@@ -740,7 +741,7 @@ export default function App() {
             )}
 
             {activeTab === "youtube" && (
-              <div className="flex-1 overflow-y-auto no-scrollbar dynamic-bottom-spacing">
+              <div className="flex-1 overflow-y-auto no-scrollbar">
                 <YoutubeTab
                   lang={lang}
                   translations={translations}

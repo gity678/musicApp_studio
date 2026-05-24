@@ -184,6 +184,27 @@ app.get("/api/worker/songs", async (req, res) => {
   }
 });
 
+app.get("/api/worker/radios", async (req, res) => {
+  const { workerUrl } = req.query;
+  if (!workerUrl) {
+    return res.status(400).json({ error: "Missing workerUrl parameter" });
+  }
+
+  try {
+    const cleanUrl = (workerUrl as string).replace(/\/$/, "");
+    console.log(`Proxying radios request to: ${cleanUrl}/radios`);
+    const response = await fetch(`${cleanUrl}/radios`);
+    if (!response.ok) {
+      throw new Error(`Worker returned status code: ${response.status}`);
+    }
+    const radios = await response.json();
+    res.json(radios);
+  } catch (error: any) {
+    console.error("Error proxying radios from Cloudflare worker:", error);
+    res.status(500).json({ error: "Failed to fetch radios from your worker", details: error.message });
+  }
+});
+
 app.post("/api/worker/upload", async (req, res) => {
   const { workerUrl, youtube_url, song_name } = req.body;
   if (!workerUrl || !youtube_url || !song_name) {
