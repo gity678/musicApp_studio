@@ -130,7 +130,7 @@ export default function BottomPlayer({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 50 }}
           onClick={() => setIsExpanded(true)}
-          className="fixed bottom-2 left-1/2 -translate-x-1/2 w-[calc(100%-1.25rem)] sm:w-[calc(100%-2.5rem)] max-w-sm md:max-w-md bg-white/95 border border-zinc-200 p-3.5 rounded-3xl shadow-[0_12px_45px_rgba(0,0,0,0.15)] z-50 flex flex-col gap-2 backdrop-blur-2xl shrink-0 select-none cursor-pointer hover:bg-zinc-50 transition-all group"
+          className="fixed bottom-px left-1/2 -translate-x-1/2 w-[calc(100%-1.25rem)] sm:w-[calc(100%-2.5rem)] max-w-sm md:max-w-md bg-white/95 border border-zinc-200 p-3.5 rounded-3xl shadow-[0_12px_45px_rgba(0,0,0,0.15)] z-50 flex flex-col gap-2 backdrop-blur-2xl shrink-0 select-none cursor-pointer hover:bg-zinc-50 transition-all group"
         >
           <div className="flex items-center justify-between gap-3 w-full">
             {/* Cover and Name details */}
@@ -158,13 +158,13 @@ export default function BottomPlayer({
             </div>
 
             {/* Symmetrical mini buttons */}
-            <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   onPrev();
                 }}
-                className="hidden sm:flex p-1.5 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg transition-all cursor-pointer active:scale-90"
+                className="flex p-1.5 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg transition-all cursor-pointer active:scale-90"
               >
                 <SkipBack size={16} />
               </button>
@@ -173,16 +173,16 @@ export default function BottomPlayer({
                   e.stopPropagation();
                   onTogglePlay();
                 }}
-                className="p-2 rounded-xl bg-zinc-900 text-white hover:bg-[#1db954] cursor-pointer flex items-center justify-center w-9 h-9 shrink-0 active:scale-90 transition-all shadow-md"
+                className="p-1.5 rounded-xl bg-zinc-900 text-white hover:bg-[#1db954] cursor-pointer flex items-center justify-center w-8 h-8 shrink-0 active:scale-90 transition-all shadow-md"
               >
-                {isPlaying ? <Pause size={16} fill="white" /> : <Play size={16} fill="white" className="ml-0.5" />}
+                {isPlaying ? <Pause size={14} fill="white" /> : <Play size={14} fill="white" className="ml-0.5" />}
               </button>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   onNext();
                 }}
-                className="p-1.5 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg transition-all cursor-pointer active:scale-90"
+                className="flex p-1.5 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg transition-all cursor-pointer active:scale-90"
               >
                 <SkipForward size={16} />
               </button>
