@@ -58,16 +58,34 @@ export default function App() {
 
   // Custom persistent states stored in LocalStorage
   const [customTracks, setCustomTracks] = useState<Track[]>(() => {
-    const saved = localStorage.getItem("spotifyy_custom_tracks");
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const saved = localStorage.getItem("spotifyy_custom_tracks");
+      if (!saved || saved === "null") return [];
+      const parsed = JSON.parse(saved);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
   });
   const [customStations, setCustomStations] = useState<RadioStation[]>(() => {
-    const saved = localStorage.getItem("spotifyy_custom_stations");
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const saved = localStorage.getItem("spotifyy_custom_stations");
+      if (!saved || saved === "null") return [];
+      const parsed = JSON.parse(saved);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
   });
   const [savedYoutubeTracks, setSavedYoutubeTracks] = useState<Track[]>(() => {
-    const saved = localStorage.getItem("spotifyy_youtube_bookmarks");
-    return saved ? JSON.parse(saved) : [];
+    try {
+      const saved = localStorage.getItem("spotifyy_youtube_bookmarks");
+      if (!saved || saved === "null") return [];
+      const parsed = JSON.parse(saved);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
   });
 
   // Cloudflare Worker settings
@@ -412,9 +430,13 @@ export default function App() {
   };
 
   const handleSeek = (time: number) => {
-    if (!audioRef.current || !currentTrack || currentTrack.id.startsWith("yt-")) return;
-    audioRef.current.currentTime = time;
-    setCurrentTime(time);
+    if (!audioRef.current || !currentTrack || isNaN(time) || currentTrack.id.startsWith("yt-")) return;
+    try {
+      audioRef.current.currentTime = time;
+      setCurrentTime(time);
+    } catch (e) {
+      console.warn("Seek failed:", e);
+    }
   };
 
   const handleSelectTrack = (track: Track) => {
@@ -429,6 +451,7 @@ export default function App() {
   };
 
   const handleSelectRadio = (station: RadioStation) => {
+    if (!station) return;
     const radioTrack: Track = {
       id: `radio-${station.id}`,
       title: station.name,
@@ -450,13 +473,14 @@ export default function App() {
 
   const handleNext = () => {
     // Check if we are playing a radio station
-    if (currentTrack?.id.includes("radio")) {
+    if (currentTrack && (currentTrack.id.startsWith("radio-") || currentTrack.genre === "Radio Feed")) {
       const allStations = [...CURATED_STATIONS, ...customStations, ...workerRadios];
       if (allStations.length === 0) return;
 
       const currentIdx = allStations.findIndex((s) => `radio-${s.id}` === currentTrack.id);
       const nextIdx = (currentIdx + 1) % allStations.length;
-      handleSelectRadio(allStations[nextIdx]);
+      const nextStation = allStations[nextIdx];
+      if (nextStation) handleSelectRadio(nextStation);
       return;
     }
 
@@ -480,13 +504,14 @@ export default function App() {
 
   const handlePrev = () => {
     // Check if we are playing a radio station
-    if (currentTrack?.id.includes("radio")) {
+    if (currentTrack && (currentTrack.id.startsWith("radio-") || currentTrack.genre === "Radio Feed")) {
       const allStations = [...CURATED_STATIONS, ...customStations, ...workerRadios];
       if (allStations.length === 0) return;
 
       const currentIdx = allStations.findIndex((s) => `radio-${s.id}` === currentTrack.id);
       const prevIdx = (currentIdx - 1 + allStations.length) % allStations.length;
-      handleSelectRadio(allStations[prevIdx]);
+      const prevStation = allStations[prevIdx];
+      if (prevStation) handleSelectRadio(prevStation);
       return;
     }
 

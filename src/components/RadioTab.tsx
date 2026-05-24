@@ -70,7 +70,18 @@ export default function RadioTab({
         }
       }
 
-      setRadios(data || []);
+      const rawRadios = Array.isArray(data) ? data : [];
+      const mappedRadios: RadioStation[] = rawRadios.map((r: any, i: number) => ({
+        id: r.id || `worker-radio-${i}`,
+        name: r.name || "Unknown Radio",
+        frequency: r.frequency || r.genre || "Global",
+        genre: r.genre || "General",
+        logoUrl: r.logo || r.logoUrl || "https://images.unsplash.com/photo-1590602847861-f357a9332bbc?w=400",
+        streamUrl: r.url || r.streamUrl || "",
+        description: r.description || ""
+      }));
+
+      setRadios(mappedRadios);
     } catch (e: any) {
       console.error("Error loading radios:", e);
       let errMsg = e.message || "Failed to fetch";
@@ -196,9 +207,9 @@ export default function RadioTab({
                     className="w-10 h-10 rounded-lg bg-white/10 shrink-0 overflow-hidden flex items-center justify-center text-lg"
                     onClick={() => playStation(i)}
                   >
-                    {r.logo ? (
+                    {r.logoUrl ? (
                       <img 
-                        src={r.logo} 
+                        src={r.logoUrl} 
                         alt={r.name} 
                         className="w-full h-full object-contain p-0.5 bg-white rounded-lg"
                         onError={(e) => {
