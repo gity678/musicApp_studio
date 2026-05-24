@@ -130,7 +130,7 @@ export default function BottomPlayer({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 50 }}
           onClick={() => setIsExpanded(true)}
-          className="fixed bottom-px left-1/2 -translate-x-1/2 w-[calc(100%-1.25rem)] sm:w-[calc(100%-2.5rem)] max-w-sm md:max-w-md bg-white/95 border border-zinc-200 p-3.5 rounded-3xl shadow-[0_12px_45px_rgba(0,0,0,0.15)] z-50 flex flex-col gap-2 backdrop-blur-2xl shrink-0 select-none cursor-pointer hover:bg-zinc-50 transition-all group"
+          className="fixed bottom-px left-1/2 -translate-x-1/2 w-[calc(100%-1.25rem)] sm:w-[calc(100%-2.5rem)] max-w-sm md:max-w-md bg-white/95 border border-zinc-200 p-3.5 rounded-2xl shadow-[0_12px_45px_rgba(0,0,0,0.15)] z-50 flex flex-col gap-2 backdrop-blur-2xl shrink-0 select-none cursor-pointer hover:bg-zinc-50 transition-all group"
         >
           <div className="flex items-center justify-between gap-3 w-full">
             {/* Cover and Name details */}
@@ -223,7 +223,7 @@ export default function BottomPlayer({
           initial={{ opacity: 0, y: 60, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 60, scale: 0.95 }}
-          className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-xs md:max-w-[340px] bg-white rounded-3xl border border-zinc-200 p-4 shadow-[0_15px_50px_rgba(0,0,0,0.1)] z-50 flex flex-col gap-3 text-zinc-800 hover:border-zinc-300 transition-colors backdrop-blur-2xl select-none"
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-sm md:max-w-md bg-white rounded-3xl border border-zinc-200 p-4 shadow-[0_15px_50px_rgba(0,0,0,0.1)] z-50 flex flex-col gap-3 text-zinc-800 hover:border-zinc-300 transition-colors backdrop-blur-2xl select-none"
         >
           {/* HEADER ROW */}
           <div className="flex items-center justify-between w-full">
@@ -241,7 +241,7 @@ export default function BottomPlayer({
                 )}
               </div>
               <div className="min-w-0">
-                <h4 className="font-bold text-xs md:text-sm text-zinc-900 truncate max-w-[140px] md:max-w-[170px]">
+                <h4 className="font-bold text-xs md:text-sm text-zinc-900 truncate">
                   {currentTrack.title}
                 </h4>
               </div>
