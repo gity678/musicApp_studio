@@ -203,7 +203,10 @@ app.get("/api/worker/radios", async (req, res) => {
   }
 
   try {
-    const cleanUrl = (workerUrl as string).replace(/\/$/, "");
+    let cleanUrl = (workerUrl as string).replace(/\/$/, "");
+    if (cleanUrl.includes("music-worker")) {
+      cleanUrl = "https://radio-worker.ma68.workers.dev";
+    }
     console.log(`Proxying radios request to: ${cleanUrl}/radios`);
     const response = await fetch(`${cleanUrl}/radios`);
     

@@ -27,7 +27,10 @@ export default function RadioTab({
     setIsLoading(true);
     setError(null);
     try {
-      const cleanUrl = workerUrl.trim().replace(/\/$/, "");
+      let cleanUrl = workerUrl.trim().replace(/\/$/, "");
+      if (cleanUrl.includes("music-worker")) {
+        cleanUrl = "https://radio-worker.ma68.workers.dev";
+      }
       let data;
 
       // Try local Express proxy first if available
@@ -137,7 +140,10 @@ export default function RadioTab({
     closeMenu();
     if (!confirm(isRTL ? `هل متأكد من حذف "${r.name}"؟` : `Delete "${r.name}"?`)) return;
     try {
-      const cleanUrl = workerUrl.trim().replace(/\/$/, "");
+      let cleanUrl = workerUrl.trim().replace(/\/$/, "");
+      if (cleanUrl.includes("music-worker")) {
+        cleanUrl = "https://radio-worker.ma68.workers.dev";
+      }
       const res = await fetch(cleanUrl + '/radios', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
