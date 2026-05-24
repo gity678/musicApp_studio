@@ -667,10 +667,10 @@ export default function App() {
         {/* Content Viewer viewport */}
         <main className="flex-1 overflow-hidden px-2.5 sm:px-5 relative z-10 animate-fade-in flex flex-col">
           <div 
-            className="max-w-sm md:max-w-md mx-auto space-y-6 w-full flex-1 flex flex-col min-h-0 transition-all duration-300"
+            className="max-w-sm md:max-w-md mx-auto space-y-4 w-full flex-1 flex flex-col min-h-0 transition-all duration-300"
             style={{ 
               paddingBottom: currentTrack 
-                ? `${playerHeight + 8}px` 
+                ? `${playerHeight + (isPlayerExpanded ? 4 : -2)}px` 
                 : '0px' 
             }}
           >
