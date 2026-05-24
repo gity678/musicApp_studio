@@ -667,7 +667,7 @@ export default function App() {
         <main className="flex-1 overflow-hidden px-2.5 sm:px-5 relative z-10 animate-fade-in flex flex-col">
           <div 
             className={`max-w-sm md:max-w-md mx-auto space-y-6 w-full flex-1 flex flex-col min-h-0 transition-all duration-300 ${
-              !currentTrack ? 'pb-4' : (isPlayerExpanded ? 'pb-[158px]' : 'pb-[84px]')
+              !currentTrack ? 'pb-4' : (isPlayerExpanded ? 'pb-[162px]' : 'pb-[84px]')
             }`}
           >
             
