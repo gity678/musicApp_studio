@@ -57,6 +57,11 @@ export default function BottomPlayer({
   const isRTL = lang === "ar";
   const t = translations[lang];
   const [isExpanded, setIsExpanded] = useState(true);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragPercent, setDragPercent] = useState(0);
+
+  const progressBarRefMin = React.useRef<HTMLDivElement>(null);
+  const progressBarRefExp = React.useRef<HTMLDivElement>(null);
 
   if (!currentTrack) {
     return null; // Don't render player at all when there is no playing track
@@ -69,16 +74,51 @@ export default function BottomPlayer({
     return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
   };
 
-  const percent = duration > 0 ? (currentTime / duration) * 100 : 0;
+  const currentPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
+  const displayPercent = isDragging ? dragPercent * 100 : currentPercent;
 
-  const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handleStartDragging = (e: React.MouseEvent | React.TouchEvent, ref: React.RefObject<HTMLDivElement>) => {
     e.stopPropagation();
-    const rect = e.currentTarget.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const width = rect.width;
-    const clickPercent = Math.max(0, Math.min(1, clickX / width));
-    onSeek(clickPercent * duration);
+    if (!ref.current) return;
+    
+    const rect = ref.current.getBoundingClientRect();
+    const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+    const progress = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    
+    setIsDragging(true);
+    setDragPercent(progress);
   };
+
+  React.useEffect(() => {
+    if (!isDragging) return;
+
+    const handleMouseMove = (e: MouseEvent | TouchEvent) => {
+      const ref = isExpanded ? progressBarRefExp : progressBarRefMin;
+      if (!ref.current) return;
+
+      const rect = ref.current.getBoundingClientRect();
+      const clientX = 'touches' in e ? e.touches[0].clientX : (e as MouseEvent).clientX;
+      const progress = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+      setDragPercent(progress);
+    };
+
+    const handleMouseUp = () => {
+      onSeek(dragPercent * duration);
+      setIsDragging(false);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('touchmove', handleMouseMove);
+    window.addEventListener('touchend', handleMouseUp);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('touchmove', handleMouseMove);
+      window.removeEventListener('touchend', handleMouseUp);
+    };
+  }, [isDragging, dragPercent, duration, onSeek, isExpanded]);
 
   return (
     <AnimatePresence>
@@ -160,15 +200,17 @@ export default function BottomPlayer({
             </div>
           </div>
 
-          {/* Integrated Internal Progress Bar - Now Clickable */}
+          {/* Integrated Internal Progress Bar - Now Clickable & Draggable */}
           <div 
-            className="w-full h-2 flex items-center cursor-pointer group/progress" 
-            onClick={handleProgressClick}
+            ref={progressBarRefMin}
+            className="w-full h-2 flex items-center cursor-pointer group/progress touch-none" 
+            onMouseDown={(e) => handleStartDragging(e, progressBarRefMin)}
+            onTouchStart={(e) => handleStartDragging(e, progressBarRefMin)}
           >
             <div className="w-full h-1 bg-zinc-100/80 rounded-full overflow-hidden transition-all group-hover/progress:h-1.5">
               <div
                 className="h-full bg-gradient-to-r from-[#1db954] to-[#20cf5d] shadow-[0_0_8px_rgba(29,185,84,0.3)]"
-                style={{ width: `${percent}%` }}
+                style={{ width: `${displayPercent}%` }}
               />
             </div>
           </div>
@@ -224,16 +266,18 @@ export default function BottomPlayer({
               </span>
               
               <div
-                className="flex-1 relative h-1 bg-zinc-100 rounded-full group cursor-pointer"
-                onClick={handleProgressClick}
+                ref={progressBarRefExp}
+                className="flex-1 relative h-1.5 bg-zinc-100 rounded-full group cursor-pointer touch-none"
+                onMouseDown={(e) => handleStartDragging(e, progressBarRefExp)}
+                onTouchStart={(e) => handleStartDragging(e, progressBarRefExp)}
               >
                 <div
                   className="absolute top-0 left-0 h-full bg-gradient-to-r from-[#1db954] to-[#20cf5d] rounded-full shadow-[0_0_8px_rgba(29,185,84,0.2)]"
-                  style={{ width: `${percent}%` }}
+                  style={{ width: `${displayPercent}%` }}
                 />
                 <div
-                  className="absolute top-1/2 -translate-y-1/2 w-2.5 h-2.5 bg-white rounded-full border border-[#1db954] shadow-sm transition-all group-hover:scale-125"
-                  style={{ left: `calc(${percent}% - 5px)` }}
+                  className="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 bg-white rounded-full border-2 border-[#1db954] shadow-md transition-transform group-hover:scale-110 active:scale-95"
+                  style={{ left: `calc(${displayPercent}% - 7px)` }}
                 />
               </div>
 
