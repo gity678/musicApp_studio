@@ -89,26 +89,29 @@ export default function BottomPlayer({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 50 }}
           onClick={() => setIsExpanded(true)}
-          className="fixed bottom-0 left-0 w-full bg-white/95 border-t border-zinc-200 p-3 shadow-[0_-4px_15px_rgba(0,0,0,0.05)] z-50 flex items-center justify-between gap-3 backdrop-blur-xl shrink-0 select-none cursor-pointer hover:bg-zinc-50 transition-colors"
+          className="fixed bottom-0 left-1/2 -translate-x-1/2 w-[calc(100%-0.75rem)] sm:w-[calc(100%-1.5rem)] max-w-sm md:max-w-md bg-white/95 border border-zinc-200 border-b-0 p-3.5 rounded-t-[2.25rem] shadow-[0_-12px_40px_rgba(0,0,0,0.12)] z-50 flex items-center justify-between gap-3 backdrop-blur-2xl shrink-0 select-none cursor-pointer hover:bg-zinc-50 transition-all group"
         >
           {/* Cover and Name details */}
-          <div className="flex items-center gap-2.5 min-w-0 flex-1">
-            <div className="relative shrink-0">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            <div className="relative shrink-0 group-hover:scale-105 transition-transform">
               <img
                 src={currentTrack.coverUrl}
                 alt={currentTrack.title}
-                className="w-8 h-8 rounded-lg object-cover border border-zinc-100 shadow-sm"
+                className="w-9 h-9 rounded-xl object-cover border border-zinc-100 shadow-sm"
               />
               {isPlaying && (
-                <div className="absolute inset-0 bg-black/10 flex items-center justify-center rounded-lg">
-                  <Disc size={12} className="text-[#1db954] animate-spin [animation-duration:3s]" />
+                <div className="absolute inset-0 bg-black/10 flex items-center justify-center rounded-xl">
+                  <Disc size={14} className="text-[#1db954] animate-spin [animation-duration:3s]" />
                 </div>
               )}
             </div>
             <div className="min-w-0">
-              <h4 className="font-semibold text-[11px] md:text-xs truncate text-zinc-900">
+              <h4 className="font-bold text-[11px] md:text-sm truncate text-zinc-900 group-hover:text-[#1db954] transition-colors">
                 {currentTrack.title}
               </h4>
+              <p className="text-[9px] text-zinc-400 font-medium truncate uppercase tracking-tighter opacity-70">
+                {currentTrack.genre || "Music"}
+              </p>
             </div>
           </div>
 
@@ -119,45 +122,45 @@ export default function BottomPlayer({
                 e.stopPropagation();
                 onPrev();
               }}
-              className="p-1 text-zinc-500 hover:text-zinc-900 transition-colors cursor-pointer"
+              className="p-1.5 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg transition-all cursor-pointer active:scale-90"
             >
-              <SkipBack size={14} />
+              <SkipBack size={16} />
             </button>
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 onTogglePlay();
               }}
-              className="p-1 rounded bg-zinc-900 text-white hover:bg-zinc-800 cursor-pointer flex items-center justify-center w-6 h-6 shrink-0 active:scale-90 transition-transform"
+              className="p-1.5 rounded-xl bg-zinc-900 text-white hover:bg-[#1db954] cursor-pointer flex items-center justify-center w-8 h-8 shrink-0 active:scale-90 transition-all shadow-md"
             >
-              {isPlaying ? <Pause size={12} fill="white" /> : <Play size={12} fill="white" className="ml-0.5" />}
+              {isPlaying ? <Pause size={14} fill="white" /> : <Play size={14} fill="white" className="ml-0.5" />}
             </button>
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 onNext();
               }}
-              className="p-1 text-zinc-500 hover:text-zinc-900 transition-colors cursor-pointer"
+              className="p-1.5 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg transition-all cursor-pointer active:scale-90"
             >
-              <SkipForward size={14} />
+              <SkipForward size={16} />
             </button>
-            <div className="w-[1px] h-4 bg-zinc-200" />
+            <div className="w-[1px] h-5 bg-zinc-200 mx-0.5" />
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 setIsExpanded(true);
               }}
-              className="p-1 text-[#1db954] hover:text-[#20cf5d] transition-colors cursor-pointer"
+              className="p-1.5 text-[#1db954] hover:bg-[#1db954]/10 rounded-lg transition-all cursor-pointer"
               title="Expand player card"
             >
-              <Maximize2 size={13} />
+              <Maximize2 size={16} />
             </button>
           </div>
 
-          {/* Thin Progress Slider on the edge */}
-          <div className="absolute bottom-0 left-0 w-full h-[2px] bg-zinc-100 overflow-hidden">
+          {/* Thin Progress Slider on the edge - stylized rounded top border */}
+          <div className="absolute bottom-0 left-0 w-full h-[3px] bg-zinc-100 overflow-hidden">
             <div
-              className="h-full bg-[#1db954]"
+              className="h-full bg-gradient-to-r from-[#1db954] to-[#20cf5d]"
               style={{ width: `${percent}%` }}
             />
           </div>
