@@ -662,7 +662,7 @@ export default function App() {
 
         {/* Content Viewer viewport */}
         <main className="flex-1 overflow-hidden px-4 relative z-10 animate-fade-in flex flex-col">
-          <div className="max-w-7xl mx-auto space-y-6 w-full flex-1 flex flex-col min-h-0 pb-20">
+          <div className="max-w-7xl mx-auto space-y-6 w-full flex-1 flex flex-col min-h-0 pb-[84px]">
             
             {/* Visualizer canvas floating header */}
             {showVisualizer && (
