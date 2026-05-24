@@ -63,32 +63,6 @@ export default function BottomPlayer({
   const progressBarRefMin = React.useRef<HTMLDivElement>(null);
   const progressBarRefExp = React.useRef<HTMLDivElement>(null);
 
-  if (!currentTrack) {
-    return null; // Don't render player at all when there is no playing track
-  }
-
-  const formatTime = (secs: number) => {
-    if (isNaN(secs)) return "0:00";
-    const minutes = Math.floor(secs / 60);
-    const seconds = Math.floor(secs % 60);
-    return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
-  };
-
-  const currentPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
-  const displayPercent = isDragging ? dragPercent * 100 : currentPercent;
-
-  const handleStartDragging = (e: React.MouseEvent | React.TouchEvent, ref: React.RefObject<HTMLDivElement>) => {
-    e.stopPropagation();
-    if (!ref.current) return;
-    
-    const rect = ref.current.getBoundingClientRect();
-    const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
-    const progress = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-    
-    setIsDragging(true);
-    setDragPercent(progress);
-  };
-
   React.useEffect(() => {
     if (!isDragging) return;
 
@@ -119,6 +93,32 @@ export default function BottomPlayer({
       window.removeEventListener('touchend', handleMouseUp);
     };
   }, [isDragging, dragPercent, duration, onSeek, isExpanded]);
+
+  if (!currentTrack) {
+    return null; // Don't render player at all when there is no playing track
+  }
+
+  const formatTime = (secs: number) => {
+    if (isNaN(secs)) return "0:00";
+    const minutes = Math.floor(secs / 60);
+    const seconds = Math.floor(secs % 60);
+    return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
+  };
+
+  const currentPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
+  const displayPercent = isDragging ? dragPercent * 100 : currentPercent;
+
+  const handleStartDragging = (e: React.MouseEvent | React.TouchEvent, ref: React.RefObject<HTMLDivElement>) => {
+    e.stopPropagation();
+    if (!ref.current) return;
+    
+    const rect = ref.current.getBoundingClientRect();
+    const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+    const progress = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    
+    setIsDragging(true);
+    setDragPercent(progress);
+  };
 
   return (
     <AnimatePresence>
