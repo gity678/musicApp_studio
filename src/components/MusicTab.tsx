@@ -71,7 +71,7 @@ export default function MusicTab({
           {/* Table List of tracks */}
           <div className="flex-1 bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-sm flex flex-col min-h-0">
             {filteredTracks.length > 0 ? (
-              <div className="flex-1 overflow-y-auto no-scrollbar divide-y divide-zinc-100">
+              <div className="flex-1 overflow-y-auto no-scrollbar divide-y divide-zinc-100 dynamic-bottom-spacing">
                 {filteredTracks.map((track, idx) => {
                   const isCurrent = currentTrack?.id === track.id;
                   return (

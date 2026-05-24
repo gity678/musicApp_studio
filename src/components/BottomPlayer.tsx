@@ -34,6 +34,7 @@ interface BottomPlayerProps {
   setShowVisualizer: (val: boolean) => void;
   isExpanded: boolean;
   setIsExpanded: (val: boolean) => void;
+  onHeightChange: (height: number) => void;
 }
 
 export default function BottomPlayer({
@@ -57,6 +58,7 @@ export default function BottomPlayer({
   setShowVisualizer,
   isExpanded,
   setIsExpanded,
+  onHeightChange,
 }: BottomPlayerProps) {
   const isRTL = lang === "ar";
   const t = translations[lang];
@@ -65,6 +67,27 @@ export default function BottomPlayer({
 
   const progressBarRefMin = React.useRef<HTMLDivElement>(null);
   const progressBarRefExp = React.useRef<HTMLDivElement>(null);
+
+  const previousNodeRef = React.useRef<HTMLDivElement | null>(null);
+
+  const playerRef = React.useCallback(
+    (node: HTMLDivElement | null) => {
+      if (node !== null) {
+        const handleResize = () => {
+          const height = node.getBoundingClientRect().height;
+          if (height > 0) {
+            onHeightChange(height);
+          }
+        };
+        
+        handleResize();
+        const observer = new ResizeObserver(handleResize);
+        observer.observe(node);
+        (node as any)._observer = observer;
+      }
+    },
+    [onHeightChange]
+  );
 
   React.useEffect(() => {
     if (!isDragging) return;
@@ -129,6 +152,7 @@ export default function BottomPlayer({
         /* MINIMIZED MINIMALIST FLOATING CONTAINER - Sits snug at bottom of screen */
         <motion.div
           key="minimized-player"
+          ref={playerRef}
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 50 }}
@@ -223,6 +247,7 @@ export default function BottomPlayer({
         /* EXPANDED FULL SYSTEM CARD PLAYER - FLOATS ON SCREEN */
         <motion.div
           key="expanded-player"
+          ref={playerRef}
           initial={{ opacity: 0, y: 60, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 60, scale: 0.95 }}

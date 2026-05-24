@@ -1,1 +1,16 @@
 @import "tailwindcss";
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  /* Robust spacing that handles the player height dynamically */
+  .dynamic-bottom-spacing {
+    padding-bottom: calc(var(--player-height, 0px) + 12px) !important;
+  }
+}
