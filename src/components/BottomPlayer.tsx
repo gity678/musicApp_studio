@@ -89,7 +89,7 @@ export default function BottomPlayer({
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 50 }}
           onClick={() => setIsExpanded(true)}
-          className="fixed bottom-0 left-1/2 -translate-x-1/2 w-[calc(100%-0.75rem)] sm:w-[calc(100%-1.5rem)] max-w-sm md:max-w-md bg-white/95 border border-zinc-200 border-b-0 p-3.5 rounded-t-[2.25rem] shadow-[0_-12px_40px_rgba(0,0,0,0.12)] z-50 flex items-center justify-between gap-3 backdrop-blur-2xl shrink-0 select-none cursor-pointer hover:bg-zinc-50 transition-all group"
+          className="fixed bottom-1 left-1/2 -translate-x-1/2 w-[calc(100%-1rem)] sm:w-[calc(100%-2rem)] max-w-sm md:max-w-md bg-white/95 border border-zinc-200 p-3.5 rounded-[1.75rem] shadow-[0_10px_40px_rgba(0,0,0,0.12)] z-50 flex items-center justify-between gap-3 backdrop-blur-2xl shrink-0 select-none cursor-pointer hover:bg-zinc-50 transition-all group"
         >
           {/* Cover and Name details */}
           <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -157,10 +157,10 @@ export default function BottomPlayer({
             </button>
           </div>
 
-          {/* Thin Progress Slider on the edge - stylized rounded top border */}
-          <div className="absolute bottom-0 left-0 w-full h-[3px] bg-zinc-100 overflow-hidden">
+          {/* Thin Progress Slider on the edge - stylized rounded bottom border */}
+          <div className="absolute bottom-0 left-0 w-full h-[3px] bg-zinc-100 rounded-b-[1.75rem] overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-[#1db954] to-[#20cf5d]"
+              className="h-full bg-gradient-to-r from-[#1db954] to-[#20cf5d] rounded-b-[1.75rem]"
               style={{ width: `${percent}%` }}
             />
           </div>
