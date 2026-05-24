@@ -206,6 +206,7 @@ export default function BottomPlayer({
             className="w-full h-2 flex items-center cursor-pointer group/progress touch-none" 
             onMouseDown={(e) => handleStartDragging(e, progressBarRefMin)}
             onTouchStart={(e) => handleStartDragging(e, progressBarRefMin)}
+            onClick={(e) => e.stopPropagation()}
           >
             <div className="w-full h-1 bg-zinc-100/80 rounded-full overflow-hidden transition-all group-hover/progress:h-1.5">
               <div
