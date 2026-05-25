@@ -117,29 +117,64 @@ export default function App() {
         
         // 1. Load Tracks
         let songs: any[] = [];
-        try {
-          const res = await fetch(`/api/worker/songs?workerUrl=${encodeURIComponent(workerUrl.trim())}`);
-          if (res.ok) {
-            const data = await res.json();
-            songs = Array.isArray(data) ? data : (data.songs || []);
+        const tryFetchSongs = async () => {
+          // Attempt 1: Local Proxy
+          try {
+            const res = await fetch(`/api/worker/songs?workerUrl=${encodeURIComponent(workerUrl.trim())}`);
+            if (res.ok) {
+              const data = await res.json();
+              return Array.isArray(data) ? data : (data.songs || []);
+            }
+          } catch (e) {
+            console.warn("Proxy songs fetch failed", e);
           }
-        } catch (e) {
-          console.warn("Proxy songs fetch failed", e);
-        }
+
+          // Attempt 2: Direct Fetch
+          try {
+            const res = await fetch(`${cleanUrl}/songs`);
+            if (res.ok) {
+              const data = await res.json();
+              return Array.isArray(data) ? data : (data.songs || []);
+            }
+          } catch (e) {
+            console.warn("Direct songs fetch failed", e);
+          }
+          return [];
+        };
+
+        songs = await tryFetchSongs();
 
         // 2. Load Radios
         let radios: any[] = [];
-        try {
+        const tryFetchRadios = async () => {
           let radioWorkerUrl = cleanUrl;
           if (cleanUrl.includes("music-worker")) radioWorkerUrl = "https://radio-worker.ma68.workers.dev";
-          const res = await fetch(`/api/worker/radios?workerUrl=${encodeURIComponent(radioWorkerUrl)}`);
-          if (res.ok) {
-            const data = await res.json();
-            radios = Array.isArray(data) ? data : [];
+          
+          // Attempt 1: Local Proxy
+          try {
+            const res = await fetch(`/api/worker/radios?workerUrl=${encodeURIComponent(radioWorkerUrl)}`);
+            if (res.ok) {
+              const data = await res.json();
+              return Array.isArray(data) ? data : [];
+            }
+          } catch (e) {
+            console.warn("Proxy radios fetch failed", e);
           }
-        } catch (e) {
-          console.warn("Proxy radios fetch failed", e);
-        }
+
+          // Attempt 2: Direct Fetch
+          try {
+            const res = await fetch(`${radioWorkerUrl}/radios`);
+            if (res.ok) {
+              const data = await res.json();
+              return Array.isArray(data) ? data : [];
+            }
+          } catch (e) {
+            console.warn("Direct radios fetch failed", e);
+          }
+          return [];
+        };
+
+        radios = await tryFetchRadios();
 
         return { songs, radios };
       };
