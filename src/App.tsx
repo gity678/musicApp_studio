@@ -817,7 +817,7 @@ export default function App() {
         {/* Content Viewer viewport */}
         <main className="flex-1 overflow-hidden px-2.5 sm:px-5 relative z-10 animate-fade-in flex flex-col">
           <div 
-            className="max-w-sm md:max-w-md mx-auto space-y-4 w-full flex-1 flex flex-col min-h-0 transition-all duration-300"
+            className="max-w-md md:max-w-lg mx-auto space-y-4 w-full flex-1 flex flex-col min-h-0 overflow-y-auto no-scrollbar"
             style={{ 
               paddingBottom: currentTrack 
                 ? `${playerHeight + (isPlayerExpanded ? 4 : -2)}px` 
@@ -831,13 +831,11 @@ export default function App() {
             )}
 
             {activeTab === "home" && (
-              <div className="flex-1 overflow-y-auto no-scrollbar">
-                <HomeTab
-                  lang={lang}
-                  translations={translations}
-                  setActiveTab={setActiveTab}
-                />
-              </div>
+              <HomeTab
+                lang={lang}
+                translations={translations}
+                setActiveTab={setActiveTab}
+              />
             )}
 
             {activeTab === "music" && (
@@ -868,23 +866,21 @@ export default function App() {
             )}
 
             {activeTab === "upload" && (
-              <div className="flex-1 overflow-y-auto no-scrollbar">
-                <UploadTab
-                  customTracks={customTracks}
-                  onAddCustomTrack={handleAddCustomTrack}
-                  onDeleteCustomTrack={handleDeleteCustomTrack}
-                  onSelectTrack={handleSelectTrack}
-                  currentTrack={currentTrack}
-                  lang={lang}
-                  translations={translations}
-                  workerUrl={workerUrl}
-                  setWorkerUrl={setWorkerUrl}
-                  workerTracks={workerTracks}
-                  isWorkerLoading={isWorkerLoading}
-                  onReloadWorkerSongs={reloadWorkerSongs}
-                  workerError={workerError}
-                />
-              </div>
+              <UploadTab
+                customTracks={customTracks}
+                onAddCustomTrack={handleAddCustomTrack}
+                onDeleteCustomTrack={handleDeleteCustomTrack}
+                onSelectTrack={handleSelectTrack}
+                currentTrack={currentTrack}
+                lang={lang}
+                translations={translations}
+                workerUrl={workerUrl}
+                setWorkerUrl={setWorkerUrl}
+                workerTracks={workerTracks}
+                isWorkerLoading={isWorkerLoading}
+                onReloadWorkerSongs={reloadWorkerSongs}
+                workerError={workerError}
+              />
             )}
 
             {activeTab === "add_radio" && (
@@ -892,17 +888,15 @@ export default function App() {
             )}
 
             {activeTab === "youtube" && (
-              <div className="flex-1 overflow-y-auto no-scrollbar">
-                <YoutubeTab
-                  lang={lang}
-                  translations={translations}
-                  onPlayYoutube={handlePlayYoutube}
-                  savedYoutubeTracks={savedYoutubeTracks}
-                  onAddYoutubeToCollection={handleAddYoutubeToCollection}
-                  onRemoveYoutubeFromCollection={handleRemoveYoutubeFromCollection}
-                  workerUrl={workerUrl}
-                />
-              </div>
+              <YoutubeTab
+                lang={lang}
+                translations={translations}
+                onPlayYoutube={handlePlayYoutube}
+                savedYoutubeTracks={savedYoutubeTracks}
+                onAddYoutubeToCollection={handleAddYoutubeToCollection}
+                onRemoveYoutubeFromCollection={handleRemoveYoutubeFromCollection}
+                workerUrl={workerUrl}
+              />
             )}
           </div>
         </main>

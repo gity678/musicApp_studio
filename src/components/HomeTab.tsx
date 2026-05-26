@@ -44,12 +44,12 @@ export default function HomeTab({
 
 
   return (
-    <div className="space-y-4 py-2 px-4 md:px-8 max-w-lg mx-auto" style={{ direction: isRTL ? "rtl" : "ltr" }}>
+    <div className="space-y-4 py-4 px-4 md:px-8 max-w-lg mx-auto" style={{ direction: isRTL ? "rtl" : "ltr" }}>
       
-      {/* Hero Welcome Section - Balanced Mobile Design */}
+      {/* Hero Welcome Section - Dynamic Mobile Header */}
       <section className="relative overflow-hidden group">
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/15 via-zinc-950 to-black rounded-2xl -z-10" />
-        <div className="p-5 md:p-7 space-y-3">
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/15 via-zinc-950 to-black rounded-3xl -z-10" />
+        <div className="p-8 md:p-10 !py-6 space-y-3">
           <div className="space-y-1">
             <motion.h1 
               initial={{ opacity: 0, y: 15 }}
@@ -62,7 +62,7 @@ export default function HomeTab({
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="text-zinc-400 text-xs md:text-sm font-medium leading-relaxed max-w-[200px]"
+              className="text-zinc-400 text-xs md:text-sm font-medium leading-relaxed max-w-[240px]"
             >
               {isRTL 
                 ? "ابدأ رحلتك الصوتية اليوم واستكشف عالم الموسيقى."
@@ -74,18 +74,18 @@ export default function HomeTab({
              initial={{ opacity: 0 }}
              animate={{ opacity: 1 }}
              transition={{ delay: 0.2 }}
-             className="flex gap-2.5"
+             className="flex gap-3"
           >
             <button 
               onClick={() => setActiveTab("music")}
-              className="bg-[#1db954] text-black px-5 py-2 rounded-full font-black text-[11px] hover:bg-[#1ed760] transition-colors shadow-lg shadow-emerald-500/10 active:scale-95 flex items-center gap-1.5 cursor-pointer"
+              className="bg-[#1db954] text-black px-6 py-2 rounded-full font-black text-[11px] hover:bg-[#1ed760] transition-colors shadow-lg shadow-emerald-500/10 active:scale-95 flex items-center gap-1.5 cursor-pointer"
             >
               <Play size={12} fill="currentColor" />
               <span>{isRTL ? "ابدأ" : "Play"}</span>
             </button>
             <button 
               onClick={() => setActiveTab("upload")}
-              className="bg-white/5 text-white border border-white/10 px-5 py-2 rounded-full font-black text-[11px] hover:bg-white/10 transition-colors active:scale-95 flex items-center gap-1.5 cursor-pointer backdrop-blur-sm"
+              className="bg-white/5 text-white border border-white/10 px-6 py-2 rounded-full font-black text-[11px] hover:bg-white/10 transition-colors active:scale-95 flex items-center gap-1.5 cursor-pointer backdrop-blur-sm"
             >
               <Plus size={12} />
               <span>{isRTL ? "إضافة" : "Add"}</span>
@@ -94,20 +94,20 @@ export default function HomeTab({
         </div>
         
         {/* Subtle Decorative Icon */}
-        <div className="absolute top-0 right-0 p-5 opacity-10 pointer-events-none">
-          <Music size={56} className="text-white transform rotate-12" />
+        <div className="absolute top-0 right-0 p-6 opacity-10 pointer-events-none">
+          <Music size={80} className="text-white transform rotate-12" />
         </div>
       </section>
 
       {/* Categories - Professional App List */}
-      <section className="space-y-3">
-        <div className="flex items-center justify-between px-0.5">
+      <section className="space-y-2">
+        <div className="flex items-center justify-between px-1">
           <h2 className="text-white text-[9px] font-black tracking-[0.25em] uppercase opacity-40">
             {isRTL ? "الأقسام" : "Categories"}
           </h2>
         </div>
         
-        <div className="grid grid-cols-1 gap-3">
+        <div className="grid grid-cols-1 gap-2.5">
           {cards.map((card, idx) => (
             <motion.div
               key={card.id}
@@ -115,7 +115,7 @@ export default function HomeTab({
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: idx * 0.1 }}
               onClick={() => setActiveTab(card.id)}
-              className={`relative bg-gradient-to-r ${card.color} border ${card.borderColor} rounded-xl p-4 cursor-pointer group hover:border-white/20 transition-all active:scale-[0.98] flex items-center justify-between shadow-lg`}
+              className={`relative bg-gradient-to-r ${card.color} border ${card.borderColor} rounded-xl px-6 py-4 cursor-pointer group hover:border-white/20 transition-all active:scale-[0.98] flex items-center justify-between shadow-lg`}
             >
               <div className="flex items-center gap-4">
                 <div className="p-2.5 bg-black/40 rounded-lg group-hover:scale-110 transition-transform shrink-0 border border-white/5">
