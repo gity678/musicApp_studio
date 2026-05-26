@@ -4,8 +4,8 @@ import { Music, Radio, Youtube, Sparkles, Menu, X, Disc, Home, UploadCloud, Plus
 interface SidebarProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
-  lang: "en";
-  setLang: (lang: "en") => void;
+  lang: "en" | "ar";
+  setLang: (lang: "en" | "ar") => void;
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
   translations: any;
@@ -20,7 +20,7 @@ export default function Sidebar({
   setIsOpen,
   translations,
 }: SidebarProps) {
-  const isRTL = false;
+  const isRTL = lang === "ar";
   const t = translations[lang];
 
   const menuItems = [
@@ -33,11 +33,11 @@ export default function Sidebar({
   ];
 
   const navContent = (
-    <div className="flex flex-col h-full bg-white text-zinc-800 border-r border-zinc-200 w-64 p-6 select-none justify-between">
+    <div className={`flex flex-col h-full bg-white text-zinc-800 border-r border-zinc-200 w-64 p-6 select-none justify-between ${isRTL ? "text-right" : "text-left"}`}>
       <div className="space-y-8">
         {/* Brand Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className={`flex items-center justify-between ${isRTL ? "flex-row-reverse" : "flex-row"}`}>
+          <div className={`flex items-center gap-3 ${isRTL ? "flex-row-reverse" : "flex-row"}`}>
             <div className="p-2 bg-[#1db954] rounded-full text-white shadow-[0_4px_12px_rgba(29,185,84,0.3)] animate-pulse">
               <Disc size={22} className="animate-spin [animation-duration:6s]" />
             </div>
@@ -70,7 +70,7 @@ export default function Sidebar({
                   isActive
                     ? "bg-[#1db954]/10 text-[#1db954] border border-[#1db954]/20 shadow-sm"
                     : "text-zinc-500 hover:text-zinc-950 hover:bg-zinc-100 border border-transparent"
-                }`}
+                } ${isRTL ? "flex-row-reverse" : "flex-row"}`}
               >
                 {isActive && (
                   <motion.div
@@ -94,8 +94,17 @@ export default function Sidebar({
         </div>
       </div>
 
-      {/* Footer copyright block */}
-      <div className="pt-6 border-t border-zinc-200">
+      {/* Footer / Settings Section */}
+      <div className="pt-6 border-t border-zinc-200 space-y-4">
+        {/* Language Toggle */}
+        <button
+          onClick={() => setLang(lang === "en" ? "ar" : "en")}
+          className="w-full flex items-center justify-between px-4 py-2 rounded-lg bg-zinc-50 hover:bg-zinc-100 text-[10px] font-bold text-zinc-600 transition-colors uppercase tracking-widest border border-zinc-100"
+        >
+          <span>{lang === "en" ? "العربية" : "English"}</span>
+          <Disc size={12} className="text-[#1db954]" />
+        </button>
+
         <div className="px-4 text-center">
           <p className="font-mono text-[9px] text-zinc-400 uppercase tracking-widest">
             © {new Date().getFullYear()} {t.appName} Client

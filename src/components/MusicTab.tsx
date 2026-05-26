@@ -122,7 +122,7 @@ interface MusicTabProps {
   currentTrack: Track | null;
   isPlaying: boolean;
   onSelectTrack: (track: Track) => void;
-  lang: "en";
+  lang: "en" | "ar";
   translations: any;
   customTracks: Track[];
   searchTerm: string;
@@ -139,16 +139,18 @@ export default function MusicTab({
 }: MusicTabProps) {
   const t = translations[lang];
 
-  const allTracks = [...tracks, ...customTracks];
+  const allTracks = [...(tracks || []), ...(customTracks || [])];
 
   // Filter tracks only based on the global top-bar searchTerm (title & artist)
-  const filteredTracks = allTracks.filter((track) => {
-    const term = searchTerm.toLowerCase().trim();
+  const filteredTracks = (allTracks || []).filter((track) => {
+    if (!track) return false;
+    const term = (searchTerm || "").toLowerCase().trim();
     if (!term) return true;
-    return (
-      track.title.toLowerCase().includes(term) ||
-      track.artist.toLowerCase().includes(term)
-    );
+    
+    const title = (track.title || "").toLowerCase();
+    const artist = (track.artist || "").toLowerCase();
+    
+    return title.includes(term) || artist.includes(term);
   });
 
   return (
@@ -182,24 +184,27 @@ export default function MusicTab({
                         </div>
                       </div>
 
-                      {/* 2. Cover Image Container (Fixed Width) */}
-                      <div className="w-8 h-8 shrink-0 flex items-center justify-center">
+                      {/* 2. Cover Image Container */}
+                      <div className="w-12 h-12 shrink-0 flex items-center justify-center">
                         <img
                           src={track.coverUrl}
                           alt={track.title}
-                          className="w-full h-full rounded-lg object-cover shadow-sm border border-zinc-100 group-hover:scale-105 transition-transform"
+                          className="w-full h-full rounded-xl object-cover shadow-sm border border-zinc-100 group-hover:scale-105 transition-transform"
                         />
                       </div>
 
-                      {/* 3. Title Container (Flexible) */}
-                      <div className="flex-1 min-w-0 px-2">
+                      {/* 3. Title & Artist Container */}
+                      <div className="flex-1 min-w-0 px-3">
                         <h4
-                          className={`font-semibold text-[11px] truncate transition-colors ${
+                          className={`font-semibold text-[13px] truncate transition-colors ${
                             isCurrent ? "text-[#1db954] font-bold" : "text-zinc-800 group-hover:text-[#1db954]"
                           }`}
                         >
                           {track.title}
                         </h4>
+                        <p className="text-[10px] text-zinc-500 truncate mt-0.5">
+                          {track.artist}
+                        </p>
                       </div>
 
                       {/* 4. Duration Container (Fixed Width) */}
@@ -236,6 +241,7 @@ export default function MusicTab({
                 </div>
                 <div>
                   <h4 className="font-bold text-sm text-[#1db954]">{currentTrack.title}</h4>
+                  <p className="text-xs text-zinc-500 mt-1">{currentTrack.artist}</p>
                 </div>
                 <div className="text-[11px] text-zinc-600 leading-relaxed italic bg-zinc-50 p-3 rounded-xl border border-zinc-100 text-left">
                   {"» Deep, atmospheric harmony engineered carefully with standard frequencies for mindfulness and perfect cognitive retention. «"}

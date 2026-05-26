@@ -1,37 +1,6 @@
 import { Track, RadioStation } from "./types";
 
-export const CURATED_TRACKS: Track[] = [
-  {
-    id: "curated-1",
-    title: "Celestial Serenity",
-    artist: "Ambient Voyager",
-    album: "Deep Sleep Vol. 1",
-    coverUrl: "https://images.unsplash.com/photo-1534067783941-51c9c23ecefd?w=400&auto=format&fit=crop&q=80",
-    audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
-    duration: "6:12",
-    genre: "Ambient"
-  },
-  {
-    id: "curated-2",
-    title: "Desert Moon",
-    artist: "Nights of Riyadh",
-    album: "Sands of Time",
-    coverUrl: "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?w=400&auto=format&fit=crop&q=80",
-    audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
-    duration: "7:04",
-    genre: "Ethno"
-  },
-  {
-    id: "curated-3",
-    title: "The Midnight Sun",
-    artist: "Nordic Dreamer",
-    album: "Northern Lights",
-    coverUrl: "https://images.unsplash.com/photo-1547826039-bfc35e0f1ea8?w=400&auto=format&fit=crop&q=80",
-    audioUrl: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
-    duration: "4:52",
-    genre: "Chillout"
-  }
-];
+export const CURATED_TRACKS: Track[] = [];
 
 export const CURATED_STATIONS: RadioStation[] = [
   {

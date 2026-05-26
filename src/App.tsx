@@ -28,8 +28,15 @@ export default function App() {
   useEffect(() => {
     sessionStorage.setItem("spotifyy_active_tab", activeTab);
   }, [activeTab]);
-  const lang = "en";
-  const setLang = () => {};
+  const [lang, setLang] = useState<"en" | "ar">(() => {
+    const saved = localStorage.getItem("spotifyy_lang");
+    return (saved as "en" | "ar") || "en";
+  });
+
+  useEffect(() => {
+    localStorage.setItem("spotifyy_lang", lang);
+  }, [lang]);
+
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
 
   // Core Playback State
@@ -182,17 +189,17 @@ export default function App() {
       fetchSongsAndRadios()
         .then(({ songs, radios }) => {
           // Map worker songs into unified Track format
-          const mappedSongs: Track[] = songs.map((song: any) => ({
+          const mappedSongs: Track[] = (songs || []).map((song: any) => ({
             id: `worker-${song.id}`,
-            title: song.title,
-            artist: song.source === "cloudinary" ? "Cloudinary Storage" : "Backblaze B2",
+            title: song.title || "Untitled",
+            artist: song.artist || (song.source === "cloudinary" ? "Cloudinary Storage" : (song.source === "b2" ? "Backblaze B2" : "Worker Audio")),
             album: song.source ? song.source.toUpperCase() : "CLOUD",
-            coverUrl: song.source === "cloudinary"
+            coverUrl: song.thumb || (song.source === "cloudinary"
               ? "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&auto=format&fit=crop&q=80"
-              : "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=400&auto=format&fit=crop&q=80",
-            audioUrl: song.url,
+              : "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=400&auto=format&fit=crop&q=80"),
+            audioUrl: song.url || "",
             duration: "...",
-            genre: song.source === "cloudinary" ? "Cloudinary" : "Backblaze B2",
+            genre: song.source === "cloudinary" ? "Cloudinary" : (song.source === "b2" ? "Backblaze B2" : "Remote Feed"),
           }));
           setWorkerTracks(mappedSongs);
 
@@ -289,17 +296,17 @@ export default function App() {
 
     fetchSongs()
       .then((songs) => {
-        const mapped: Track[] = songs.map((song: any) => ({
+        const mapped: Track[] = (songs || []).map((song: any) => ({
           id: `worker-${song.id}`,
-          title: song.title,
-          artist: song.source === "cloudinary" ? "Cloudinary Storage" : "Backblaze B2",
+          title: song.title || "Untitled",
+          artist: song.artist || (song.source === "cloudinary" ? "Cloudinary Storage" : (song.source === "b2" ? "Backblaze B2" : "Worker Audio")),
           album: song.source ? song.source.toUpperCase() : "CLOUD",
-          coverUrl: song.source === "cloudinary"
+          coverUrl: song.thumb || (song.source === "cloudinary"
             ? "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&auto=format&fit=crop&q=80"
-            : "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=400&auto=format&fit=crop&q=80",
-          audioUrl: song.url,
+            : "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=400&auto=format&fit=crop&q=80"),
+          audioUrl: song.url || "",
           duration: "...",
-          genre: song.source === "cloudinary" ? "Cloudinary" : "Backblaze B2",
+          genre: song.source === "cloudinary" ? "Cloudinary" : (song.source === "b2" ? "Backblaze B2" : "Remote Feed"),
         }));
         setWorkerTracks(mapped);
       })
@@ -721,7 +728,7 @@ export default function App() {
     setCustomTracks((prev) => [...prev, placeholder]);
   };
 
-  const isRTL = false;
+  const isRTL = lang === "ar";
   const t = translations[lang];
 
   const combinedStations = [...CURATED_STATIONS, ...customStations, ...workerRadios];

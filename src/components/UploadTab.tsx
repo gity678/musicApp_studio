@@ -5,6 +5,7 @@ import {
   AlertCircle, RefreshCw, Search, Video, X, ExternalLink
 } from "lucide-react";
 import { Track } from "../types";
+import ConfirmMetadataModal from "./ConfirmMetadataModal";
 
 interface UploadTabProps {
   customTracks: Track[];
@@ -61,7 +62,29 @@ export default function UploadTab({
   // Beautiful interactive deletion confirm modal
   const [trackToDelete, setTrackToDelete] = useState<Track | null>(null);
 
-  // 1) Action: Send YouTube Link
+  // Metadata Confirmation States
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [pendingVideoId, setPendingVideoId] = useState("");
+  const [pendingRawTitle, setPendingRawTitle] = useState("");
+  const [pendingYoutubeMeta, setPendingYoutubeMeta] = useState({ title: "", artist: "", thumb: "", source: "YouTube" });
+  const [pendingItunesMeta, setPendingItunesMeta] = useState<any>(null);
+
+  // Helper: Search iTunes for rich metadata
+  const fetchItunesMetadata = async (query: string) => {
+    const cleanWorkerUrl = workerUrl.trim().replace(/\/$/, "");
+    try {
+      const res = await fetch(`${cleanWorkerUrl}/itunes?q=${encodeURIComponent(query)}`);
+      if (res.ok) {
+        const data = await res.json();
+        return data; // { title, artist, thumb, source: 'iTunes' }
+      }
+    } catch (e) {
+      console.warn("iTunes search failed", e);
+    }
+    return null;
+  };
+
+  // 1) Action: Send YouTube Link - Stage One (Metadata Search)
   const handleLinkUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!workerUrl.trim()) {
@@ -86,88 +109,124 @@ export default function UploadTab({
 
     setLinkStatus({
       loading: true,
-      msg: isRTL ? "⏳ جاري استرجاع تفاصيل التراك والرفع التلقائي..." : "⏳ Fetching video details & deploying...",
+      msg: isRTL ? "⏳ جاري استرجاع تفاصيل الفيديو..." : "⏳ Fetching video metadata...",
       success: false
     });
 
-    let cleanName = `Youtube_${videoId}`;
     try {
-      // noembed is highly reliable and CORS-safe
-      const oembedRes = await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${videoId}`);
-      const oembedData = await oembedRes.json();
-      if (oembedData && oembedData.title) {
-        cleanName = oembedData.title.replace(/[^a-zA-Z0-9 ]/g, "").replace(/\s+/g, "_");
-      }
-    } catch (e) {
-      console.warn("Title fetch failed, fallback to videoId code", e);
+      // 1. Get YouTube Basic Info (oEmbed)
+      const ytRes = await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${videoId}`);
+      const ytData = await ytRes.json();
+      
+      const rawTitle = ytData.title || `YouTube Video ${videoId}`;
+      const thumb = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+      
+      const ytMeta = {
+        title: rawTitle,
+        artist: ytData.author_name || "YouTube",
+        thumb: thumb,
+        source: "YouTube"
+      };
+
+      // 2. Search for rich iTunes metadata
+      setLinkStatus({
+        loading: true,
+        msg: isRTL ? "⏳ جاري البحث عن بيانات المسار في iTunes..." : "⏳ Searching iTunes for rich metadata...",
+        success: false
+      });
+      
+      const itunesData = await fetchItunesMetadata(rawTitle);
+
+      // 3. Open Confirmation Modal
+      setPendingVideoId(videoId);
+      setPendingRawTitle(rawTitle);
+      setPendingYoutubeMeta(ytMeta);
+      setPendingItunesMeta(itunesData);
+      setIsConfirmOpen(true);
+      
+      setLinkStatus({ loading: false, msg: "", success: false });
+    } catch (err: any) {
+      setLinkStatus({
+        loading: false,
+        msg: isRTL ? "❌ فشل استرجاع البيانات." : `❌ Failed to fetch info: ${err.message}`,
+        success: false
+      });
+    }
+  };
+
+  // 1.5) Final Action: Dispatch confirmed upload
+  const dispatchConfirmedUpload = async (confirmedMeta: { title: string; artist: string; thumb: string }) => {
+    setIsConfirmOpen(false);
+    
+    // Set loading state in the active sub tab
+    if (activeSubTab === "link") {
+      setLinkStatus({ loading: true, msg: isRTL ? "⏳ جاري الإرسال للسيرفر السحابي..." : "⏳ Dispatching to cloud server...", success: false });
+    } else {
+      setSongAddStates(prev => ({ ...prev, [pendingVideoId]: { loading: true } }));
     }
 
+    const cleanName = confirmedMeta.title.replace(/[^a-zA-Z0-9 ]/g, "").replace(/\s+/g, "_");
     const cleanWorkerUrl = workerUrl.trim().replace(/\/$/, "");
+    const videoUrl = `https://www.youtube.com/watch?v=${pendingVideoId}`;
+
     let isSuccess = false;
     let errorMsg = "";
 
-    // Dispatch upload to Cloudflare worker (directly or via express proxy)
+    const payload = {
+      youtube_url: videoUrl,
+      song_name: cleanName,
+      title: confirmedMeta.title,
+      artist: confirmedMeta.artist,
+      thumb: confirmedMeta.thumb
+    };
+
     try {
       const response = await fetch(cleanWorkerUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ youtube_url: ytUrl.trim(), song_name: cleanName })
+        body: JSON.stringify(payload)
       });
 
       if (response.ok) {
         const data = await response.json();
-        if (data.ok || data.success) {
-          isSuccess = true;
-        } else {
-          errorMsg = data.body || data.error || "Worker refused dispatch request.";
-        }
+        if (data.ok || data.success) isSuccess = true;
+        else errorMsg = data.body || data.error;
       } else {
-        errorMsg = `Server response code: ${response.status}`;
+        errorMsg = `Status ${response.status}`;
       }
-    } catch (directErr: any) {
-      console.warn("Direct dispatcher query failed, falling back to backend server proxy: ", directErr);
+    } catch (e: any) {
+      // Fallback to proxy
       try {
         const response = await fetch("/api/worker/upload", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            workerUrl: workerUrl.trim(),
-            youtube_url: ytUrl.trim(),
-            song_name: cleanName
-          })
+          body: JSON.stringify({ workerUrl, ...payload })
         });
-        if (response.ok) {
-          const data = await response.json();
-          if (data.ok || data.success || !data.error) {
-            isSuccess = true;
-          } else {
-            errorMsg = data.error;
-          }
-        }
-      } catch (proxyErr: any) {
-        errorMsg = proxyErr.message || "Failed to reach Cloudflare worker API.";
+        if (response.ok) isSuccess = true;
+      } catch (e2) {
+        errorMsg = "Network error communicating with worker.";
       }
     }
 
     if (isSuccess) {
-      setLinkStatus({
-        loading: false,
-        msg: isRTL 
-          ? "✅ تم الرفع وبدء المعالجة بنجاح! سيتم تنزيل الأغنية وتحميلها سحابياً في بضع ثوانٍ." 
-          : "✅ Dispatched successfully! The automated downloader is transferring your audio now.",
-        success: true
-      });
-      setYtUrl("");
-      // Sync track list automatically in 10s
-      setTimeout(() => {
-        onReloadWorkerSongs();
-      }, 10000);
+      const successMsg = isRTL 
+        ? "✅ تم الإرسال بنجاح! ستبدأ عملية المعالجة قريباً." 
+        : "✅ Dispatched successfully! Processing will begin momentarily.";
+      
+      if (activeSubTab === "link") {
+        setLinkStatus({ loading: false, msg: successMsg, success: true });
+        setYtUrl("");
+      } else {
+        setSongAddStates(prev => ({ ...prev, [pendingVideoId]: { loading: false, success: true } }));
+      }
+      setTimeout(() => onReloadWorkerSongs(), 10000);
     } else {
-      setLinkStatus({
-        loading: false,
-        msg: errorMsg || (isRTL ? "فشل إرسال التراك للـ Worker الخاص بك." : "Dispatched upload request rejected."),
-        success: false
-      });
+      const failMsg = isRTL ? `❌ فشل الرفع: ${errorMsg}` : `❌ Upload failed: ${errorMsg}`;
+      if (activeSubTab === "link") {
+        setLinkStatus({ loading: false, msg: failMsg, success: false });
+      } else {
+        setSongAddStates(prev => ({ ...prev, [pendingVideoId]: { loading: false, error: true } }));
+      }
     }
   };
 
@@ -208,58 +267,28 @@ export default function UploadTab({
     }
   };
 
-  // 3) Action: Dispatch video found in search list
-  const handleAddSongFromSearch = async (videoId: string, title: string) => {
+  // 3) Action: Dispatch video found in search list - Stage One (Metadata search)
+  const handleAddSongFromSearch = async (videoId: string, title: string, channel?: string, thumb?: string) => {
     setSongAddStates(prev => ({ ...prev, [videoId]: { loading: true } }));
 
-    const url = `https://www.youtube.com/watch?v=${videoId}`;
-    const cleanName = title.replace(/[^a-zA-Z0-9 ]/g, "").replace(/\s+/g, "_");
-
-    const cleanWorkerUrl = workerUrl.trim().replace(/\/$/, "");
-    let isSuccess = false;
-
-    // Direct fetch to worker
     try {
-      const response = await fetch(cleanWorkerUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ youtube_url: url, song_name: cleanName })
-      });
-      if (response.ok) {
-        const data = await response.json();
-        if (data.ok || data.success) {
-          isSuccess = true;
-        }
-      }
-    } catch (directErr) {
-      console.warn("Direct song add failed, attempting Proxy fallback...", directErr);
-      try {
-        const response = await fetch("/api/worker/upload", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            workerUrl: workerUrl.trim(),
-            youtube_url: url,
-            song_name: cleanName
-          })
-        });
-        if (response.ok) {
-          const data = await response.json();
-          if (data.ok || data.success || !data.error) {
-            isSuccess = true;
-          }
-        }
-      } catch {
-        isSuccess = false;
-      }
-    }
+      const ytMeta = {
+        title: title,
+        artist: channel || "YouTube",
+        thumb: thumb || `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
+        source: "YouTube"
+      };
 
-    if (isSuccess) {
-      setSongAddStates(prev => ({ ...prev, [videoId]: { loading: false, success: true } }));
-      setTimeout(() => {
-        onReloadWorkerSongs();
-      }, 10000);
-    } else {
+      const itunesData = await fetchItunesMetadata(title);
+
+      setPendingVideoId(videoId);
+      setPendingRawTitle(title);
+      setPendingYoutubeMeta(ytMeta);
+      setPendingItunesMeta(itunesData);
+      setIsConfirmOpen(true);
+      
+      setSongAddStates(prev => ({ ...prev, [videoId]: { loading: false } }));
+    } catch (e) {
       setSongAddStates(prev => ({ ...prev, [videoId]: { loading: false, error: true } }));
     }
   };
@@ -513,7 +542,7 @@ export default function UploadTab({
                           </button>
 
                           <button
-                            onClick={() => handleAddSongFromSearch(v.videoId, v.title)}
+                            onClick={() => handleAddSongFromSearch(v.videoId, v.title, v.author?.title, v.thumbnails?.[0]?.url)}
                             disabled={itemState.loading}
                             className={`px-3 py-1.5 rounded-lg text-[10px] font-bold tracking-tight transition-all cursor-pointer ${
                               itemState.success 
@@ -591,6 +620,16 @@ export default function UploadTab({
         )}
       </AnimatePresence>
 
+      <ConfirmMetadataModal
+        isOpen={isConfirmOpen}
+        onClose={() => setIsConfirmOpen(false)}
+        onConfirm={dispatchConfirmedUpload}
+        videoId={pendingVideoId}
+        rawTitle={pendingRawTitle}
+        youtubeMeta={pendingYoutubeMeta}
+        itunesMeta={pendingItunesMeta}
+        lang={lang}
+      />
     </div>
   );
 }
