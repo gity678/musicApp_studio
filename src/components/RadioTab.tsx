@@ -169,8 +169,8 @@ export default function RadioTab({
   };
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex-1 pb-32">
+    <div className="space-y-4">
+      <div>
         {isLoading ? (
           <div className="flex items-center justify-center py-20 text-zinc-500 animate-pulse text-xs font-mono uppercase tracking-widest">
             {isRTL ? "جاري تحميل المحطات..." : "Synchronizing Radio Frequencies..."}

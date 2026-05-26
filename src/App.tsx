@@ -748,7 +748,7 @@ export default function App() {
       />
 
       {/* RIGHT Core Body container */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden relative">
+      <div className="flex-1 flex flex-col h-full relative">
         {/* Custom Header Navigation */}
         <header className="bg-white/90 border-b border-zinc-200 px-4 py-1.5 z-20 backdrop-blur-md shrink-0">
           <div className="max-w-sm md:max-w-md mx-auto w-full flex items-center justify-between gap-4">
@@ -815,15 +815,16 @@ export default function App() {
         </header>
 
         {/* Content Viewer viewport */}
-        <main className="flex-1 overflow-hidden px-2.5 sm:px-5 relative z-10 animate-fade-in flex flex-col">
+        <main className="flex-1 relative z-10 animate-fade-in flex flex-col min-h-0">
           <div 
-            className="max-w-md md:max-w-lg mx-auto space-y-4 w-full flex-1 flex flex-col min-h-0 overflow-y-auto no-scrollbar"
+            className="w-full flex-1 overflow-y-auto overscroll-contain no-scrollbar"
             style={{ 
               paddingBottom: currentTrack 
-                ? `${playerHeight + (isPlayerExpanded ? 4 : -2)}px` 
-                : '0px' 
+                ? `${playerHeight + (isPlayerExpanded ? 20 : 0)}px` 
+                : '100px' 
             }}
           >
+            <div className="max-w-md md:max-w-lg mx-auto space-y-4 px-2.5 sm:px-5 py-4">
             
             {/* Visualizer canvas floating header */}
             {showVisualizer && (
@@ -898,6 +899,7 @@ export default function App() {
                 workerUrl={workerUrl}
               />
             )}
+            </div>
           </div>
         </main>
 
