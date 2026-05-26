@@ -431,36 +431,36 @@ export default function UploadTab({
                 </div>
               )}
 
-              {/* Embedded YouTube preview player block - Mobile Optimized Sticky View */}
+              {/* Embedded YouTube preview player block - Compact View */}
               {playVideoId && (
                 <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="sticky top-[-21px] z-20 -mx-5 md:mx-0 p-4 bg-white/95 backdrop-blur-md rounded-none md:rounded-2xl border-b md:border border-zinc-200 space-y-3 shadow-xl overflow-hidden"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="z-20 p-3 bg-zinc-50 rounded-2xl border border-zinc-200 space-y-2 shadow-sm overflow-hidden"
                 >
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
-                      <div className="p-1.5 bg-[#1db954]/10 rounded-lg">
-                        <Video size={14} className="text-[#1db954]" />
+                      <div className="p-1.5 bg-[#1db954]/10 rounded-lg shrink-0">
+                        <Video size={12} className="text-[#1db954]" />
                       </div>
                       <div className="min-w-0">
-                        <span className="text-[10px] text-zinc-400 uppercase font-bold tracking-tight block">
-                          {isRTL ? "معاينة الفيديو النشطة" : "Active Preview"}
+                        <span className="text-[9px] text-zinc-400 uppercase font-bold tracking-tight block">
+                          {isRTL ? "معاينة الفيديو" : "Preview"}
                         </span>
-                        <h3 className="text-[11px] font-black text-zinc-800 truncate max-w-[180px] md:max-w-none">
+                        <h3 className="text-[10px] font-black text-zinc-800 truncate">
                           {playVideoTitle}
                         </h3>
                       </div>
                     </div>
                     <button
                       onClick={closeVideoPreview}
-                      className="text-zinc-400 hover:text-zinc-800 p-2 rounded-full hover:bg-zinc-100 transition-colors cursor-pointer"
+                      className="text-zinc-400 hover:text-zinc-800 p-1.5 rounded-full hover:bg-zinc-200/50 transition-colors cursor-pointer"
                     >
-                      <X size={16} />
+                      <X size={14} />
                     </button>
                   </div>
 
-                  <div className="aspect-video w-full rounded-xl overflow-hidden border border-zinc-200 bg-black shadow-inner">
+                  <div className="aspect-video w-full max-w-[280px] mx-auto rounded-xl overflow-hidden border border-zinc-200 bg-black shadow-inner">
                     <iframe
                       src={`https://www.youtube.com/embed/${playVideoId}?autoplay=1`}
                       allow="autoplay; encrypted-media"
@@ -469,24 +469,24 @@ export default function UploadTab({
                     />
                   </div>
 
-                  <div className="flex items-center gap-2 pt-1">
+                  <div className="flex items-center gap-2 pt-0.5">
                     <button
                       onClick={() => handleAddSongFromSearch(playVideoId, playVideoTitle, playVideoChannel, playVideoThumb, playVideoDuration)}
                       disabled={songAddStates[playVideoId]?.loading}
-                      className="flex-1 bg-[#1db954] text-white hover:bg-[#20cf5d] active:scale-[0.98] disabled:opacity-50 py-2.5 rounded-xl text-xs font-black cursor-pointer transition-all shadow-md shadow-[#1db954]/20 flex items-center justify-center gap-2"
+                      className="flex-1 bg-[#1db954] text-white hover:bg-[#20cf5d] active:scale-[0.98] disabled:opacity-50 py-2 rounded-xl text-[10px] font-black cursor-pointer transition-all shadow-md shadow-[#1db954]/20 flex items-center justify-center gap-1.5"
                     >
                       {songAddStates[playVideoId]?.loading 
-                        ? <RefreshCw size={14} className="animate-spin" />
+                        ? <RefreshCw size={12} className="animate-spin" />
                         : songAddStates[playVideoId]?.success 
-                        ? <Check size={14} />
-                        : <UploadCloud size={14} />
+                        ? <Check size={12} />
+                        : <UploadCloud size={12} />
                       }
                       <span>
                         {songAddStates[playVideoId]?.loading 
-                          ? (isRTL ? "جاري الإرسال..." : "Transmitting...") 
+                          ? (isRTL ? "جاري الإرسال..." : "Sending...") 
                           : songAddStates[playVideoId]?.success 
-                          ? (isRTL ? "تم الإضافة!" : "Success!")
-                          : (isRTL ? "تنزيل وإضافة التراك" : "Download & Add")}
+                          ? (isRTL ? "تم بنجاح!" : "Success!")
+                          : (isRTL ? "إرسال للتحميل" : "Send to Download")}
                       </span>
                     </button>
                   </div>
