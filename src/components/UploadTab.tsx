@@ -42,7 +42,7 @@ export default function UploadTab({
   const t = translations[lang];
 
   // Active Tab state inside upload page: 'link' (Upload by Link) or 'search' (Upload by Search)
-  const [activeSubTab, setActiveSubTab] = useState<"link" | "search">("link");
+  const [activeSubTab, setActiveSubTab] = useState<"link" | "search">("search");
 
   // TAB 1: Link Upload States
   const [ytUrl, setYtUrl] = useState("");
@@ -366,18 +366,6 @@ export default function UploadTab({
         {/* Quick Tab switcher Buttons - Light Border Styled */}
         <div className="flex bg-white border border-zinc-200 p-1.5 rounded-xl gap-2 shadow-sm">
           <button
-            onClick={() => setActiveSubTab("link")}
-            className={`flex-1 py-3 px-4 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2 ${
-              activeSubTab === "link"
-                ? "bg-[#1db954] text-white shadow-md shadow-[#1db954]/10"
-                : "bg-transparent text-zinc-500 hover:text-zinc-900"
-            }`}
-          >
-            <ExternalLink size={14} />
-            <span>{isRTL ? "الرفع عن طريق وضع الرابط" : "Upload by Link"}</span>
-          </button>
-          
-          <button
             onClick={() => setActiveSubTab("search")}
             className={`flex-1 py-3 px-4 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2 ${
               activeSubTab === "search"
@@ -388,83 +376,28 @@ export default function UploadTab({
             <Search size={14} />
             <span>{isRTL ? "الرفع عن طريق البحث" : "Upload by Search"}</span>
           </button>
+
+          <button
+            onClick={() => setActiveSubTab("link")}
+            className={`flex-1 py-3 px-4 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2 ${
+              activeSubTab === "link"
+                ? "bg-[#1db954] text-white shadow-md shadow-[#1db954]/10"
+                : "bg-transparent text-zinc-500 hover:text-zinc-900"
+            }`}
+          >
+            <ExternalLink size={14} />
+            <span>{isRTL ? "الرفع عن طريق وضع الرابط" : "Upload by Link"}</span>
+          </button>
         </div>
 
         {/* Interactive Section */}
         <div className="bg-white border border-zinc-200 p-5 md:p-6 rounded-2xl shadow-sm space-y-4">
           
-          {/* PART 1: Upload by YouTube Link */}
-          {activeSubTab === "link" && (
-            <div className="space-y-4">
-              <div className="pb-3 border-b border-zinc-200 flex items-center gap-2">
-                <span className="flex items-center justify-center w-5 h-5 rounded-full bg-[#1db954]/10 text-[#1db954] text-[10px] font-mono font-bold">1</span>
-                <h2 className="font-sans font-bold text-xs md:text-sm text-zinc-800">
-                  {isRTL ? "تحميل تراك يوتيوب عن طريق الرابط المباشر" : "Transfer YouTube Asset by pasting URL"}
-                </h2>
-              </div>
-
-              <form onSubmit={handleLinkUpload} className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-mono uppercase text-zinc-500 font-bold block">
-                    {isRTL ? "ضع رابط فيديو اليوتيوب في هذه الخانة:" : "YouTube Video Url:"}
-                  </label>
-                  <input
-                    type="url"
-                    required
-                    placeholder={isRTL ? "ضع الرابط هنا... (مثال: https://www.youtube.com/watch?v=...)" : "Paste YouTube link here..."}
-                    value={ytUrl}
-                    onChange={(e) => setYtUrl(e.target.value)}
-                    className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-xs text-zinc-800 focus:outline-none focus:border-[#1db954] transition-colors font-mono"
-                  />
-                </div>
-
-                {linkStatus.msg && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className={`p-3.5 rounded-xl text-xs font-semibold flex items-start gap-2 ${
-                      linkStatus.success 
-                        ? "bg-[#1db954]/10 border border-[#1db954]/20 text-[#1db954]" 
-                        : "bg-red-500/10 border border-red-500/20 text-red-500"
-                    }`}
-                  >
-                    <AlertCircle size={14} className="shrink-0 mt-0.5" />
-                    <span className="whitespace-pre-line leading-relaxed">{linkStatus.msg}</span>
-                  </motion.div>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={linkStatus.loading}
-                  className="w-full bg-[#1db954] text-white hover:bg-[#20cf5d] active:scale-[0.98] disabled:bg-zinc-100 disabled:text-zinc-400 disabled:cursor-not-allowed font-black py-3 rounded-xl text-xs transition-with-duration cursor-pointer flex items-center justify-center gap-2 shadow-sm"
-                >
-                  {linkStatus.loading ? (
-                    <RefreshCw size={14} className="animate-spin" />
-                  ) : (
-                    <ArrowUpRight size={14} />
-                  )}
-                  <span>{isRTL ? "تنزيل وإرسال للسيرفر" : "Download & Send to Server"}</span>
-                </button>
-              </form>
-
-              <div className="pt-2 text-center">
-                <a
-                  href="https://github.com/gity678/Spotify/actions"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 text-[10px] text-zinc-400 hover:text-zinc-800 transition-colors"
-                >
-                  <span>{isRTL ? "متابعة تدفق العمل على GitHub ↗" : "Follow workflow on GitHub Actions ↗"}</span>
-                </a>
-              </div>
-            </div>
-          )}
-
-          {/* PART 2: Upload by Searching YouTube */}
+          {/* PART 1: Upload by Searching YouTube */}
           {activeSubTab === "search" && (
             <div className="space-y-4">
               <div className="pb-3 border-b border-zinc-200 flex items-center gap-2">
-                <span className="flex items-center justify-center w-5 h-5 rounded-full bg-[#1db954]/10 text-[#1db954] text-[10px] font-mono font-bold">2</span>
+                <span className="flex items-center justify-center w-5 h-5 rounded-full bg-[#1db954]/10 text-[#1db954] text-[10px] font-mono font-bold">1</span>
                 <h2 className="font-sans font-bold text-xs md:text-sm text-zinc-800">
                   {isRTL ? "البحث عن فيديو يوتيوب وتحميله" : "Interactive Music Search & Host Finder"}
                 </h2>
@@ -498,27 +431,36 @@ export default function UploadTab({
                 </div>
               )}
 
-              {/* Embedded YouTube preview player block */}
+              {/* Embedded YouTube preview player block - Mobile Optimized Sticky View */}
               {playVideoId && (
                 <motion.div
-                  initial={{ opacity: 0, scale: 0.98 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="p-3 bg-zinc-50 rounded-xl border border-zinc-200 space-y-2.5"
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="sticky top-[-21px] z-20 -mx-5 md:mx-0 p-4 bg-white/95 backdrop-blur-md rounded-none md:rounded-2xl border-b md:border border-zinc-200 space-y-3 shadow-xl overflow-hidden"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] text-zinc-500 flex items-center gap-1 font-sans">
-                      <Video size={12} className="text-[#1db954]" />
-                      <span>{isRTL ? "معاينة الفيديو النشطة:" : "Active Video Preview:"} <strong className="text-zinc-800 font-semibold">{playVideoTitle}</strong></span>
-                    </span>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="p-1.5 bg-[#1db954]/10 rounded-lg">
+                        <Video size={14} className="text-[#1db954]" />
+                      </div>
+                      <div className="min-w-0">
+                        <span className="text-[10px] text-zinc-400 uppercase font-bold tracking-tight block">
+                          {isRTL ? "معاينة الفيديو النشطة" : "Active Preview"}
+                        </span>
+                        <h3 className="text-[11px] font-black text-zinc-800 truncate max-w-[180px] md:max-w-none">
+                          {playVideoTitle}
+                        </h3>
+                      </div>
+                    </div>
                     <button
                       onClick={closeVideoPreview}
-                      className="text-zinc-400 hover:text-zinc-800 p-1 rounded-md hover:bg-zinc-100 cursor-pointer"
+                      className="text-zinc-400 hover:text-zinc-800 p-2 rounded-full hover:bg-zinc-100 transition-colors cursor-pointer"
                     >
-                      <X size={14} />
+                      <X size={16} />
                     </button>
                   </div>
 
-                  <div className="aspect-video w-full rounded-lg overflow-hidden border border-zinc-200 bg-black">
+                  <div className="aspect-video w-full rounded-xl overflow-hidden border border-zinc-200 bg-black shadow-inner">
                     <iframe
                       src={`https://www.youtube.com/embed/${playVideoId}?autoplay=1`}
                       allow="autoplay; encrypted-media"
@@ -527,19 +469,25 @@ export default function UploadTab({
                     />
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 pt-1">
                     <button
                       onClick={() => handleAddSongFromSearch(playVideoId, playVideoTitle, playVideoChannel, playVideoThumb, playVideoDuration)}
                       disabled={songAddStates[playVideoId]?.loading}
-                      className="flex-1 bg-[#1db954] text-white hover:bg-[#20cf5d] disabled:opacity-50 py-2 rounded-lg text-xs font-black cursor-pointer transition-all"
+                      className="flex-1 bg-[#1db954] text-white hover:bg-[#20cf5d] active:scale-[0.98] disabled:opacity-50 py-2.5 rounded-xl text-xs font-black cursor-pointer transition-all shadow-md shadow-[#1db954]/20 flex items-center justify-center gap-2"
                     >
                       {songAddStates[playVideoId]?.loading 
-                        ? (isRTL ? "⏳ جاري إرسال الطلب..." : "⏳ Transmitting request...") 
+                        ? <RefreshCw size={14} className="animate-spin" />
                         : songAddStates[playVideoId]?.success 
-                        ? (isRTL ? "✅ تم إضافة الأغنية للتحميل!" : "✅ Song Dispatched!")
-                        : songAddStates[playVideoId]?.error 
-                        ? (isRTL ? "❌ فشل الرفع" : "❌ Process Failed")
-                        : (isRTL ? "تنزيل وإضافة التراك لمعرض السحابة" : "Download & Save Track")}
+                        ? <Check size={14} />
+                        : <UploadCloud size={14} />
+                      }
+                      <span>
+                        {songAddStates[playVideoId]?.loading 
+                          ? (isRTL ? "جاري الإرسال..." : "Transmitting...") 
+                          : songAddStates[playVideoId]?.success 
+                          ? (isRTL ? "تم الإضافة!" : "Success!")
+                          : (isRTL ? "تنزيل وإضافة التراك" : "Download & Add")}
+                      </span>
                     </button>
                   </div>
                 </motion.div>
@@ -617,6 +565,73 @@ export default function UploadTab({
                   })}
                 </div>
               )}
+            </div>
+          )}
+
+          {/* PART 2: Upload by YouTube Link */}
+          {activeSubTab === "link" && (
+            <div className="space-y-4">
+              <div className="pb-3 border-b border-zinc-200 flex items-center gap-2">
+                <span className="flex items-center justify-center w-5 h-5 rounded-full bg-[#1db954]/10 text-[#1db954] text-[10px] font-mono font-bold">2</span>
+                <h2 className="font-sans font-bold text-xs md:text-sm text-zinc-800">
+                  {isRTL ? "تحميل تراك يوتيوب عن طريق الرابط المباشر" : "Transfer YouTube Asset by pasting URL"}
+                </h2>
+              </div>
+
+              <form onSubmit={handleLinkUpload} className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-mono uppercase text-zinc-500 font-bold block">
+                    {isRTL ? "ضع رابط فيديو اليوتيوب في هذه الخانة:" : "YouTube Video Url:"}
+                  </label>
+                  <input
+                    type="url"
+                    required
+                    placeholder={isRTL ? "ضع الرابط هنا... (مثال: https://www.youtube.com/watch?v=...)" : "Paste YouTube link here..."}
+                    value={ytUrl}
+                    onChange={(e) => setYtUrl(e.target.value)}
+                    className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-xs text-zinc-800 focus:outline-none focus:border-[#1db954] transition-colors font-mono"
+                  />
+                </div>
+
+                {linkStatus.msg && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className={`p-3.5 rounded-xl text-xs font-semibold flex items-start gap-2 ${
+                      linkStatus.success 
+                        ? "bg-[#1db954]/10 border border-[#1db954]/20 text-[#1db954]" 
+                        : "bg-red-500/10 border border-red-500/20 text-red-500"
+                    }`}
+                  >
+                    <AlertCircle size={14} className="shrink-0 mt-0.5" />
+                    <span className="whitespace-pre-line leading-relaxed">{linkStatus.msg}</span>
+                  </motion.div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={linkStatus.loading}
+                  className="w-full bg-[#1db954] text-white hover:bg-[#20cf5d] active:scale-[0.98] disabled:bg-zinc-100 disabled:text-zinc-400 disabled:cursor-not-allowed font-black py-3 rounded-xl text-xs transition-with-duration cursor-pointer flex items-center justify-center gap-2 shadow-sm"
+                >
+                  {linkStatus.loading ? (
+                    <RefreshCw size={14} className="animate-spin" />
+                  ) : (
+                    <ArrowUpRight size={14} />
+                  )}
+                  <span>{isRTL ? "تنزيل وإرسال للسيرفر" : "Download & Send to Server"}</span>
+                </button>
+              </form>
+
+              <div className="pt-2 text-center">
+                <a
+                  href="https://github.com/gity678/Spotify/actions"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1.5 text-[10px] text-zinc-400 hover:text-zinc-800 transition-colors"
+                >
+                  <span>{isRTL ? "متابعة تدفق العمل على GitHub ↗" : "Follow workflow on GitHub Actions ↗"}</span>
+                </a>
+              </div>
             </div>
           )}
 
