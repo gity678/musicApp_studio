@@ -171,17 +171,15 @@ export default function ConfirmMetadataModal({
                   placeholder={isRTL ? "اسم الفنان..." : "Artist name..."}
                 />
               </div>
-              <div className="space-y-1">
-                <label className={`block text-[9px] font-bold text-zinc-400 uppercase tracking-widest ${isRTL ? "text-right" : "text-left"}`}>
+              
+              {/* Duration display - not interactive as per user request */}
+              <div className="flex items-center justify-between py-1 px-1 opacity-60">
+                <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest">
                   {isRTL ? "المدة" : "Duration"}
-                </label>
-                <input
-                  type="text"
-                  value={duration}
-                  onChange={(e) => setDuration(e.target.value)}
-                  className={`w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-xs text-zinc-800 focus:outline-none focus:border-[#1db954] transition-all ${isRTL ? "text-right" : "text-left"}`}
-                  placeholder="0:00"
-                />
+                </span>
+                <span className="text-xs font-mono text-zinc-600">
+                  {duration || "--:--"}
+                </span>
               </div>
             </div>
 

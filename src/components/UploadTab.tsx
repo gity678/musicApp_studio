@@ -154,7 +154,29 @@ export default function UploadTab({
       
       const itunesData = await fetchItunesMetadata(rawTitle);
 
-      // 3. Open Confirmation Modal
+      // 3. Optional: If itunes fails to provide duration, try to get it from worker's search using the videoId or title
+      let finalDuration = itunesData?.duration || "";
+      if (!finalDuration && videoId) {
+        try {
+          const cleanWorkerUrl = workerUrl.trim().replace(/\/$/, "");
+          const searchRes = await fetch(`${cleanWorkerUrl}/search?q=${encodeURIComponent(videoId)}`);
+          if (searchRes.ok) {
+            const searchData = await searchRes.json();
+            const foundVideo = searchData?.contents?.find((c: any) => c.video?.videoId === videoId);
+            if (foundVideo?.video?.lengthText) {
+              finalDuration = foundVideo.video.lengthText;
+            } else if (foundVideo?.video?.duration) {
+              finalDuration = foundVideo.video.duration;
+            }
+          }
+        } catch (e) {
+          console.warn("Worker search fallback for duration failed", e);
+        }
+      }
+
+      ytMeta.duration = finalDuration;
+
+      // 4. Open Confirmation Modal
       setPendingVideoId(videoId);
       setPendingRawTitle(rawTitle);
       setPendingYoutubeMeta(ytMeta);
