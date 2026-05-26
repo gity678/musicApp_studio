@@ -35,7 +35,6 @@ export default function ConfirmMetadataModal({
   const [title, setTitle] = useState("");
   const [artist, setArtist] = useState("");
   const [thumb, setThumb] = useState("");
-  const [isSearching, setIsSearching] = useState(false);
 
   // Sync with available metadata when modal opens or source changes
   useEffect(() => {
@@ -65,125 +64,125 @@ export default function ConfirmMetadataModal({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[10000] flex items-center justify-center p-4">
+      <div className="fixed inset-0 bg-zinc-900/60 backdrop-blur-sm z-[10000] flex items-center justify-center p-4">
         <motion.div
-          initial={{ scale: 0.9, opacity: 0, y: 20 }}
+          initial={{ scale: 0.95, opacity: 0, y: 10 }}
           animate={{ scale: 1, opacity: 1, y: 0 }}
-          exit={{ scale: 0.9, opacity: 0, y: 20 }}
-          className="bg-[#1a1a2e] border border-white/10 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl"
+          exit={{ scale: 0.95, opacity: 0, y: 10 }}
+          className="bg-white border border-zinc-200 rounded-2xl w-full max-w-[340px] overflow-hidden shadow-2xl"
         >
-          {/* Header Image */}
-          <div className="relative h-48 w-full group">
+          {/* Header Image - Reduced height for compactness */}
+          <div className="relative h-32 w-full group">
             <img
               src={thumb}
               alt={title}
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
               referrerPolicy="no-referrer"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#1a1a2e] to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
             <button
               onClick={onClose}
-              className="absolute top-4 right-4 p-2 bg-black/40 hover:bg-black/60 rounded-full text-white/70 hover:text-white transition-all backdrop-blur-sm"
+              className="absolute top-2 right-2 p-1.5 bg-black/40 hover:bg-black/60 rounded-full text-white/70 hover:text-white transition-all backdrop-blur-sm"
             >
-              <X size={18} />
+              <X size={14} />
             </button>
-            <div className="absolute bottom-4 left-6 right-6">
-               <div className="flex items-center gap-2 mb-1">
-                 <div className={`px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-tighter ${source === "iTunes" ? "bg-red-600 text-white" : "bg-[#1db954] text-white"}`}>
-                    {source} SOURCE
+            <div className="absolute bottom-2 left-4 right-4">
+               <div className="flex items-center gap-2 mb-0.5">
+                 <div className="px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-tight bg-[#1db954] text-white">
+                    {source}
                  </div>
                </div>
-               <h3 className="text-white font-black text-lg truncate drop-shadow-lg">{title || "Loading..."}</h3>
+               <h3 className="text-white font-bold text-sm truncate drop-shadow-md">{title || "..."}</h3>
             </div>
           </div>
 
-          <div className="p-6 md:p-8 space-y-6">
-            {/* Original Ref */}
+          <div className="p-4 md:p-5 space-y-4">
+            {/* Original YouTube Reference */}
             <div>
-              <label className={`block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5 ${isRTL ? "text-right" : "text-left"}`}>
-                {isRTL ? "العنوان الأصلي (يوتيوب)" : "Original YouTube Title"}
+              <label className={`block text-[9px] font-bold text-zinc-400 uppercase tracking-widest mb-1 ${isRTL ? "text-right" : "text-left"}`}>
+                {isRTL ? "العنوان الأصلي" : "Original Title"}
               </label>
-              <div className={`bg-white/5 border border-white/5 rounded-xl px-4 py-3 text-xs text-gray-400 select-all truncate ${isRTL ? "text-right" : "text-left"}`}>
+              <div className={`bg-zinc-50 border border-zinc-100 rounded-lg px-3 py-2 text-[10px] text-zinc-500 truncate select-all font-mono ${isRTL ? "text-right" : "text-left"}`}>
                 {rawTitle}
               </div>
             </div>
 
-            {/* Source Selection */}
-            <div className="space-y-2">
-              <label className={`block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5 ${isRTL ? "text-right" : "text-left"}`}>
-                {isRTL ? "اختر مصدر البيانات" : "Select Metadata Source"}
+            {/* Source Selection Buttons */}
+            <div className="space-y-1.5">
+              <label className={`block text-[9px] font-bold text-zinc-400 uppercase tracking-widest mb-1 ${isRTL ? "text-right" : "text-left"}`}>
+                {isRTL ? "اختر المصدر" : "Metadata Source"}
               </label>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
                   disabled={!itunesMeta}
                   onClick={() => setSource("iTunes")}
-                  className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border transition-all text-[11px] font-bold ${
+                  className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg border transition-all text-[10px] font-bold ${
                     source === "iTunes"
-                      ? "bg-[#e91e63] border-[#e91e63] text-white shadow-lg shadow-[#e91e63]/20"
-                      : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed"
+                      ? "bg-[#1db954] border-[#1db954] text-white shadow-md shadow-[#1db954]/20"
+                      : "bg-zinc-50 border-zinc-200 text-zinc-400 hover:bg-zinc-100 disabled:opacity-30 disabled:cursor-not-allowed"
                   }`}
                 >
-                  <Music size={14} />
+                  <Music size={12} />
                   <span>iTunes</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setSource("YouTube")}
-                  className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border transition-all text-[11px] font-bold ${
+                  className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg border transition-all text-[10px] font-bold ${
                     source === "YouTube"
-                      ? "bg-[#e91e63] border-[#e91e63] text-white shadow-lg shadow-[#e91e63]/20"
-                      : "bg-white/5 border-white/10 text-gray-400 hover:bg-white/10"
+                      ? "bg-[#1db954] border-[#1db954] text-white shadow-md shadow-[#1db954]/20"
+                      : "bg-zinc-50 border-zinc-200 text-zinc-400 hover:bg-zinc-100"
                   }`}
                 >
-                  <Youtube size={14} />
+                  <Youtube size={12} />
                   <span>YouTube</span>
                 </button>
               </div>
             </div>
 
-            {/* Form Fields */}
-            <div className="space-y-4">
-              <div className="space-y-1.5">
-                <label className={`block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5 ${isRTL ? "text-right" : "text-left"}`}>
+            {/* Editable Form Fields */}
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <label className={`block text-[9px] font-bold text-zinc-400 uppercase tracking-widest ${isRTL ? "text-right" : "text-left"}`}>
                   {isRTL ? "العنوان" : "Title"}
                 </label>
                 <input
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className={`w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#e91e63] transition-all ${isRTL ? "text-right" : "text-left"}`}
+                  className={`w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-xs text-zinc-800 focus:outline-none focus:border-[#1db954] transition-all ${isRTL ? "text-right" : "text-left"}`}
                   placeholder={isRTL ? "عنوان الأغنية..." : "Song title..."}
                 />
               </div>
-              <div className="space-y-1.5">
-                <label className={`block text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5 ${isRTL ? "text-right" : "text-left"}`}>
+              <div className="space-y-1">
+                <label className={`block text-[9px] font-bold text-zinc-400 uppercase tracking-widest ${isRTL ? "text-right" : "text-left"}`}>
                   {isRTL ? "الفنان" : "Artist"}
                 </label>
                 <input
                   type="text"
                   value={artist}
                   onChange={(e) => setArtist(e.target.value)}
-                  className={`w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#e91e63] transition-all ${isRTL ? "text-right" : "text-left"}`}
+                  className={`w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-xs text-zinc-800 focus:outline-none focus:border-[#1db954] transition-all ${isRTL ? "text-right" : "text-left"}`}
                   placeholder={isRTL ? "اسم الفنان..." : "Artist name..."}
                 />
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className={`flex gap-3 pt-4 ${isRTL ? "flex-row-reverse" : "flex-row"}`}>
+            {/* Quick Actions */}
+            <div className={`flex gap-2 pt-2 ${isRTL ? "flex-row-reverse" : "flex-row"}`}>
               <button
                 onClick={onClose}
-                className="flex-1 bg-white/5 hover:bg-white/10 text-gray-400 font-bold py-3.5 rounded-2xl text-xs transition-all border border-white/10"
+                className="flex-1 bg-zinc-100 hover:bg-zinc-200 text-zinc-500 font-bold py-2.5 rounded-xl text-[10px] transition-all border border-zinc-200"
               >
                 {isRTL ? "إلغاء" : "Cancel"}
               </button>
               <button
                 onClick={() => onConfirm({ title, artist, thumb })}
-                className="flex-[2] bg-[#e91e63] hover:bg-[#d81b60] text-white font-black py-3.5 rounded-2xl text-xs transition-all shadow-xl shadow-[#e91e63]/20 active:scale-95 flex items-center justify-center gap-2"
+                className="flex-[2] bg-[#1db954] hover:bg-[#1ed760] text-white font-black py-2.5 rounded-xl text-[10px] transition-all shadow-lg shadow-[#1db954]/20 active:scale-95 flex items-center justify-center gap-1.5"
               >
-                <Check size={16} />
-                <span>{isRTL ? "تأكيد وإرسال" : "Confirm & Dispatch"}</span>
+                <Check size={14} />
+                <span>{isRTL ? "تأكيد وإرسال" : "Confirm & Send"}</span>
               </button>
             </div>
           </div>
