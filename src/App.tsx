@@ -198,7 +198,7 @@ export default function App() {
               ? "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&auto=format&fit=crop&q=80"
               : "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=400&auto=format&fit=crop&q=80"),
             audioUrl: song.url || "",
-            duration: "...",
+            duration: song.duration || "...",
             genre: song.source === "cloudinary" ? "Cloudinary" : (song.source === "b2" ? "Backblaze B2" : "Remote Feed"),
           }));
           setWorkerTracks(mappedSongs);
@@ -305,7 +305,7 @@ export default function App() {
             ? "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&auto=format&fit=crop&q=80"
             : "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=400&auto=format&fit=crop&q=80"),
           audioUrl: song.url || "",
-          duration: "...",
+          duration: song.duration || "...",
           genre: song.source === "cloudinary" ? "Cloudinary" : (song.source === "b2" ? "Backblaze B2" : "Remote Feed"),
         }));
         setWorkerTracks(mapped);

@@ -58,6 +58,9 @@ export default function UploadTab({
   // Active video player preview URL
   const [playVideoId, setPlayVideoId] = useState("");
   const [playVideoTitle, setPlayVideoTitle] = useState("");
+  const [playVideoChannel, setPlayVideoChannel] = useState("");
+  const [playVideoThumb, setPlayVideoThumb] = useState("");
+  const [playVideoDuration, setPlayVideoDuration] = useState("");
 
   // Beautiful interactive deletion confirm modal
   const [trackToDelete, setTrackToDelete] = useState<Track | null>(null);
@@ -66,8 +69,17 @@ export default function UploadTab({
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [pendingVideoId, setPendingVideoId] = useState("");
   const [pendingRawTitle, setPendingRawTitle] = useState("");
-  const [pendingYoutubeMeta, setPendingYoutubeMeta] = useState({ title: "", artist: "", thumb: "", source: "YouTube" });
+  const [pendingYoutubeMeta, setPendingYoutubeMeta] = useState({ title: "", artist: "", thumb: "", source: "YouTube", duration: "" });
   const [pendingItunesMeta, setPendingItunesMeta] = useState<any>(null);
+
+  // Helper: Format milliseconds to MM:SS
+  const formatMillis = (ms: number) => {
+    if (!ms) return "";
+    const totalSeconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+  };
 
   // Helper: Search iTunes for rich metadata
   const fetchItunesMetadata = async (query: string) => {
@@ -76,7 +88,11 @@ export default function UploadTab({
       const res = await fetch(`${cleanWorkerUrl}/itunes?q=${encodeURIComponent(query)}`);
       if (res.ok) {
         const data = await res.json();
-        return data; // { title, artist, thumb, source: 'iTunes' }
+        // If iTunes returns trackTimeMillis, add formatted duration
+        if (data && data.trackTimeMillis && !data.duration) {
+          data.duration = formatMillis(data.trackTimeMillis);
+        }
+        return data; 
       }
     } catch (e) {
       console.warn("iTunes search failed", e);
@@ -125,7 +141,8 @@ export default function UploadTab({
         title: rawTitle,
         artist: ytData.author_name || "YouTube",
         thumb: thumb,
-        source: "YouTube"
+        source: "YouTube",
+        duration: "" // oEmbed doesn't provide duration easily
       };
 
       // 2. Search for rich iTunes metadata
@@ -155,7 +172,7 @@ export default function UploadTab({
   };
 
   // 1.5) Final Action: Dispatch confirmed upload
-  const dispatchConfirmedUpload = async (confirmedMeta: { title: string; artist: string; thumb: string }) => {
+  const dispatchConfirmedUpload = async (confirmedMeta: { title: string; artist: string; thumb: string; duration: string }) => {
     setIsConfirmOpen(false);
     
     // Set loading state in the active sub tab
@@ -177,7 +194,8 @@ export default function UploadTab({
       song_name: cleanName,
       title: confirmedMeta.title,
       artist: confirmedMeta.artist,
-      thumb: confirmedMeta.thumb
+      thumb: confirmedMeta.thumb,
+      duration: confirmedMeta.duration
     };
 
     try {
@@ -268,7 +286,7 @@ export default function UploadTab({
   };
 
   // 3) Action: Dispatch video found in search list - Stage One (Metadata search)
-  const handleAddSongFromSearch = async (videoId: string, title: string, channel?: string, thumb?: string) => {
+  const handleAddSongFromSearch = async (videoId: string, title: string, channel?: string, thumb?: string, duration?: string) => {
     setSongAddStates(prev => ({ ...prev, [videoId]: { loading: true } }));
 
     try {
@@ -276,7 +294,8 @@ export default function UploadTab({
         title: title,
         artist: channel || "YouTube",
         thumb: thumb || `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`,
-        source: "YouTube"
+        source: "YouTube",
+        duration: duration || ""
       };
 
       const itunesData = await fetchItunesMetadata(title);
@@ -293,14 +312,21 @@ export default function UploadTab({
     }
   };
 
-  const startVideoPreview = (id: string, title: string) => {
-    setPlayVideoId(id);
-    setPlayVideoTitle(title);
+  const startVideoPreview = (item: any) => {
+    const v = item.video;
+    setPlayVideoId(v.videoId);
+    setPlayVideoTitle(v.title);
+    setPlayVideoChannel(v.author?.title || "");
+    setPlayVideoThumb(v.thumbnails?.[0]?.url || "");
+    setPlayVideoDuration(v.lengthText || v.duration || "");
   };
 
   const closeVideoPreview = () => {
     setPlayVideoId("");
     setPlayVideoTitle("");
+    setPlayVideoChannel("");
+    setPlayVideoThumb("");
+    setPlayVideoDuration("");
   };
 
   const confirmTrackDeletion = () => {
@@ -481,7 +507,7 @@ export default function UploadTab({
 
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => handleAddSongFromSearch(playVideoId, playVideoTitle)}
+                      onClick={() => handleAddSongFromSearch(playVideoId, playVideoTitle, playVideoChannel, playVideoThumb, playVideoDuration)}
                       disabled={songAddStates[playVideoId]?.loading}
                       className="flex-1 bg-[#1db954] text-white hover:bg-[#20cf5d] disabled:opacity-50 py-2 rounded-lg text-xs font-black cursor-pointer transition-all"
                     >
@@ -502,6 +528,7 @@ export default function UploadTab({
                 <div className="space-y-2.5 max-h-[360px] overflow-y-auto no-scrollbar pr-1 pt-2">
                   {searchResults.map((item) => {
                     const v = item.video;
+                    const duration = v.lengthText || v.duration || "";
                     const isCurrentPreview = playVideoId === v.videoId;
                     const itemState = songAddStates[v.videoId] || {};
 
@@ -516,12 +543,12 @@ export default function UploadTab({
                           src={v.thumbnails && v.thumbnails[0] ? v.thumbnails[0].url : "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=100&auto=format"}
                           alt=""
                           className="w-14 h-14 rounded-lg object-cover bg-zinc-200 shrink-0 select-none cursor-pointer hover:brightness-75 transition"
-                          onClick={() => startVideoPreview(v.videoId, v.title)}
+                          onClick={() => startVideoPreview(item)}
                         />
 
                         <div className="min-w-0 flex-1">
                           <h4
-                            onClick={() => startVideoPreview(v.videoId, v.title)}
+                            onClick={() => startVideoPreview(item)}
                             className="text-[11px] font-bold text-zinc-900 truncate cursor-pointer hover:text-[#1db954] transition-colors"
                             title={v.title}
                           >
@@ -534,7 +561,7 @@ export default function UploadTab({
 
                         <div className="flex items-center gap-1.5">
                           <button
-                            onClick={() => startVideoPreview(v.videoId, v.title)}
+                            onClick={() => startVideoPreview(item)}
                             className="p-2 rounded-lg bg-white border border-zinc-200 text-zinc-500 hover:text-zinc-800 transition-colors cursor-pointer"
                             title={isRTL ? "تشغيل معاينة" : "Preview playback"}
                           >
@@ -542,7 +569,7 @@ export default function UploadTab({
                           </button>
 
                           <button
-                            onClick={() => handleAddSongFromSearch(v.videoId, v.title, v.author?.title, v.thumbnails?.[0]?.url)}
+                            onClick={() => handleAddSongFromSearch(v.videoId, v.title, v.author?.title, v.thumbnails?.[0]?.url, duration)}
                             disabled={itemState.loading}
                             className={`px-3 py-1.5 rounded-lg text-[10px] font-bold tracking-tight transition-all cursor-pointer ${
                               itemState.success 

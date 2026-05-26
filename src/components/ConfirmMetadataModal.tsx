@@ -7,12 +7,13 @@ interface Metadata {
   artist: string;
   thumb: string;
   source: string;
+  duration?: string;
 }
 
 interface ConfirmMetadataModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: (data: { title: string; artist: string; thumb: string }) => void;
+  onConfirm: (data: { title: string; artist: string; thumb: string; duration: string }) => void;
   videoId: string;
   rawTitle: string;
   youtubeMeta: Metadata;
@@ -35,6 +36,7 @@ export default function ConfirmMetadataModal({
   const [title, setTitle] = useState("");
   const [artist, setArtist] = useState("");
   const [thumb, setThumb] = useState("");
+  const [duration, setDuration] = useState("");
 
   // Sync with available metadata when modal opens or source changes
   useEffect(() => {
@@ -44,10 +46,12 @@ export default function ConfirmMetadataModal({
       setTitle(itunesMeta.title || rawTitle);
       setArtist(itunesMeta.artist || "—");
       setThumb(itunesMeta.thumb || youtubeMeta.thumb);
+      setDuration(itunesMeta.duration || youtubeMeta.duration || "—");
     } else {
       setTitle(youtubeMeta.title || rawTitle);
       setArtist(youtubeMeta.artist || "—");
       setThumb(youtubeMeta.thumb);
+      setDuration(youtubeMeta.duration || "—");
     }
   }, [isOpen, source, itunesMeta, youtubeMeta, rawTitle]);
 
@@ -167,6 +171,18 @@ export default function ConfirmMetadataModal({
                   placeholder={isRTL ? "اسم الفنان..." : "Artist name..."}
                 />
               </div>
+              <div className="space-y-1">
+                <label className={`block text-[9px] font-bold text-zinc-400 uppercase tracking-widest ${isRTL ? "text-right" : "text-left"}`}>
+                  {isRTL ? "المدة" : "Duration"}
+                </label>
+                <input
+                  type="text"
+                  value={duration}
+                  onChange={(e) => setDuration(e.target.value)}
+                  className={`w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-xs text-zinc-800 focus:outline-none focus:border-[#1db954] transition-all ${isRTL ? "text-right" : "text-left"}`}
+                  placeholder="0:00"
+                />
+              </div>
             </div>
 
             {/* Quick Actions */}
@@ -178,7 +194,7 @@ export default function ConfirmMetadataModal({
                 {isRTL ? "إلغاء" : "Cancel"}
               </button>
               <button
-                onClick={() => onConfirm({ title, artist, thumb })}
+                onClick={() => onConfirm({ title, artist, thumb, duration })}
                 className="flex-[2] bg-[#1db954] hover:bg-[#1ed760] text-white font-black py-2.5 rounded-xl text-[10px] transition-all shadow-lg shadow-[#1db954]/20 active:scale-95 flex items-center justify-center gap-1.5"
               >
                 <Check size={14} />
