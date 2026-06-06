@@ -19,6 +19,20 @@ const isStaticEnvironment = (): boolean => {
   return !hostname.includes("localhost") && !hostname.includes(".run.app") && !hostname.includes(".studio");
 };
 
+const formatSecondsToMinutes = (seconds: any): string => {
+  if (seconds === undefined || seconds === null) return "...";
+  if (typeof seconds === "string" && /^\d+:\d{2}$/.test(seconds)) {
+    return seconds;
+  }
+  const num = Number(seconds);
+  if (!isNaN(num) && num > 0) {
+    const mins = Math.floor(num / 60);
+    const secs = Math.floor(num % 60);
+    return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
+  }
+  return "...";
+};
+
 export default function App() {
   const [activeTab, setActiveTab] = useState<string>(() => {
     const saved = sessionStorage.getItem("spotifyy_active_tab");
@@ -27,6 +41,32 @@ export default function App() {
 
   useEffect(() => {
     sessionStorage.setItem("spotifyy_active_tab", activeTab);
+  }, [activeTab]);
+
+  // Sync activeTab with browser history to handle physical/hardware back button in mobile browsers
+  useEffect(() => {
+    // Replace the very first loading entry if the state is not already set
+    if (!window.history.state || window.history.state.tab === undefined) {
+      window.history.replaceState({ tab: activeTab }, "", "");
+    }
+
+    const handlePopState = (event: PopStateEvent) => {
+      if (event.state && typeof event.state.tab === "string") {
+        setActiveTab(event.state.tab);
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, []);
+
+  useEffect(() => {
+    const currentState = window.history.state;
+    if (currentState && currentState.tab !== activeTab) {
+      window.history.pushState({ tab: activeTab }, "", "");
+    }
   }, [activeTab]);
   const [lang, setLang] = useState<"en" | "ar">(() => {
     const saved = localStorage.getItem("spotifyy_lang");
@@ -198,7 +238,7 @@ export default function App() {
               ? "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&auto=format&fit=crop&q=80"
               : "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=400&auto=format&fit=crop&q=80"),
             audioUrl: song.url || "",
-            duration: song.duration || "...",
+            duration: formatSecondsToMinutes(song.duration),
             genre: song.source === "cloudinary" ? "Cloudinary" : (song.source === "b2" ? "Backblaze B2" : "Remote Feed"),
           }));
           setWorkerTracks(mappedSongs);
@@ -305,7 +345,7 @@ export default function App() {
             ? "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&auto=format&fit=crop&q=80"
             : "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=400&auto=format&fit=crop&q=80"),
           audioUrl: song.url || "",
-          duration: song.duration || "...",
+          duration: formatSecondsToMinutes(song.duration),
           genre: song.source === "cloudinary" ? "Cloudinary" : (song.source === "b2" ? "Backblaze B2" : "Remote Feed"),
         }));
         setWorkerTracks(mapped);
