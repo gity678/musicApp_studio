@@ -460,12 +460,12 @@ export default function UploadTab({
                     </button>
                   </div>
 
-                  <div className="aspect-video w-full max-w-[280px] mx-auto rounded-xl overflow-hidden border border-zinc-200 bg-black shadow-inner">
+                  <div className="relative aspect-video w-full rounded-xl overflow-hidden border border-zinc-200 bg-black shadow-inner">
                     <iframe
-                      src={`https://www.youtube.com/embed/${playVideoId}?autoplay=1`}
-                      allow="autoplay; encrypted-media"
-                      allowFullScreen
-                      className="w-full h-full border-none"
+                      id="yt-player"
+                      src={`https://www.youtube.com/embed/${playVideoId}?autoplay=1&enablejsapi=1&origin=${window.location.origin}`}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      style={{ width: "100%", height: "100%", border: "none" }}
                     />
                   </div>
 

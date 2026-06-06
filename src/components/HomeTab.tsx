@@ -33,9 +33,9 @@ export default function HomeTab({
       borderColor: "border-blue-500/20"
     },
     {
-      id: "upload",
-      title: isRTL ? "إضافة موسيقى" : "Add & Upload",
-      desc: isRTL ? "ارفع اغانيك من يوتيوب" : "Fetch from YouTube",
+      id: "youtube",
+      title: isRTL ? "منصة يوتيوب" : "YouTube Stream",
+      desc: isRTL ? "بحث وتشغيل فيديوهات يوتيوب فورا" : "Search & stream YouTube directly",
       icon: <Youtube className="text-red-400" size={24} />,
       color: "from-red-500/20 to-red-500/5",
       borderColor: "border-red-500/20"
