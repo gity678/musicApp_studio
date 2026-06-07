@@ -34,17 +34,63 @@ export default function YoutubeTab(props: YoutubeTabProps) {
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/youtube/search", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ query: query.trim(), workerUrl: workerUrl?.trim() }),
-      });
-      const data = await response.json();
-      if (data.results) {
-        setResults(data.results);
+      let success = false;
+      // 1. Attempt local Node.js proxy search
+      try {
+        const response = await fetch("/api/youtube/search", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query: query.trim(), workerUrl: workerUrl?.trim() }),
+        });
+        if (response.ok) {
+          const data = await response.json();
+          if (data && data.results) {
+            setResults(data.results);
+            success = true;
+          }
+        }
+      } catch (localErr) {
+        console.warn("Local proxy YouTube search failed, attempting fallback to direct worker query:", localErr);
       }
-    } catch (e) {
-      console.error("YouTube search error:", e);
+
+      // 2. Direct Fallback if local proxy was unavailable/unreachable
+      if (!success && workerUrl && workerUrl.trim()) {
+        const cleanWorkerUrl = workerUrl.trim().replace(/\/$/, "");
+        const res = await fetch(`${cleanWorkerUrl}/search?q=${encodeURIComponent(query.trim())}`);
+        if (res.ok) {
+          const data = await res.json();
+          let parsedResults: YouTubeVideo[] = [];
+          
+          if (data && data.contents && Array.isArray(data.contents)) {
+            for (const item of data.contents) {
+              if (item.video) {
+                const v = item.video;
+                parsedResults.push({
+                  id: v.videoId,
+                  title: v.title || "Unknown Title",
+                  channelTitle: v.author?.name || "Unknown Channel",
+                  thumbnailUrl: v.thumbnails?.[0]?.url || `https://i.ytimg.com/vi/${v.videoId}/hqdefault.jpg`,
+                  publishedAt: v.publishedTimeText || "Recent"
+                });
+              }
+            }
+          } else if (Array.isArray(data)) {
+            parsedResults = data.map((item: any) => ({
+              id: item.id || item.videoId,
+              title: item.title,
+              channelTitle: item.channelTitle || item.author,
+              thumbnailUrl: item.thumbnailUrl || item.thumbnail,
+              publishedAt: item.publishedAt || ""
+            }));
+          }
+          
+          if (parsedResults.length > 0) {
+            setResults(parsedResults);
+          }
+        }
+      }
+    } catch (err) {
+      console.error("YouTube search error:", err);
     } finally {
       setIsLoading(false);
     }
