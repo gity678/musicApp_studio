@@ -207,7 +207,7 @@ export default function BottomPlayer({
                     </div>
                   </div>
                 ) : (
-                  <p className="text-[10px] text-zinc-400 font-medium truncate uppercase tracking-tighter opacity-75 mt-0.5">
+                  <p className="text-[10px] text-zinc-400 font-medium truncate tracking-normal opacity-75 mt-0.5">
                     {currentTrack.artist || currentTrack.genre || "Music"}
                   </p>
                 )}
@@ -339,7 +339,7 @@ export default function BottomPlayer({
                     </div>
                   </div>
                 ) : (
-                  <p className="text-[10px] text-zinc-400 font-medium truncate uppercase tracking-tighter opacity-75 mt-0.5">
+                  <p className="text-[10px] text-zinc-400 font-medium truncate tracking-normal opacity-75 mt-0.5">
                     {currentTrack.artist || currentTrack.genre || "Music"}
                   </p>
                 )}

@@ -357,6 +357,11 @@ export default function App() {
   // HTML5 audio elements reference
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const handleNextRef = useRef<() => void>(() => {});
+  const currentTrackRef = useRef<Track | null>(null);
+
+  useEffect(() => {
+    currentTrackRef.current = currentTrack;
+  }, [currentTrack]);
 
   useEffect(() => {
     audioRef.current = new Audio();
@@ -382,14 +387,28 @@ export default function App() {
       }
     };
 
+    const onPause = () => {
+      if (currentTrackRef.current && currentTrackRef.current.id.startsWith("yt-")) return;
+      setIsPlaying(false);
+    };
+
+    const onPlay = () => {
+      if (currentTrackRef.current && currentTrackRef.current.id.startsWith("yt-")) return;
+      setIsPlaying(true);
+    };
+
     audio.addEventListener("timeupdate", onTimeUpdate);
     audio.addEventListener("durationchange", onDurationChange);
     audio.addEventListener("ended", onEnded);
+    audio.addEventListener("pause", onPause);
+    audio.addEventListener("play", onPlay);
 
     return () => {
       audio.removeEventListener("timeupdate", onTimeUpdate);
       audio.removeEventListener("durationchange", onDurationChange);
       audio.removeEventListener("ended", onEnded);
+      audio.removeEventListener("pause", onPause);
+      audio.removeEventListener("play", onPlay);
     };
   }, []);
 
