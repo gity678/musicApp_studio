@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { RadioStation } from "../types";
-import { MoreVertical, X, Edit2, Trash2 } from "lucide-react";
+import { MoreVertical, X, Edit2, Trash2, Radio as RadioIcon, Play } from "lucide-react";
 
 interface RadioTabProps {
   activeStation: RadioStation | null;
@@ -120,11 +120,12 @@ export default function RadioTab({
   const openMenu = (i: number, e: React.MouseEvent) => {
     e.stopPropagation();
     setMenuIndex(i);
-    const rect = (e.target as HTMLElement).getBoundingClientRect();
-    // Position dropdown (simplified logic from snippet)
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    
+    // Position dropdown better for mobile/desktop
     setDropdownPos({
-      top: rect.top - 80, // roughly
-      left: rect.left - 120
+      top: rect.top + window.scrollY + 40,
+      left: Math.max(10, rect.left - 130)
     });
   };
 
@@ -136,9 +137,6 @@ export default function RadioTab({
     if (menuIndex === -1) return;
     const r = radios[menuIndex];
     closeMenu();
-    // In this app, we'll just alert or if we had a proper route we'd use it.
-    // The snippet used window.location.href. 
-    // We can potentially notify the user or perform some other action.
     alert(isRTL ? `تعديل: ${r.name}` : `Modify: ${r.name}`);
   };
 
@@ -169,8 +167,8 @@ export default function RadioTab({
   };
 
   return (
-    <div className="space-y-4">
-      <div>
+    <div className="space-y-4 text-zinc-800">
+      <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-sm flex flex-col">
         {isLoading ? (
           <div className="flex items-center justify-center py-20 text-zinc-500 animate-pulse text-xs font-mono uppercase tracking-widest">
             {isRTL ? "جاري تحميل المحطات..." : "Synchronizing Radio Frequencies..."}
@@ -191,51 +189,72 @@ export default function RadioTab({
             {isRTL ? "❌ فشل التحميل أو لا توجد محطات" : "❌ No stations detected"}
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-2 p-2">
+          <div className="divide-y divide-zinc-100">
             {radios.map((r, i) => {
               const isActive = activeStation?.name === r.name;
               return (
                 <div
                   key={i}
-                  className={`flex items-center gap-2 p-2 rounded-xl border border-transparent transition-all cursor-pointer group min-w-0 overflow-hidden ${
-                    isActive 
-                      ? "bg-[#e91e63]/20 border-[#e91e63]/50" 
-                      : "bg-black/10 hover:bg-black/20"
+                  className={`flex items-center gap-2 p-1.5 px-3 hover:bg-zinc-50 transition-all duration-300 cursor-pointer group ${
+                    isActive ? "bg-[#1db954]/10" : ""
                   }`}
                 >
-                  <div 
-                    className="w-10 h-10 rounded-lg bg-white/10 shrink-0 overflow-hidden flex items-center justify-center text-lg"
-                    onClick={() => playStation(i)}
-                  >
-                    {r.logoUrl ? (
-                      <img 
-                        src={r.logoUrl} 
-                        alt={r.name} 
-                        className="w-full h-full object-contain p-0.5 bg-white rounded-lg"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement;
-                          target.hidden = true;
-                          target.parentElement!.textContent = '📻';
-                        }}
-                      />
-                    ) : (
-                      '📻'
-                    )}
-                  </div>
-                  <div 
-                    className="flex-1 min-w-0"
-                    onClick={() => playStation(i)}
-                  >
-                    <div className={`text-[11px] font-medium truncate ${isActive ? "text-[#e91e63]" : "text-zinc-800"}`}>
-                      {r.name}
+                  {/* 1. Index / Play Icon */}
+                  <div className="w-6 flex items-center justify-center shrink-0" onClick={() => playStation(i)}>
+                    <span className="font-mono text-[10px] text-zinc-400 group-hover:hidden">
+                      {i + 1}
+                    </span>
+                    <div className="hidden group-hover:flex items-center justify-center animate-pulse">
+                      <Play size={10} className={isActive ? "text-[#1db954]" : "text-zinc-600"} />
                     </div>
                   </div>
-                  <button 
-                    className="shrink-0 p-1 text-zinc-400 hover:text-zinc-900 transition-colors"
-                    onClick={(e) => openMenu(i, e)}
-                  >
-                    <MoreVertical size={14} />
-                  </button>
+
+                  {/* 2. Logo */}
+                  <div className="w-12 h-12 shrink-0 flex items-center justify-center" onClick={() => playStation(i)}>
+                    <div className="w-full h-full rounded-xl bg-zinc-100 shadow-sm border border-zinc-100 group-hover:scale-105 transition-transform overflow-hidden flex items-center justify-center">
+                      {r.logoUrl ? (
+                         <img 
+                          src={r.logoUrl} 
+                          alt={r.name} 
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                            const parent = target.parentElement;
+                            if (parent) {
+                              const icon = document.createElement('div');
+                              icon.textContent = '📻';
+                              parent.appendChild(icon);
+                            }
+                          }}
+                        />
+                      ) : (
+                        <RadioIcon size={20} className="text-zinc-400" />
+                      )}
+                    </div>
+                  </div>
+
+                  {/* 3. Name & Frequency */}
+                  <div className="flex-1 min-w-0 px-3" onClick={() => playStation(i)}>
+                    <h4 className={`font-semibold text-[13px] truncate transition-colors ${
+                       isActive ? "text-[#1db954] font-bold" : "text-zinc-800 group-hover:text-[#1db954]"
+                    }`}>
+                      {r.name}
+                    </h4>
+                    <p className="text-[10px] text-zinc-500 truncate mt-0.5">
+                      {r.frequency || r.genre}
+                    </p>
+                  </div>
+
+                  {/* 4. Options Menu */}
+                  <div className="w-10 shrink-0 flex justify-end">
+                    <button 
+                      className="p-2 text-zinc-400 hover:text-zinc-900 transition-colors"
+                      onClick={(e) => openMenu(i, e)}
+                    >
+                      <MoreVertical size={14} />
+                    </button>
+                  </div>
                 </div>
               );
             })}
@@ -246,32 +265,33 @@ export default function RadioTab({
       {menuIndex !== -1 && (
         <div 
           ref={dropdownRef}
-          className="fixed bg-[#1a1a2e] border border-white/10 rounded-xl overflow-hidden z-[100] min-w-[160px] shadow-2xl animate-fade-in"
+          className="fixed bg-white border border-zinc-200 rounded-xl overflow-hidden z-[100] min-w-[150px] shadow-2xl animate-fade-in"
           style={{ 
             top: `${dropdownPos.top}px`, 
             left: `${dropdownPos.left}px` 
           }}
         >
           <button 
-            className="flex justify-between items-center w-full px-4 py-3 hover:bg-white/10 text-white text-sm transition-colors text-left"
+            className="flex items-center gap-3 w-full px-4 py-3 hover:bg-zinc-50 text-zinc-700 text-xs font-semibold transition-colors text-left"
             onClick={modifierFromMenu}
           >
-            <span className="flex items-center gap-2">
-              <Edit2 size={14} />
-              {isRTL ? "تعديل" : "Modifier"}
-            </span>
-            <X size={12} className="text-zinc-500" onClick={(e) => { e.stopPropagation(); closeMenu(); }} />
+            <Edit2 size={13} className="text-zinc-400" />
+            {isRTL ? "تعديل" : "Modify Station"}
           </button>
           <button 
-            className="flex items-center gap-2 w-full px-4 py-3 hover:bg-white/10 text-red-500 text-sm transition-colors text-left"
+            className="flex items-center gap-3 w-full px-4 py-3 hover:bg-zinc-50 text-red-500 text-xs font-semibold transition-colors text-left border-t border-zinc-100"
             onClick={supprimerFromMenu}
           >
-            <Trash2 size={14} />
-            {isRTL ? "حذف" : "Supprimer"}
+            <Trash2 size={13} />
+            {isRTL ? "حذف" : "Remove Station"}
           </button>
+          <div className="bg-zinc-50 px-4 py-1 flex justify-end border-t border-zinc-100">
+            <button onClick={closeMenu} className="text-[9px] text-zinc-400 hover:text-zinc-600 font-bold uppercase tracking-wider">Close</button>
+          </div>
         </div>
       )}
     </div>
   );
 }
+
 

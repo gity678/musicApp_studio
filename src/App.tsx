@@ -774,59 +774,75 @@ export default function App() {
       <div className="flex-1 flex flex-col h-full relative overflow-hidden min-w-0">
         {/* Custom Header Navigation */}
         {activeTab !== "home" && (
-          <header className="bg-white/90 border-b border-zinc-200 px-4 py-1.5 z-20 backdrop-blur-md shrink-0">
-            <div className="max-w-sm md:max-w-md mx-auto w-full flex items-center justify-between gap-4">
-              <div className="flex items-center gap-4 flex-1">
-                {!isSearchActive || (activeTab !== "music" && activeTab !== "radio") ? (
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold tracking-tight uppercase flex items-center gap-2 text-zinc-900 transition-opacity duration-300">
-                      {activeTab === "home" && <Home size={16} className="text-[#1db954]" />}
-                      {activeTab === "music" && <Music size={16} className="text-[#1db954]" />}
-                      {activeTab === "radio" && <Radio size={16} className="text-teal-400" />}
-                      {activeTab === "upload" && <UploadCloud size={16} className="text-[#1db954]" />}
-                      {activeTab === "add_radio" && <PlusCircle size={16} className="text-[#1db954]" />}
-                      {activeTab === "youtube" && <Youtube size={16} className="text-red-500" />}
-                      {activeTab === "ai" && <Sparkles size={16} className="text-emerald-400" />}
-                      <span>{translations[lang][activeTab as keyof typeof translations["en"]] || activeTab}</span>
-                    </span>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2 flex-1 relative">
-                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 animate-pulse" />
-                    <input
-                      autoFocus
-                      type="text"
-                      placeholder="Search tracks, artists..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full bg-zinc-100 border border-zinc-200 focus:border-[#1db954] text-zinc-900 text-xs pl-9 pr-9 py-2 rounded-xl focus:outline-none transition-colors"
-                    />
-                    <button
-                      onClick={() => {
-                        setSearchTerm("");
-                        setIsSearchActive(false);
-                      }}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-900 cursor-pointer"
-                    >
-                      <X size={14} />
-                    </button>
-                  </div>
-                )}
+          <header className="bg-white/90 border-b border-zinc-200 px-4 py-2 z-20 backdrop-blur-md shrink-0 h-14 flex items-center">
+            <div className="max-w-sm md:max-w-md mx-auto w-full relative h-full flex items-center justify-between">
+              {/* Left side (Balanced spacer or back button placeholder) */}
+              <div className="w-10 flex items-center justify-start">
+                <div className="p-2 opacity-80">
+                  {activeTab === "music" && <Music size={18} className="text-[#1db954]" />}
+                  {activeTab === "radio" && <Radio size={18} className="text-teal-400" />}
+                  {activeTab === "upload" && <UploadCloud size={18} className="text-[#1db954]" />}
+                  {activeTab === "add_radio" && <PlusCircle size={18} className="text-[#1db954]" />}
+                  {activeTab === "youtube" && <Youtube size={18} className="text-red-500" />}
+                  {activeTab === "ai" && <Sparkles size={18} className="text-emerald-400" />}
+                </div>
               </div>
 
-              <div className="flex items-center gap-3 shrink-0">
-                {!isSearchActive && (activeTab === "music" || activeTab === "radio") && (
-                  <button
-                    onClick={() => setIsSearchActive(true)}
-                    className="p-2 bg-zinc-100 hover:bg-zinc-200 border border-zinc-200 hover:border-[#1db954]/50 rounded-xl text-zinc-600 hover:text-zinc-900 transition-all cursor-pointer flex items-center gap-1"
-                    title="Search Music"
+              {/* Center: Title (Requested) */}
+              <div className="absolute inset-x-0 inset-y-0 flex items-center justify-center pointer-events-none">
+                {!isSearchActive || (activeTab !== "music" && activeTab !== "radio") ? (
+                  <motion.span 
+                    key={activeTab}
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-xs font-black tracking-[0.2em] uppercase text-zinc-900 whitespace-nowrap"
+                    style={{ fontFamily: "'Space Grotesk', system-ui, sans-serif" }}
                   >
-                    <Search size={14} />
-                  </button>
+                    {translations[lang][activeTab as keyof typeof translations["en"]] || activeTab}
+                  </motion.span>
+                ) : null}
+              </div>
+
+              {/* Right Side: Search / Settings */}
+              <div className="flex items-center gap-2 z-10">
+                {isSearchActive && (activeTab === "music" || activeTab === "radio") ? (
+                  <div className="absolute inset-0 bg-white z-30 flex items-center px-1">
+                    <div className="flex items-center gap-2 flex-1 relative">
+                      <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+                      <input
+                        autoFocus
+                        type="text"
+                        placeholder="Find music..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full bg-zinc-100 border border-zinc-200 focus:border-[#1db954] text-zinc-900 text-xs pl-9 pr-9 py-2 rounded-xl focus:outline-none transition-colors"
+                      />
+                      <button
+                        onClick={() => {
+                          setSearchTerm("");
+                          setIsSearchActive(false);
+                        }}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-900 cursor-pointer"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    {(activeTab === "music" || activeTab === "radio") && (
+                      <button
+                        onClick={() => setIsSearchActive(true)}
+                        className="p-2 bg-zinc-100 hover:bg-zinc-200 border border-zinc-200 rounded-xl text-zinc-500 hover:text-[#1db954] transition-all cursor-pointer"
+                      >
+                        <Search size={16} />
+                      </button>
+                    )}
+                    <span className="font-mono text-[8px] text-zinc-300 font-bold uppercase tracking-tighter hidden md:inline">
+                      {themePreset}
+                    </span>
+                  </>
                 )}
-                <span className="font-mono text-[9px] text-zinc-400 font-extrabold uppercase tracking-widest hidden sm:inline">
-                  PRESET: {themePreset.toUpperCase()}
-                </span>
               </div>
             </div>
           </header>
