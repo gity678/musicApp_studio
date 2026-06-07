@@ -1,5 +1,6 @@
 import React from "react";
-import { Youtube, Music, RadioReceiver, Compass, Play, Plus, Search, Heart, ArrowRight } from "lucide-react";
+import { Youtube, Music, Compass, Play, Plus, Search, Heart, ArrowRight } from "lucide-react";
+import Radio from "./ClassicRadioIcon";
 import { motion } from "motion/react";
 
 interface HomeTabProps {
@@ -28,7 +29,7 @@ export default function HomeTab({
       id: "radio",
       title: "Live Radio",
       desc: "On-air",
-      icon: <RadioReceiver className="text-blue-400" size={24} />,
+      icon: <Radio className="text-blue-400" size={24} />,
       color: "from-blue-500/20 to-blue-500/5",
       borderColor: "border-blue-500/20"
     },
@@ -54,39 +55,40 @@ export default function HomeTab({
         }
       `}</style>
 
-      {/* Premium Animated Brand Logo */}
-      <div className="flex items-center justify-center py-2 select-none shrink-0 border-b border-white/5 mb-1.5">
+      {/* Brand logo without the card background */}
+      <motion.div
+        animate={{
+          y: [0, -3, 0, 3, 0],
+          rotate: [0, -0.8, 0, 0.8, 0],
+        }}
+        transition={{
+          duration: 5,
+          repeat: Infinity,
+          ease: "easeInOut"
+        }}
+        className="flex flex-col items-center gap-4 py-4 sm:py-6"
+      >
         <motion.div
-          animate={{
-            y: [0, -2, 0, 2, 0],
-            rotate: [0, -0.5, 0, 0.5, 0],
+          animate={{ 
+            scale: [1, 1.25, 1],
+            rotate: [0, 8, -8, 0]
           }}
           transition={{
-            duration: 6,
+            duration: 3,
             repeat: Infinity,
             ease: "easeInOut"
           }}
-          className="flex items-center gap-2"
+          className="flex items-center justify-center p-4 sm:p-5 bg-black/40 rounded-2xl border border-white/5 shadow-inner"
         >
-          <motion.div
-            animate={{ 
-              scale: [1, 1.15, 1],
-            }}
-            transition={{
-              duration: 2.5,
-              repeat: Infinity,
-              ease: "easeInOut"
-            }}
-            className="flex items-center justify-center"
-          >
-            <Music size={18} className="text-[#1db954]" />
-          </motion.div>
+          <Music size={36} className="text-[#1db954]" />
+        </motion.div>
 
+        <div className="flex items-center gap-3.5">
           <span 
-            className="font-sans font-black text-2xl sm:text-3xl tracking-widest bg-gradient-to-r from-emerald-400 via-white to-[#1db954] bg-clip-text text-transparent bg-[size:300%_auto] text-center filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]"
+            className="font-sans font-black text-5xl sm:text-6xl tracking-widest bg-gradient-to-r from-emerald-400 via-white to-[#1db954] bg-clip-text text-transparent bg-[size:300%_auto] text-center filter drop-shadow-[0_2px_12px_rgba(16,185,129,0.45)]"
             style={{ 
               fontFamily: "'Space Grotesk', system-ui, sans-serif",
-              animation: "shimmerBg 5s linear infinite"
+              animation: "shimmerBg 4s linear infinite"
             }}
           >
             musicy
@@ -94,24 +96,24 @@ export default function HomeTab({
 
           <motion.div
             animate={{ 
-              scale: [1, 0.9, 1],
+              scale: [1, 0.85, 1],
             }}
             transition={{
-              duration: 2.2,
+              duration: 2,
               repeat: Infinity,
               ease: "easeInOut"
             }}
             className="flex items-center justify-center"
           >
-            <div className="flex items-end gap-[2px] h-3">
-              <motion.div animate={{ height: [4, 12, 4] }} transition={{ duration: 1, repeat: Infinity }} className="w-[2px] bg-emerald-400 rounded-full" />
-              <motion.div animate={{ height: [8, 4, 8] }} transition={{ duration: 0.8, repeat: Infinity }} className="w-[2px] bg-white rounded-full" />
-              <motion.div animate={{ height: [6, 12, 6] }} transition={{ duration: 1.2, repeat: Infinity }} className="w-[2px] bg-emerald-500 rounded-full" />
+            <div className="flex items-end gap-[4px] h-6">
+              <motion.div animate={{ height: [6, 20, 6] }} transition={{ duration: 0.9, repeat: Infinity, ease: "easeInOut" }} className="w-[3px] bg-emerald-400 rounded-full" />
+              <motion.div animate={{ height: [15, 6, 15] }} transition={{ duration: 0.7, repeat: Infinity, ease: "easeInOut" }} className="w-[3px] bg-white rounded-full" />
+              <motion.div animate={{ height: [10, 22, 10] }} transition={{ duration: 1.1, repeat: Infinity, ease: "easeInOut" }} className="w-[3px] bg-emerald-500 rounded-full" />
             </div>
           </motion.div>
-        </motion.div>
-      </div>
-      
+        </div>
+      </motion.div>
+
       {/* Hero Welcome Section - Dynamic Mobile Header */}
       <section className="relative overflow-hidden group rounded-2xl sm:rounded-3xl border border-white/5">
         <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-zinc-950 to-black -z-10" />

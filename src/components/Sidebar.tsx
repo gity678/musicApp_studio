@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from "motion/react";
-import { Music, RadioReceiver, Youtube, Sparkles, Menu, X, Disc, Home, UploadCloud, PlusCircle } from "lucide-react";
+import { Music, Youtube, Sparkles, Menu, X, Disc, Home, UploadCloud, PlusCircle } from "lucide-react";
+import Radio from "./ClassicRadioIcon";
 
 interface SidebarProps {
   activeTab: string;
@@ -26,7 +27,7 @@ export default function Sidebar({
   const menuItems = [
     { id: "home", label: t.home, icon: Home },
     { id: "music", label: t.music, icon: Music },
-    { id: "radio", label: t.radio, icon: RadioReceiver },
+    { id: "radio", label: t.radio, icon: Radio },
     { id: "upload", label: t.upload, icon: UploadCloud },
     { id: "add_radio", label: t.addRadio, icon: PlusCircle },
     { id: "youtube", label: t.youtube, icon: Youtube },
