@@ -1,5 +1,5 @@
 import React from "react";
-import { Youtube, Music, Radio, Compass, Play, Plus, Search, Heart, ArrowRight } from "lucide-react";
+import { Youtube, Music, RadioReceiver, Compass, Play, Plus, Search, Heart, ArrowRight } from "lucide-react";
 import { motion } from "motion/react";
 
 interface HomeTabProps {
@@ -28,7 +28,7 @@ export default function HomeTab({
       id: "radio",
       title: "Live Radio",
       desc: "On-air",
-      icon: <Radio className="text-blue-400" size={24} />,
+      icon: <RadioReceiver className="text-blue-400" size={24} />,
       color: "from-blue-500/20 to-blue-500/5",
       borderColor: "border-blue-500/20"
     },
@@ -45,6 +45,72 @@ export default function HomeTab({
 
   return (
     <div className="space-y-3 py-1 px-3 sm:px-4 max-w-lg mx-auto w-full" style={{ direction: "ltr" }}>
+      
+      <style>{`
+        @keyframes shimmerBg {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+      `}</style>
+
+      {/* Premium Animated Brand Logo */}
+      <div className="flex items-center justify-center py-2 select-none shrink-0 border-b border-white/5 mb-1.5">
+        <motion.div
+          animate={{
+            y: [0, -2, 0, 2, 0],
+            rotate: [0, -0.5, 0, 0.5, 0],
+          }}
+          transition={{
+            duration: 6,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+          className="flex items-center gap-2"
+        >
+          <motion.div
+            animate={{ 
+              scale: [1, 1.15, 1],
+            }}
+            transition={{
+              duration: 2.5,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+            className="flex items-center justify-center"
+          >
+            <Music size={18} className="text-[#1db954]" />
+          </motion.div>
+
+          <span 
+            className="font-sans font-black text-2xl sm:text-3xl tracking-widest bg-gradient-to-r from-emerald-400 via-white to-[#1db954] bg-clip-text text-transparent bg-[size:300%_auto] text-center filter drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)]"
+            style={{ 
+              fontFamily: "'Space Grotesk', system-ui, sans-serif",
+              animation: "shimmerBg 5s linear infinite"
+            }}
+          >
+            musicy
+          </span>
+
+          <motion.div
+            animate={{ 
+              scale: [1, 0.9, 1],
+            }}
+            transition={{
+              duration: 2.2,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+            className="flex items-center justify-center"
+          >
+            <div className="flex items-end gap-[2px] h-3">
+              <motion.div animate={{ height: [4, 12, 4] }} transition={{ duration: 1, repeat: Infinity }} className="w-[2px] bg-emerald-400 rounded-full" />
+              <motion.div animate={{ height: [8, 4, 8] }} transition={{ duration: 0.8, repeat: Infinity }} className="w-[2px] bg-white rounded-full" />
+              <motion.div animate={{ height: [6, 12, 6] }} transition={{ duration: 1.2, repeat: Infinity }} className="w-[2px] bg-emerald-500 rounded-full" />
+            </div>
+          </motion.div>
+        </motion.div>
+      </div>
       
       {/* Hero Welcome Section - Dynamic Mobile Header */}
       <section className="relative overflow-hidden group rounded-2xl sm:rounded-3xl border border-white/5">

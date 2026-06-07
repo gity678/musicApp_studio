@@ -12,7 +12,7 @@ import MusicVisualizer from "./components/MusicVisualizer";
 import { Track, RadioStation } from "./types";
 import { CURATED_TRACKS, CURATED_STATIONS } from "./data";
 import { translations } from "./locale";
-import { Disc, Menu, Sparkles, Moon, Laptop, Flame, Music, Radio, Youtube, Home, UploadCloud, PlusCircle, Search, X } from "lucide-react";
+import { Disc, Menu, Sparkles, Moon, Laptop, Flame, Music, RadioReceiver, Youtube, Home, UploadCloud, PlusCircle, Search, X } from "lucide-react";
 
 const isStaticEnvironment = (): boolean => {
   const hostname = window.location.hostname;
@@ -781,7 +781,7 @@ export default function App() {
                     <span className="text-sm font-bold tracking-tight uppercase flex items-center gap-2 text-zinc-900 transition-opacity duration-300">
                       {activeTab === "home" && <Home size={16} className="text-[#1db954]" />}
                       {activeTab === "music" && <Music size={16} className="text-[#1db954]" />}
-                      {activeTab === "radio" && <Radio size={16} className="text-teal-400" />}
+                      {activeTab === "radio" && <RadioReceiver size={16} className="text-teal-400" />}
                       {activeTab === "upload" && <UploadCloud size={16} className="text-[#1db954]" />}
                       {activeTab === "add_radio" && <PlusCircle size={16} className="text-[#1db954]" />}
                       {activeTab === "youtube" && <Youtube size={16} className="text-red-500" />}
@@ -958,7 +958,7 @@ export default function App() {
             {[
               { id: "home", label: "Home", icon: Home },
               { id: "music", label: "Music", icon: Music },
-              { id: "radio", label: "Radio", icon: Radio },
+              { id: "radio", label: "Radio", icon: RadioReceiver },
               { id: "youtube", label: "YouTube", icon: Youtube }
             ].map((item) => {
               const Icon = item.icon;
