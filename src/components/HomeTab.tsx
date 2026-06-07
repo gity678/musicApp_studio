@@ -85,10 +85,10 @@ export default function HomeTab({
 
         <div className="flex items-center gap-3.5">
           <span 
-            className="font-sans font-black text-5xl sm:text-6xl tracking-widest bg-gradient-to-r from-emerald-400 via-white to-[#1db954] bg-clip-text text-transparent bg-[size:300%_auto] text-center filter drop-shadow-[0_2px_12px_rgba(16,185,129,0.45)]"
+            className="font-sans font-black text-5xl sm:text-6xl tracking-widest bg-gradient-to-r from-emerald-400 via-emerald-100 to-emerald-500 bg-clip-text text-transparent bg-[size:200%_auto] text-center filter drop-shadow-[0_2px_8px_rgba(16,185,129,0.35)]"
             style={{ 
               fontFamily: "'Space Grotesk', system-ui, sans-serif",
-              animation: "shimmerBg 4s linear infinite"
+              animation: "shimmerBg 3s linear infinite"
             }}
           >
             musicy
