@@ -41,38 +41,38 @@ export default function UploadTab({
   const isRTL = lang === "ar";
   const t = translations[lang];
 
-  // Active Tab state inside upload page: 'link' (Upload by Link) or 'search' (Upload by Search)
+  // Active sub-tab inside upload: 'search' (default) or 'link'
   const [activeSubTab, setActiveSubTab] = useState<"link" | "search">("search");
 
-  // TAB 1: Link Upload States
+  // TAB 1: Direct Link Input States
   const [ytUrl, setYtUrl] = useState("");
   const [linkStatus, setLinkStatus] = useState({ loading: false, msg: "", success: false });
 
-  // TAB 2: Search Upload States
+  // TAB 2: Search Input States
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState("");
   const [songAddStates, setSongAddStates] = useState<Record<string, { loading: boolean; success?: boolean; error?: boolean }>>({});
 
-  // Active video player preview URL
+  // Active preview video ID and details
   const [playVideoId, setPlayVideoId] = useState("");
   const [playVideoTitle, setPlayVideoTitle] = useState("");
   const [playVideoChannel, setPlayVideoChannel] = useState("");
   const [playVideoThumb, setPlayVideoThumb] = useState("");
   const [playVideoDuration, setPlayVideoDuration] = useState("");
 
-  // Beautiful interactive deletion confirm modal
+  // Track deletion support
   const [trackToDelete, setTrackToDelete] = useState<Track | null>(null);
 
-  // Metadata Confirmation States
+  // Metadata Dialog Confirmation parameters
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [pendingVideoId, setPendingVideoId] = useState("");
   const [pendingRawTitle, setPendingRawTitle] = useState("");
   const [pendingYoutubeMeta, setPendingYoutubeMeta] = useState({ title: "", artist: "", thumb: "", source: "YouTube", duration: "" });
   const [pendingItunesMeta, setPendingItunesMeta] = useState<any>(null);
 
-  // Helper: Format milliseconds to MM:SS
+  // Helper formatting timing
   const formatMillis = (ms: number) => {
     if (!ms) return "";
     const totalSeconds = Math.floor(ms / 1000);
@@ -81,14 +81,13 @@ export default function UploadTab({
     return `${minutes}:${seconds.toString().padStart(2, "0")}`;
   };
 
-  // Helper: Search iTunes for rich metadata
+  // Helper metadata lookups from iTunes API
   const fetchItunesMetadata = async (query: string) => {
     const cleanWorkerUrl = workerUrl.trim().replace(/\/$/, "");
     try {
       const res = await fetch(`${cleanWorkerUrl}/itunes?q=${encodeURIComponent(query)}`);
       if (res.ok) {
         const data = await res.json();
-        // If iTunes returns trackTimeMillis, add formatted duration
         if (data && data.trackTimeMillis && !data.duration) {
           data.duration = formatMillis(data.trackTimeMillis);
         }
@@ -100,7 +99,7 @@ export default function UploadTab({
     return null;
   };
 
-  // 1) Action: Send YouTube Link - Stage One (Metadata Search)
+  // Upload Workflow Stage 1 (Extract metadata from URL)
   const handleLinkUpload = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!workerUrl.trim()) {
@@ -115,6 +114,7 @@ export default function UploadTab({
 
     const videoId = ytUrl.match(/(?:v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/watch\?v=)([^&?/]+)/)?.[1];
     if (!videoId) {
+      setYtUrl("");
       setLinkStatus({
         loading: false,
         msg: isRTL ? "❌ رابط فيديو يوتيوب غير مدعوم أو غير صالح!" : "❌ Invalid YouTube video link format!",
@@ -130,7 +130,7 @@ export default function UploadTab({
     });
 
     try {
-      // 1. Get YouTube Basic Info (oEmbed)
+      // 1. Fetch info from oEmbed
       const ytRes = await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${videoId}`);
       const ytData = await ytRes.json();
       
@@ -142,10 +142,10 @@ export default function UploadTab({
         artist: ytData.author_name || "YouTube",
         thumb: thumb,
         source: "YouTube",
-        duration: "" // oEmbed doesn't provide duration easily
+        duration: ""
       };
 
-      // 2. Search for rich iTunes metadata
+      // 2. Fetch from iTunes
       setLinkStatus({
         loading: true,
         msg: isRTL ? "⏳ جاري البحث عن بيانات المسار في iTunes..." : "⏳ Searching iTunes for rich metadata...",
@@ -154,7 +154,7 @@ export default function UploadTab({
       
       const itunesData = await fetchItunesMetadata(rawTitle);
 
-      // 3. Optional: If itunes fails to provide duration, try to get it from worker's search using the videoId or title
+      // 3. Obtain duration if possible
       let finalDuration = itunesData?.duration || "";
       if (!finalDuration && videoId) {
         try {
@@ -176,7 +176,7 @@ export default function UploadTab({
 
       ytMeta.duration = finalDuration;
 
-      // 4. Open Confirmation Modal
+      // 4. Open Confirm Metadata Dialog
       setPendingVideoId(videoId);
       setPendingRawTitle(rawTitle);
       setPendingYoutubeMeta(ytMeta);
@@ -193,11 +193,10 @@ export default function UploadTab({
     }
   };
 
-  // 1.5) Final Action: Dispatch confirmed upload
+  // Upload Workflow Stage 2 (Submit final, confirmed metadata to server)
   const dispatchConfirmedUpload = async (confirmedMeta: { title: string; artist: string; thumb: string; duration: string }) => {
     setIsConfirmOpen(false);
     
-    // Set loading state in the active sub tab
     if (activeSubTab === "link") {
       setLinkStatus({ loading: true, msg: isRTL ? "⏳ جاري الإرسال للسيرفر السحابي..." : "⏳ Dispatching to cloud server...", success: false });
     } else {
@@ -230,12 +229,12 @@ export default function UploadTab({
       if (response.ok) {
         const data = await response.json();
         if (data.ok || data.success) isSuccess = true;
-        else errorMsg = data.body || data.error;
+        else errorMsg = data.body || data.error || "Server error";
       } else {
         errorMsg = `Status ${response.status}`;
       }
     } catch (e: any) {
-      // Fallback to proxy
+      // Proxy backup try
       try {
         const response = await fetch("/api/worker/upload", {
           method: "POST",
@@ -243,15 +242,16 @@ export default function UploadTab({
           body: JSON.stringify({ workerUrl, ...payload })
         });
         if (response.ok) isSuccess = true;
+        else errorMsg = "Proxy route failed.";
       } catch (e2) {
-        errorMsg = "Network error communicating with worker.";
+        errorMsg = "Network error communicating with worker server.";
       }
     }
 
     if (isSuccess) {
       const successMsg = isRTL 
-        ? "✅ تم الإرسال بنجاح! ستبدأ عملية المعالجة قريباً." 
-        : "✅ Dispatched successfully! Processing will begin momentarily.";
+        ? "✅ تم الإرسال بنجاح! ستبدأ عملية المعالجة قريباً بالتنزيل والتحويل." 
+        : "✅ Dispatched successfully! The stream will be processed and downloaded shortly.";
       
       if (activeSubTab === "link") {
         setLinkStatus({ loading: false, msg: successMsg, success: true });
@@ -259,7 +259,7 @@ export default function UploadTab({
       } else {
         setSongAddStates(prev => ({ ...prev, [pendingVideoId]: { loading: false, success: true } }));
       }
-      setTimeout(() => onReloadWorkerSongs(), 10000);
+      setTimeout(() => onReloadWorkerSongs(), 8000);
     } else {
       const failMsg = isRTL ? `❌ فشل الرفع: ${errorMsg}` : `❌ Upload failed: ${errorMsg}`;
       if (activeSubTab === "link") {
@@ -270,7 +270,7 @@ export default function UploadTab({
     }
   };
 
-  // 2) Action: Do YouTube Search
+  // Search Submit on Worker Endpoint
   const handleSearchSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!searchQuery.trim()) return;
@@ -283,7 +283,7 @@ export default function UploadTab({
     setSearchLoading(true);
     setSearchError("");
     setSearchResults([]);
-    setPlayVideoId(""); // close player
+    setPlayVideoId(""); // Terminate live player instance to secure width
 
     const cleanWorkerUrl = workerUrl.trim().replace(/\/$/, "");
     try {
@@ -294,12 +294,12 @@ export default function UploadTab({
         const videosOnly = data.contents.filter((item: any) => item.type === "video");
         setSearchResults(videosOnly);
       } else {
-        setSearchError(isRTL ? "❌ عذراً، لم نعثر على أي نتائج مطابقة للبحث." : "❌ No YouTube videos matched your search.");
+        setSearchError(isRTL ? "❌ عذراً، لم نعثر على أي نتائج مطابقة." : "❌ No YouTube videos matched your search query.");
       }
     } catch (err: any) {
       console.error("Search on worker endpoint failed:", err);
       setSearchError(isRTL 
-        ? "❌ فشل الاتصال بالـ Worker للبحث. يرجى مراجعة إعدادات التشغيل وتأكيد اتصال خادمك." 
+        ? "❌ فشل الاتصال بخادم البحث. يرجى تأكيد استقرار اتصال الخادم الخاص بك." 
         : `❌ Failed to communicate with search server: ${err.message}`
       );
     } finally {
@@ -307,7 +307,7 @@ export default function UploadTab({
     }
   };
 
-  // 3) Action: Dispatch video found in search list - Stage One (Metadata search)
+  // Trigger search item action
   const handleAddSongFromSearch = async (videoId: string, title: string, channel?: string, thumb?: string, duration?: string) => {
     setSongAddStates(prev => ({ ...prev, [videoId]: { loading: true } }));
 
@@ -359,286 +359,298 @@ export default function UploadTab({
   };
 
   return (
-    <div className="space-y-6 md:space-y-8 pb-10 text-zinc-800 max-w-2xl mx-auto">
-      {/* Main Container - Centered Single Column with Light Theme styling */}
-      <div className="space-y-6">
-        
-        {/* Quick Tab switcher Buttons - Light Border Styled */}
-        <div className="flex bg-white border border-zinc-200 p-1.5 rounded-xl gap-2 shadow-sm">
+    <div className="w-full max-w-4xl mx-auto overflow-hidden space-y-4 pb-12 text-zinc-100">
+      
+      {/* Subtab Navigation Buttons to switch between Search & Link, styled in beautiful premium dark theme */}
+      <div className="w-full max-w-full overflow-hidden shrink-0 mb-4">
+        <div className="grid grid-cols-2 bg-[#0c0c0e]/60 border border-[#1e1e24] p-1 rounded-xl gap-1 shadow-sm w-full">
           <button
-            onClick={() => setActiveSubTab("search")}
-            className={`flex-1 py-3 px-4 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2 ${
+            onClick={() => {
+              setActiveSubTab("search");
+              setYtUrl("");
+              setLinkStatus({ loading: false, msg: "", success: false });
+            }}
+            className={`py-2 px-1 sm:px-4 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 min-w-0 overflow-hidden ${
               activeSubTab === "search"
-                ? "bg-[#1db954] text-white shadow-md shadow-[#1db954]/10"
-                : "bg-transparent text-zinc-500 hover:text-zinc-900"
+                ? "bg-[#1db954] text-black shadow-md shadow-[#1db954]/10"
+                : "bg-transparent text-zinc-400 hover:text-zinc-200"
             }`}
           >
-            <Search size={14} />
-            <span>{isRTL ? "الرفع عن طريق البحث" : "Upload by Search"}</span>
+            <Search size={12} className="shrink-0" />
+            <span className="truncate">{isRTL ? "البحث بالفيديو" : "Upload by Search"}</span>
           </button>
 
           <button
-            onClick={() => setActiveSubTab("link")}
-            className={`flex-1 py-3 px-4 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2 ${
+            onClick={() => {
+              setActiveSubTab("link");
+              setSearchQuery("");
+              setSearchResults([]);
+              setSearchError("");
+              closeVideoPreview();
+            }}
+            className={`py-2 px-1 sm:px-4 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 min-w-0 overflow-hidden ${
               activeSubTab === "link"
-                ? "bg-[#1db954] text-white shadow-md shadow-[#1db954]/10"
-                : "bg-transparent text-zinc-500 hover:text-zinc-900"
+                ? "bg-[#1db954] text-black shadow-md shadow-[#1db954]/10"
+                : "bg-transparent text-zinc-400 hover:text-zinc-200"
             }`}
           >
-            <ExternalLink size={14} />
-            <span>{isRTL ? "الرفع عن طريق وضع الرابط" : "Upload by Link"}</span>
+            <ExternalLink size={12} className="shrink-0" />
+            <span className="truncate">{isRTL ? "الرفع برابط مباشر" : "Upload by Link"}</span>
           </button>
         </div>
+      </div>
 
-        {/* Interactive Section */}
-        <div className="bg-white border border-zinc-200 p-5 md:p-6 rounded-2xl shadow-sm space-y-4">
-          
-          {/* PART 1: Upload by Searching YouTube */}
-          {activeSubTab === "search" && (
-            <div className="space-y-4">
-              <div className="pb-3 border-b border-zinc-200 flex items-center gap-2">
-                <span className="flex items-center justify-center w-5 h-5 rounded-full bg-[#1db954]/10 text-[#1db954] text-[10px] font-mono font-bold">1</span>
-                <h2 className="font-sans font-bold text-xs md:text-sm text-zinc-800">
-                  {isRTL ? "البحث عن فيديو يوتيوب وتحميله" : "Interactive Music Search & Host Finder"}
-                </h2>
+      {/* Conditionally render Search Tab Content */}
+      {activeSubTab === "search" && (
+        <>
+          {/* Search Input Section - Premium & spacious like the YouTube Tab */}
+          <form onSubmit={handleSearchSubmit} className="flex gap-2 w-full">
+            <div className="flex-1 relative bg-[#141419] border border-[#1e1e24] rounded-xl focus-within:border-[#1db954] transition-colors">
+              <span className={`absolute top-1/2 -translate-y-1/2 ${isRTL ? "right-3.5" : "left-3.5"} text-zinc-400`}>
+                <Search size={16} />
+              </span>
+              <input
+                type="text"
+                placeholder={isRTL ? "ادخل اسم الأغنية أو اسم الفنان..." : "Enter song name, artist..."}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className={`w-full bg-transparent py-3 text-xs text-white focus:outline-none ${isRTL ? "pr-10" : "pl-10"}`}
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={searchLoading}
+              className="bg-[#1db954] text-black hover:bg-[#20cf5d] hover:scale-105 active:scale-95 disabled:opacity-40 px-6 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0"
+            >
+              {searchLoading ? <RefreshCw size={12} className="animate-spin text-black" /> : null}
+              <span>{isRTL ? "ابحث" : "Search"}</span>
+            </button>
+          </form>
+
+          {searchError && (
+            <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-400 rounded-xl text-xs">
+              {searchError}
+            </div>
+          )}
+
+          {/* Active Live YouTube Embed style matching YouTube Tab */}
+          {playVideoId && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="space-y-3 w-full"
+            >
+              <div className="relative aspect-video rounded-2xl overflow-hidden border border-[#1db954]/20 bg-black shadow-2xl w-full">
+                <iframe
+                  id="yt-player"
+                  src={`https://www.youtube.com/embed/${playVideoId}?autoplay=1&enablejsapi=1&origin=${window.location.origin}`}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  style={{ width: "100%", height: "100%", border: "none" }}
+                />
               </div>
 
-              {/* Search Bar Input */}
-              <form onSubmit={handleSearchSubmit} className="flex gap-2">
-                <div className="relative flex-1">
-                  <Search className={`absolute ${isRTL ? "right-3" : "left-3"} top-3 text-zinc-400`} size={14} />
-                  <input
-                    type="text"
-                    placeholder={isRTL ? "ادخل اسم الأغنية أو اسم الفنان..." : "Enter song name, artist..."}
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className={`w-full bg-zinc-50 border border-zinc-200 ${isRTL ? "pr-9 pl-4" : "pl-9 pr-4"} py-2.5 rounded-xl text-xs text-zinc-800 focus:outline-none focus:border-[#1db954] transition-colors`}
-                  />
+              {/* Dedicated control container bar underneath the video */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-zinc-900/40 border border-[#1e1e24] p-3 rounded-xl gap-3">
+                <div className="min-w-0 flex-1">
+                  <span className="text-[9px] text-zinc-400 font-mono block uppercase tracking-wider mb-0.5">{playVideoChannel || "YouTube Channel"}</span>
+                  <h3 className="text-xs font-bold text-white truncate" title={playVideoTitle}>
+                    {playVideoTitle}
+                  </h3>
                 </div>
-                <button
-                  type="submit"
-                  disabled={searchLoading}
-                  className="bg-[#1db954] text-white hover:bg-[#20cf5d] active:scale-95 disabled:opacity-50 px-5 rounded-xl text-xs font-bold font-sans transition-all cursor-pointer flex items-center gap-1.5"
-                >
-                  {searchLoading ? <RefreshCw size={12} className="animate-spin" /> : null}
-                  <span>{isRTL ? "ابحث" : "Search"}</span>
-                </button>
-              </form>
+                
+                <div className="flex items-center gap-2 shrink-0 justify-end">
+                  <button
+                    onClick={closeVideoPreview}
+                    className="bg-zinc-800 hover:bg-zinc-750 text-zinc-200 hover:text-white px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5"
+                    title={isRTL ? "إغلاق" : "Close"}
+                  >
+                    <X size={13} />
+                    <span>{isRTL ? "إلغاء" : "Cancel"}</span>
+                  </button>
 
-              {searchError && (
-                <div className="p-3 bg-red-500/10 border border-red-500/20 text-red-500 rounded-xl text-xs">
-                  {searchError}
-                </div>
-              )}
-
-              {/* Embedded YouTube preview player block - Compact View */}
-              {playVideoId && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="z-20 p-3 bg-zinc-50 rounded-2xl border border-zinc-200 space-y-2 shadow-sm overflow-hidden"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div className="p-1.5 bg-[#1db954]/10 rounded-lg shrink-0">
-                        <Video size={12} className="text-[#1db954]" />
-                      </div>
-                      <div className="min-w-0">
-                        <span className="text-[9px] text-zinc-400 uppercase font-bold tracking-tight block">
-                          {isRTL ? "معاينة الفيديو" : "Preview"}
-                        </span>
-                        <h3 className="text-[10px] font-black text-zinc-800 truncate">
-                          {playVideoTitle}
-                        </h3>
-                      </div>
-                    </div>
-                    <button
-                      onClick={closeVideoPreview}
-                      className="text-zinc-400 hover:text-zinc-800 p-1.5 rounded-full hover:bg-zinc-200/50 transition-colors cursor-pointer"
-                    >
-                      <X size={14} />
-                    </button>
-                  </div>
-
-                  <div className="relative aspect-video w-full rounded-xl overflow-hidden border border-zinc-200 bg-black shadow-inner">
-                    <iframe
-                      id="yt-player"
-                      src={`https://www.youtube.com/embed/${playVideoId}?autoplay=1&enablejsapi=1&origin=${window.location.origin}`}
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      style={{ width: "100%", height: "100%", border: "none" }}
-                    />
-                  </div>
-
-                  <div className="flex items-center gap-2 pt-0.5">
-                    <button
-                      onClick={() => handleAddSongFromSearch(playVideoId, playVideoTitle, playVideoChannel, playVideoThumb, playVideoDuration)}
-                      disabled={songAddStates[playVideoId]?.loading}
-                      className="flex-1 bg-[#1db954] text-white hover:bg-[#20cf5d] active:scale-[0.98] disabled:opacity-50 py-2 rounded-xl text-[10px] font-black cursor-pointer transition-all shadow-md shadow-[#1db954]/20 flex items-center justify-center gap-1.5"
-                    >
+                  <button
+                    onClick={() => handleAddSongFromSearch(playVideoId, playVideoTitle, playVideoChannel, playVideoThumb, playVideoDuration)}
+                    disabled={songAddStates[playVideoId]?.loading}
+                    className="bg-[#1db954] hover:bg-[#20cf5d] active:scale-95 disabled:opacity-50 text-black px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5"
+                  >
+                    {songAddStates[playVideoId]?.loading 
+                      ? <RefreshCw size={12} className="animate-spin text-black" />
+                      : songAddStates[playVideoId]?.success 
+                      ? <Check size={12} className="text-black" />
+                      : <UploadCloud size={12} className="text-black" />
+                    }
+                    <span>
                       {songAddStates[playVideoId]?.loading 
-                        ? <RefreshCw size={12} className="animate-spin" />
+                        ? (isRTL ? "جاري الإرسال للتنزيل..." : "Sending...") 
                         : songAddStates[playVideoId]?.success 
-                        ? <Check size={12} />
-                        : <UploadCloud size={12} />
-                      }
-                      <span>
-                        {songAddStates[playVideoId]?.loading 
-                          ? (isRTL ? "جاري الإرسال..." : "Sending...") 
-                          : songAddStates[playVideoId]?.success 
-                          ? (isRTL ? "تم بنجاح!" : "Success!")
-                          : (isRTL ? "إرسال للتحميل" : "Send to Download")}
-                      </span>
-                    </button>
-                  </div>
-                </motion.div>
-              )}
+                        ? (isRTL ? "تم الإرسال!" : "Dispatched!")
+                        : (isRTL ? "بدء التحميل والحفظ" : "Send to Download")}
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          )}
 
-              {/* Search Results list rendered beautifully */}
-              {searchResults.length > 0 && (
-                <div className="space-y-2.5 max-h-[360px] overflow-y-auto no-scrollbar pr-1 pt-2">
-                  {searchResults.map((item) => {
-                    const v = item.video;
-                    const duration = v.lengthText || v.duration || "";
-                    const isCurrentPreview = playVideoId === v.videoId;
-                    const itemState = songAddStates[v.videoId] || {};
+          {/* List Results section styled exactly like YouTube Tab grid */}
+          {searchResults.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[480px] overflow-y-auto no-scrollbar pt-1 w-full">
+              {searchResults.map((item) => {
+                const v = item.video;
+                const duration = v.lengthText || v.duration || "";
+                const isCurrentPreview = playVideoId === v.videoId;
+                const itemState = songAddStates[v.videoId] || {};
 
-                    return (
-                      <div
-                        key={v.videoId}
-                        className={`p-2.5 bg-zinc-50 rounded-xl border hover:border-zinc-300 flex items-center gap-3 transition-colors ${
-                          isCurrentPreview ? "border-[#1db954]/40 bg-zinc-100/60" : "border-zinc-200"
-                        }`}
+                return (
+                  <div
+                    key={v.videoId}
+                    className={`bg-[#0c0c0e]/60 border rounded-xl overflow-hidden p-3.5 flex gap-4 hover:bg-[#141419] transition-colors duration-300 group ${
+                      isCurrentPreview ? "border-[#1db954]/30 bg-[#1db954]/5" : "border-[#1e1e24]"
+                    }`}
+                  >
+                    {/* Thumbnail Wrapper */}
+                    <div className="relative shrink-0 w-24 h-16 rounded-lg overflow-hidden border border-[#1e1e24] bg-zinc-900">
+                      <img
+                        src={v.thumbnails && v.thumbnails[0] ? v.thumbnails[0].url : "https://images.unsplash.com/photo-161461353535308-eb5fbd3d2c17?w=100&auto=format"}
+                        alt={v.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                      <button
+                        onClick={() => startVideoPreview(item)}
+                        className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                       >
-                        <img
-                          src={v.thumbnails && v.thumbnails[0] ? v.thumbnails[0].url : "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=100&auto=format"}
-                          alt=""
-                          className="w-14 h-14 rounded-lg object-cover bg-zinc-200 shrink-0 select-none cursor-pointer hover:brightness-75 transition"
+                        <Play size={18} className="text-white fill-white" />
+                      </button>
+                    </div>
+
+                    {/* Details side */}
+                    <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
+                      <div>
+                        <h4
                           onClick={() => startVideoPreview(item)}
-                        />
+                          className="font-semibold text-xs text-white truncate group-hover:text-[#1db954] cursor-pointer"
+                          title={v.title}
+                        >
+                          {v.title}
+                        </h4>
+                        <p className="text-[10px] text-gray-400 mt-1 truncate">{v.author ? v.author.title : "YouTube Video"}</p>
+                      </div>
 
-                        <div className="min-w-0 flex-1">
-                          <h4
-                            onClick={() => startVideoPreview(item)}
-                            className="text-[11px] font-bold text-zinc-900 truncate cursor-pointer hover:text-[#1db954] transition-colors"
-                            title={v.title}
-                          >
-                            {v.title}
-                          </h4>
-                          <p className="text-[9px] text-zinc-400 truncate mt-0.5">
-                            {v.author ? v.author.title : "YouTube Channel"}
-                          </p>
-                        </div>
-
-                        <div className="flex items-center gap-1.5">
+                      <div className="flex items-center justify-between mt-2">
+                        <span className="text-[9px] font-mono text-zinc-500">{duration || "3:30"}</span>
+                        
+                        <div className="flex items-center gap-2">
                           <button
                             onClick={() => startVideoPreview(item)}
-                            className="p-2 rounded-lg bg-white border border-zinc-200 text-zinc-500 hover:text-zinc-800 transition-colors cursor-pointer"
+                            className="bg-blue-600 hover:bg-blue-500 active:scale-95 text-white px-3 py-1.5 rounded-lg text-[9px] font-black transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
                             title={isRTL ? "تشغيل معاينة" : "Preview playback"}
                           >
-                            <Play size={10} className="fill-current" />
+                            <Play size={10} className="fill-current text-white" />
+                            <span>{isRTL ? "تشغيل" : "Play"}</span>
                           </button>
 
                           <button
                             onClick={() => handleAddSongFromSearch(v.videoId, v.title, v.author?.title, v.thumbnails?.[0]?.url, duration)}
                             disabled={itemState.loading}
-                            className={`px-3 py-1.5 rounded-lg text-[10px] font-bold tracking-tight transition-all cursor-pointer ${
+                            className={`px-3 py-1.5 rounded-lg text-[9px] font-black transition-all cursor-pointer ${
                               itemState.success 
-                                ? "bg-[#1db954]/20 text-[#1db954]" 
+                                ? "bg-emerald-500/10 text-emerald-400" 
                                 : itemState.error 
-                                ? "bg-red-500/20 text-red-500"
-                                : "bg-[#1db954] text-white hover:bg-[#20cf5d]"
+                                ? "bg-red-500/10 text-red-400"
+                                : "bg-[#1db954] text-black hover:bg-[#20cf5d]"
                             }`}
                           >
                             {itemState.loading ? (
-                              <RefreshCw size={8} className="animate-spin" />
+                              <RefreshCw size={8} className="animate-spin text-black" />
                             ) : itemState.success ? (
                               "✅"
                             ) : itemState.error ? (
                               "❌"
                             ) : (
-                              "➕"
+                              (isRTL ? "حفظ" : "Download")
                             )}
                           </button>
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Conditionally render Direct URL Tab Content */}
+      {activeSubTab === "link" && (
+        <div className="bg-[#0c0c0e]/60 border border-[#1e1e24] rounded-2xl p-5 shadow-xl space-y-4 w-full overflow-hidden">
+          <div className="pb-3 border-b border-zinc-800/60 flex items-center gap-2">
+            <span className="flex items-center justify-center w-5 h-5 rounded-full bg-[#1db954]/20 text-[#1db954] text-[10px] font-mono font-bold shrink-0">
+              2
+            </span>
+            <h2 className="font-sans font-bold text-xs text-zinc-100 truncate">
+              {isRTL ? "تحميل المسار عن طريق الرابط المباشر" : "Transfer YouTube Asset by pasting URL"}
+            </h2>
+          </div>
+
+          <form onSubmit={handleLinkUpload} className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-mono uppercase text-zinc-400 font-extrabold block">
+                {isRTL ? "ضع رابط يوتيوب هنا:" : "YouTube Video Url:"}
+              </label>
+              <input
+                type="url"
+                required
+                placeholder={isRTL ? "مثال: https://www.youtube.com/watch?v=..." : "Paste YouTube link here..."}
+                value={ytUrl}
+                onChange={(e) => setYtUrl(e.target.value)}
+                className="w-full bg-[#141419] border border-[#1e1e24] rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-[#1db954] transition-colors font-mono min-w-0"
+              />
+            </div>
+
+            {linkStatus.msg && (
+              <motion.div
+                initial={{ opacity: 0, y: 3 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={`p-3.5 rounded-xl text-xs font-semibold flex items-start gap-2.5 ${
+                  linkStatus.success 
+                    ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-400" 
+                    : "bg-red-500/10 border border-red-500/20 text-red-400"
+                }`}
+              >
+                <AlertCircle size={14} className="shrink-0 mt-0.5" />
+                <span className="whitespace-pre-line leading-relaxed flex-1">{linkStatus.msg}</span>
+              </motion.div>
+            )}
+
+            <button
+              type="submit"
+              disabled={linkStatus.loading}
+              className="w-full bg-[#1db954] hover:bg-[#20cf5d] active:scale-[0.98] disabled:bg-zinc-800/50 disabled:text-zinc-500 disabled:cursor-not-allowed text-black font-black py-3 rounded-xl text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
+            >
+              {linkStatus.loading ? (
+                <RefreshCw size={13} className="animate-spin text-black" />
+              ) : (
+                <ArrowUpRight size={13} className="text-black" />
               )}
-            </div>
-          )}
+              <span>{isRTL ? "تنزيل وإرسال للسيرفر" : "Download & Send to Server"}</span>
+            </button>
+          </form>
 
-          {/* PART 2: Upload by YouTube Link */}
-          {activeSubTab === "link" && (
-            <div className="space-y-4">
-              <div className="pb-3 border-b border-zinc-200 flex items-center gap-2">
-                <span className="flex items-center justify-center w-5 h-5 rounded-full bg-[#1db954]/10 text-[#1db954] text-[10px] font-mono font-bold">2</span>
-                <h2 className="font-sans font-bold text-xs md:text-sm text-zinc-800">
-                  {isRTL ? "تحميل تراك يوتيوب عن طريق الرابط المباشر" : "Transfer YouTube Asset by pasting URL"}
-                </h2>
-              </div>
-
-              <form onSubmit={handleLinkUpload} className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-mono uppercase text-zinc-500 font-bold block">
-                    {isRTL ? "ضع رابط فيديو اليوتيوب في هذه الخانة:" : "YouTube Video Url:"}
-                  </label>
-                  <input
-                    type="url"
-                    required
-                    placeholder={isRTL ? "ضع الرابط هنا... (مثال: https://www.youtube.com/watch?v=...)" : "Paste YouTube link here..."}
-                    value={ytUrl}
-                    onChange={(e) => setYtUrl(e.target.value)}
-                    className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-3 text-xs text-zinc-800 focus:outline-none focus:border-[#1db954] transition-colors font-mono"
-                  />
-                </div>
-
-                {linkStatus.msg && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className={`p-3.5 rounded-xl text-xs font-semibold flex items-start gap-2 ${
-                      linkStatus.success 
-                        ? "bg-[#1db954]/10 border border-[#1db954]/20 text-[#1db954]" 
-                        : "bg-red-500/10 border border-red-500/20 text-red-500"
-                    }`}
-                  >
-                    <AlertCircle size={14} className="shrink-0 mt-0.5" />
-                    <span className="whitespace-pre-line leading-relaxed">{linkStatus.msg}</span>
-                  </motion.div>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={linkStatus.loading}
-                  className="w-full bg-[#1db954] text-white hover:bg-[#20cf5d] active:scale-[0.98] disabled:bg-zinc-100 disabled:text-zinc-400 disabled:cursor-not-allowed font-black py-3 rounded-xl text-xs transition-with-duration cursor-pointer flex items-center justify-center gap-2 shadow-sm"
-                >
-                  {linkStatus.loading ? (
-                    <RefreshCw size={14} className="animate-spin" />
-                  ) : (
-                    <ArrowUpRight size={14} />
-                  )}
-                  <span>{isRTL ? "تنزيل وإرسال للسيرفر" : "Download & Send to Server"}</span>
-                </button>
-              </form>
-
-              <div className="pt-2 text-center">
-                <a
-                  href="https://github.com/gity678/Spotify/actions"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 text-[10px] text-zinc-400 hover:text-zinc-800 transition-colors"
-                >
-                  <span>{isRTL ? "متابعة تدفق العمل على GitHub ↗" : "Follow workflow on GitHub Actions ↗"}</span>
-                </a>
-              </div>
-            </div>
-          )}
-
+          <div className="pt-2 text-center select-none">
+            <a
+              href="https://github.com/gity678/Spotify/actions"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 text-[10px] text-zinc-500 hover:text-zinc-300 transition-colors font-semibold"
+            >
+              <span>{isRTL ? "متابعة تدفق العمل على GitHub ↗" : "Follow workflow on GitHub Actions ↗"}</span>
+            </a>
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* --- CONFIRM DELETION MODAL DIALOG ("هل تريد الحذف") --- */}
+      {/* Track deletion confirm dialog box */}
       <AnimatePresence>
         {trackToDelete && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
@@ -649,11 +661,11 @@ export default function UploadTab({
               className="bg-white border border-zinc-200 p-6 rounded-2xl max-w-sm w-full text-center space-y-4 shadow-xl relative"
             >
               <div className="w-12 h-12 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mx-auto">
-                <Trash2 size={22} className="animate-pulse" />
+                <Trash2 size={20} className="animate-pulse" />
               </div>
 
               <div className="space-y-1.5 text-center">
-                <h3 className="text-zinc-900 font-black text-sm">
+                <h3 className="text-zinc-900 font-extrabold text-sm">
                   {isRTL ? "تأكيد حذف الأغنية" : "Confirm Song Deletion"}
                 </h3>
                 <p className="text-xs text-zinc-500 leading-relaxed max-w-xs mx-auto">
@@ -667,16 +679,16 @@ export default function UploadTab({
                 <button
                   type="button"
                   onClick={confirmTrackDeletion}
-                  className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer active:scale-95 shadow-sm"
+                  className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 rounded-xl text-xs font-bold transition-all cursor-pointer active:scale-95 shadow-sm"
                 >
                   {isRTL ? "نعم، احذف" : "Yes, Delete"}
                 </button>
                 <button
                   type="button"
                   onClick={() => setTrackToDelete(null)}
-                  className="flex-1 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer border border-zinc-200 active:scale-95"
+                  className="flex-1 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer border border-zinc-200 active:scale-95"
                 >
-                  {isRTL ? "إلغاء الحفظ" : "Cancel"}
+                  {isRTL ? "إلغاء العمل" : "Cancel"}
                 </button>
               </div>
             </motion.div>
@@ -694,6 +706,7 @@ export default function UploadTab({
         itunesMeta={pendingItunesMeta}
         lang={lang}
       />
+
     </div>
   );
 }

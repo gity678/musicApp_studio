@@ -788,7 +788,7 @@ export default function App() {
       />
 
       {/* RIGHT Core Body container */}
-      <div className="flex-1 flex flex-col h-full relative">
+      <div className="flex-1 flex flex-col h-full relative overflow-hidden min-w-0">
         {/* Custom Header Navigation */}
         <header className="bg-white/90 border-b border-zinc-200 px-4 py-1.5 z-20 backdrop-blur-md shrink-0">
           <div className="max-w-sm md:max-w-md mx-auto w-full flex items-center justify-between gap-4">
@@ -864,7 +864,7 @@ export default function App() {
                 : '100px' 
             }}
           >
-            <div className="max-w-md md:max-w-lg mx-auto space-y-4 px-2.5 sm:px-5 py-4">
+            <div className="w-full max-w-sm md:max-w-md mx-auto space-y-4 px-3 sm:px-4 py-4 overflow-hidden">
             
             {/* Visualizer canvas floating header */}
             {showVisualizer && (
