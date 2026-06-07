@@ -16,7 +16,7 @@ export default function AiAssistantTab({
   onInstantPlayTrack,
   onQueueTrack,
 }: AiAssistantProps) {
-  const isRTL = lang === "ar";
+  const isRTL = false;
   const t = translations[lang];
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");

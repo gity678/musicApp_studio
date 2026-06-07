@@ -17,7 +17,7 @@ export default function RadioTab({
   workerUrl,
   workerRadios,
 }: RadioTabProps) {
-  const isRTL = lang === "ar";
+  const isRTL = false;
   const [radios, setRadios] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

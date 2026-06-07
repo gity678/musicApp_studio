@@ -19,7 +19,7 @@ interface AddRadioTabProps {
 }
 
 export default function AddRadioTab({ lang }: AddRadioTabProps) {
-  const isRTL = lang === "ar";
+  const isRTL = false;
   
   // App State
   const [mode, setMode] = useState<'modifier' | 'ajouter' | 'json'>('modifier');

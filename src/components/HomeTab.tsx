@@ -13,29 +13,29 @@ export default function HomeTab({
   translations,
   setActiveTab,
 }: HomeTabProps) {
-  const isRTL = lang === "ar";
+  const isRTL = false;
 
   const cards = [
     {
       id: "music",
-      title: isRTL ? "المكتبة الموسيقية" : "Music Library",
-      desc: isRTL ? "استمع إلى مفضلاتك" : "Listen to your favorites",
+      title: "Music Library",
+      desc: "Favorites",
       icon: <Music className="text-emerald-400" size={24} />,
       color: "from-emerald-500/20 to-emerald-500/5",
       borderColor: "border-emerald-500/20"
     },
     {
       id: "radio",
-      title: isRTL ? "محطات الراديو" : "Live Radio",
-      desc: isRTL ? "أثير العالم بين يديك" : "Global stations on-air",
+      title: "Live Radio",
+      desc: "On-air",
       icon: <Radio className="text-blue-400" size={24} />,
       color: "from-blue-500/20 to-blue-500/5",
       borderColor: "border-blue-500/20"
     },
     {
       id: "youtube",
-      title: isRTL ? "منصة يوتيوب" : "YouTube Stream",
-      desc: isRTL ? "بحث وتشغيل فيديوهات يوتيوب فورا" : "Search & stream YouTube directly",
+      title: "YouTube",
+      desc: "Stream",
       icon: <Youtube className="text-red-400" size={24} />,
       color: "from-red-500/20 to-red-500/5",
       borderColor: "border-red-500/20"
@@ -44,29 +44,27 @@ export default function HomeTab({
 
 
   return (
-    <div className="space-y-4 py-4 px-4 md:px-8 max-w-lg mx-auto" style={{ direction: isRTL ? "rtl" : "ltr" }}>
+    <div className="space-y-3 py-1 px-3 sm:px-4 max-w-lg mx-auto w-full" style={{ direction: "ltr" }}>
       
       {/* Hero Welcome Section - Dynamic Mobile Header */}
-      <section className="relative overflow-hidden group">
-        <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/15 via-zinc-950 to-black rounded-3xl -z-10" />
-        <div className="p-8 md:p-10 !py-6 space-y-3">
-          <div className="space-y-1">
+      <section className="relative overflow-hidden group rounded-2xl sm:rounded-3xl border border-white/5">
+        <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 via-zinc-950 to-black -z-10" />
+        <div className="p-5 sm:p-6 space-y-2.5">
+          <div className="space-y-0.5">
             <motion.h1 
-              initial={{ opacity: 0, y: 15 }}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-white text-2xl md:text-3xl font-black tracking-tight"
+              className="text-white text-xl sm:text-2xl font-black tracking-tight"
             >
-              {isRTL ? "مرحباً بك،" : "Good vibrations,"}
+              Good vibrations,
             </motion.h1>
             <motion.p 
-              initial={{ opacity: 0, y: 15 }}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="text-zinc-400 text-xs md:text-sm font-medium leading-relaxed max-w-[240px]"
+              className="text-zinc-400 text-[10px] sm:text-xs font-medium leading-relaxed max-w-[240px]"
             >
-              {isRTL 
-                ? "ابدأ رحلتك الصوتية اليوم واستكشف عالم الموسيقى."
-                : "Your high-fidelity gateway to universal sound and rhythm."}
+              Your high-fidelity gateway to universal sound and rhythm.
             </motion.p>
           </div>
           
@@ -74,47 +72,47 @@ export default function HomeTab({
              initial={{ opacity: 0 }}
              animate={{ opacity: 1 }}
              transition={{ delay: 0.2 }}
-             className="flex flex-wrap gap-2 md:gap-3"
+             className="flex flex-wrap gap-1.5 sm:gap-2"
           >
             <button 
               onClick={() => setActiveTab("music")}
-              className="bg-[#1db954] text-black px-5 py-2 rounded-full font-black text-[11px] hover:bg-[#1ed760] transition-colors shadow-lg shadow-emerald-500/10 active:scale-95 flex items-center gap-1.5 cursor-pointer"
+              className="bg-[#1db954] text-black px-4 py-1.5 rounded-full font-black text-[10px] sm:text-[11px] hover:bg-[#1ed760] transition-colors shadow-lg active:scale-95 flex items-center gap-1 cursor-pointer"
             >
-              <Play size={12} fill="currentColor" />
-              <span>{isRTL ? "ابدأ" : "Play"}</span>
+              <Play size={10} fill="currentColor" />
+              <span>Play</span>
             </button>
             <button 
               onClick={() => setActiveTab("upload")}
-              className="bg-white/5 text-white border border-white/10 px-5 py-2 rounded-full font-black text-[11px] hover:bg-white/10 transition-colors active:scale-95 flex items-center gap-1.5 cursor-pointer backdrop-blur-sm"
+              className="bg-white/5 text-white border border-white/10 px-4 py-1.5 rounded-full font-black text-[10px] sm:text-[11px] hover:bg-white/10 transition-colors active:scale-95 flex items-center gap-1 cursor-pointer backdrop-blur-sm"
             >
-              <Plus size={12} />
-              <span>{isRTL ? "إضافة موسيقى" : "Add Music"}</span>
+              <Plus size={10} />
+              <span>Add Music</span>
             </button>
             <button 
               onClick={() => setActiveTab("add_radio")}
-              className="bg-teal-500 hover:bg-teal-400 active:scale-95 text-black px-5 py-2 rounded-full font-black text-[11px] transition-all flex items-center gap-1.5 cursor-pointer shadow-lg shadow-teal-500/10"
+              className="bg-teal-500 hover:bg-teal-400 active:scale-95 text-black px-4 py-1.5 rounded-full font-black text-[10px] sm:text-[11px] transition-all flex items-center gap-1 cursor-pointer shadow-lg"
             >
-              <Plus size={12} />
-              <span>{isRTL ? "إضافة محطة" : "Add Station"}</span>
+              <Plus size={10} />
+              <span>Add Station</span>
             </button>
           </motion.div>
         </div>
         
         {/* Subtle Decorative Icon */}
-        <div className="absolute top-0 right-0 p-6 opacity-10 pointer-events-none">
-          <Music size={80} className="text-white transform rotate-12" />
+        <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+          <Music size={60} className="text-white transform rotate-12" />
         </div>
       </section>
 
       {/* Categories - Professional App List */}
-      <section className="space-y-2">
+      <section className="space-y-1.5">
         <div className="flex items-center justify-between px-1">
-          <h2 className="text-white text-[9px] font-black tracking-[0.25em] uppercase opacity-40">
-            {isRTL ? "الأقسام" : "Categories"}
+          <h2 className="text-zinc-500 text-[9px] font-black tracking-[0.25em] uppercase opacity-60">
+            Categories
           </h2>
         </div>
         
-        <div className="grid grid-cols-1 gap-2.5">
+        <div className="grid grid-cols-3 gap-2">
           {cards.map((card, idx) => (
             <motion.div
               key={card.id}
@@ -122,20 +120,13 @@ export default function HomeTab({
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: idx * 0.1 }}
               onClick={() => setActiveTab(card.id)}
-              className={`relative bg-gradient-to-r ${card.color} border ${card.borderColor} rounded-xl px-6 py-4 cursor-pointer group hover:border-white/20 transition-all active:scale-[0.98] flex items-center justify-between shadow-lg`}
+              className={`relative bg-gradient-to-b ${card.color} border ${card.borderColor} rounded-xl px-2 py-3 cursor-pointer group hover:border-white/20 transition-all active:scale-[0.98] flex flex-col items-center justify-center text-center shadow-md`}
             >
-              <div className="flex items-center gap-4">
-                <div className="p-2.5 bg-black/40 rounded-lg group-hover:scale-110 transition-transform shrink-0 border border-white/5">
-                  {React.cloneElement(card.icon as React.ReactElement, { size: 18 })}
-                </div>
-                <div className="text-left space-y-0.5">
-                  <h3 className="text-white font-bold text-sm tracking-tight">{card.title}</h3>
-                  <p className="text-zinc-500 text-[9px] font-medium opacity-80">{card.desc}</p>
-                </div>
+              <div className="p-2 bg-black/40 rounded-lg group-hover:scale-110 transition-transform shrink-0 border border-white/5 mb-1.5">
+                {React.cloneElement(card.icon as React.ReactElement, { size: 16 })}
               </div>
-              <div className="w-7 h-7 rounded-full border border-white/10 flex items-center justify-center text-white/30 group-hover:text-white group-hover:bg-white/5 transition-all">
-                <ArrowRight size={12} className={isRTL ? "rotate-180" : ""} />
-              </div>
+              <h3 className="text-white font-extrabold text-[11px] sm:text-xs tracking-tight">{card.title}</h3>
+              <p className="text-zinc-500 text-[8px] font-medium opacity-80 mt-0.5">{card.desc}</p>
             </motion.div>
           ))}
         </div>

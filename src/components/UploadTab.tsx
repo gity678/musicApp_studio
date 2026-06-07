@@ -38,7 +38,7 @@ export default function UploadTab({
   onReloadWorkerSongs,
   workerError,
 }: UploadTabProps) {
-  const isRTL = lang === "ar";
+  const isRTL = false;
   const t = translations[lang];
 
   // Active sub-tab inside upload: 'search' (default) or 'link'

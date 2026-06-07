@@ -62,7 +62,7 @@ export default function BottomPlayer({
   onHeightChange,
   liveSong = "",
 }: BottomPlayerProps) {
-  const isRTL = lang === "ar";
+  const isRTL = false;
   const t = translations[lang];
   const [isDragging, setIsDragging] = useState(false);
   const [dragPercent, setDragPercent] = useState(0);
@@ -191,7 +191,7 @@ export default function BottomPlayer({
                 {isLive ? (
                   <div className="flex flex-col gap-0.5 mt-0.5">
                     <p className="text-[11px] text-zinc-600 font-medium truncate max-w-[200px]">
-                      {liveSong || currentTrack.artist || currentTrack.album || (isRTL ? "جاري الاتصال..." : "Connecting...")}
+                      {liveSong || currentTrack.artist || currentTrack.album || "Connecting..."}
                     </p>
                     <div className="flex items-center gap-1">
                       <span className="relative flex h-1.5 w-1.5 shrink-0">
@@ -199,7 +199,7 @@ export default function BottomPlayer({
                         <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-pink-500"></span>
                       </span>
                       <span className="text-[9px] font-bold text-pink-500 uppercase tracking-wider font-sans leading-none">
-                        {isRTL ? "مباشر" : "LIVE"}
+                        LIVE
                       </span>
                     </div>
                   </div>
@@ -313,7 +313,7 @@ export default function BottomPlayer({
                 {isLive ? (
                   <div className="flex flex-col gap-0.5 mt-0.5">
                     <p className="text-[11px] text-zinc-600 font-medium truncate max-w-[200px]">
-                      {liveSong || currentTrack.artist || currentTrack.album || (isRTL ? "جاري الاتصال..." : "Connecting...")}
+                      {liveSong || currentTrack.artist || currentTrack.album || "Connecting..."}
                     </p>
                     <div className="flex items-center gap-1">
                       <span className="relative flex h-1.5 w-1.5 shrink-0">
@@ -321,7 +321,7 @@ export default function BottomPlayer({
                         <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-pink-500"></span>
                       </span>
                       <span className="text-[9px] font-bold text-pink-500 uppercase tracking-wider font-sans leading-none">
-                        {isRTL ? "مباشر" : "LIVE"}
+                        LIVE
                       </span>
                     </div>
                   </div>

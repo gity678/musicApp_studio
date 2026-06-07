@@ -21,7 +21,7 @@ export default function YoutubeTab(props: YoutubeTabProps) {
     onAddYoutubeToCollection,
     workerUrl,
   } = props;
-  const isRTL = lang === "ar";
+  const isRTL = false;
   const t = translations[lang];
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<YouTubeVideo[]>([]);
@@ -149,10 +149,10 @@ export default function YoutubeTab(props: YoutubeTabProps) {
             <button
               onClick={() => setActiveVideoId(null)}
               className="bg-zinc-800 hover:bg-zinc-700 active:scale-95 text-zinc-200 hover:text-white px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
-              title={isRTL ? "إلغاء الفيديو" : "Cancel playback"}
+              title="Cancel playback"
             >
               <X size={13} />
-              <span>{isRTL ? "إلغاء" : "Cancel"}</span>
+              <span>Cancel</span>
             </button>
           </div>
         </motion.div>
