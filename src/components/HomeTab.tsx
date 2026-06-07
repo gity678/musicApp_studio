@@ -74,21 +74,28 @@ export default function HomeTab({
              initial={{ opacity: 0 }}
              animate={{ opacity: 1 }}
              transition={{ delay: 0.2 }}
-             className="flex gap-3"
+             className="flex flex-wrap gap-2 md:gap-3"
           >
             <button 
               onClick={() => setActiveTab("music")}
-              className="bg-[#1db954] text-black px-6 py-2 rounded-full font-black text-[11px] hover:bg-[#1ed760] transition-colors shadow-lg shadow-emerald-500/10 active:scale-95 flex items-center gap-1.5 cursor-pointer"
+              className="bg-[#1db954] text-black px-5 py-2 rounded-full font-black text-[11px] hover:bg-[#1ed760] transition-colors shadow-lg shadow-emerald-500/10 active:scale-95 flex items-center gap-1.5 cursor-pointer"
             >
               <Play size={12} fill="currentColor" />
               <span>{isRTL ? "ابدأ" : "Play"}</span>
             </button>
             <button 
               onClick={() => setActiveTab("upload")}
-              className="bg-white/5 text-white border border-white/10 px-6 py-2 rounded-full font-black text-[11px] hover:bg-white/10 transition-colors active:scale-95 flex items-center gap-1.5 cursor-pointer backdrop-blur-sm"
+              className="bg-white/5 text-white border border-white/10 px-5 py-2 rounded-full font-black text-[11px] hover:bg-white/10 transition-colors active:scale-95 flex items-center gap-1.5 cursor-pointer backdrop-blur-sm"
             >
               <Plus size={12} />
-              <span>{isRTL ? "إضافة" : "Add"}</span>
+              <span>{isRTL ? "إضافة موسيقى" : "Add Music"}</span>
+            </button>
+            <button 
+              onClick={() => setActiveTab("add_radio")}
+              className="bg-teal-500 hover:bg-teal-400 active:scale-95 text-black px-5 py-2 rounded-full font-black text-[11px] transition-all flex items-center gap-1.5 cursor-pointer shadow-lg shadow-teal-500/10"
+            >
+              <Plus size={12} />
+              <span>{isRTL ? "إضافة محطة" : "Add Station"}</span>
             </button>
           </motion.div>
         </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import Sidebar from "./components/Sidebar";
+import { motion } from "motion/react";
 import BottomPlayer from "./components/BottomPlayer";
 import HomeTab from "./components/HomeTab";
 import MusicTab from "./components/MusicTab";
@@ -776,30 +776,12 @@ export default function App() {
 
   return (
     <div className="flex bg-zinc-50 h-[100dvh] overflow-hidden text-zinc-900 overscroll-none touch-pan-y shadow-inner" dir={isRTL ? "rtl" : "ltr"}>
-      {/* LEFT Navigation sidebar */}
-      <Sidebar
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        lang={lang}
-        setLang={setLang}
-        isOpen={isSidebarOpen}
-        setIsOpen={setIsSidebarOpen}
-        translations={translations}
-      />
-
       {/* RIGHT Core Body container */}
       <div className="flex-1 flex flex-col h-full relative overflow-hidden min-w-0">
         {/* Custom Header Navigation */}
         <header className="bg-white/90 border-b border-zinc-200 px-4 py-1.5 z-20 backdrop-blur-md shrink-0">
           <div className="max-w-sm md:max-w-md mx-auto w-full flex items-center justify-between gap-4">
             <div className="flex items-center gap-4 flex-1">
-              <button
-                onClick={() => setIsSidebarOpen(true)}
-                className="md:hidden p-2 rounded-xl hover:bg-zinc-100 text-zinc-500 hover:text-zinc-950 transition-colors cursor-pointer"
-              >
-                <Menu size={18} />
-              </button>
-
               {!isSearchActive || (activeTab !== "music" && activeTab !== "radio") ? (
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-bold tracking-tight uppercase flex items-center gap-2 text-zinc-900 transition-opacity duration-300">
@@ -837,7 +819,16 @@ export default function App() {
               )}
             </div>
 
-            <div className="flex items-center gap-4 shrink-0">
+            <div className="flex items-center gap-3 shrink-0">
+              {/* Language Switcher Toggler in Header */}
+              <button
+                onClick={() => setLang(lang === "en" ? "ar" : "en")}
+                className="px-2 py-1 bg-zinc-100 hover:bg-zinc-200 hover:text-zinc-950 border border-zinc-200 text-zinc-650 rounded-lg font-black text-[9px] uppercase tracking-wider transition-all cursor-pointer shadow-xs"
+                title={lang === "en" ? "العربية" : "English"}
+              >
+                {lang === "en" ? "AR" : "EN"}
+              </button>
+
               {!isSearchActive && (activeTab === "music" || activeTab === "radio") && (
                 <button
                   onClick={() => setIsSearchActive(true)}
@@ -860,8 +851,8 @@ export default function App() {
             className="w-full flex-1 overflow-y-auto overscroll-contain no-scrollbar"
             style={{ 
               paddingBottom: currentTrack 
-                ? `${playerHeight + (isPlayerExpanded ? 20 : 0)}px` 
-                : '100px' 
+                ? `${playerHeight + (isPlayerExpanded ? 20 : 0) + 76}px` 
+                : '160px' 
             }}
           >
             <div className="w-full max-w-sm md:max-w-md mx-auto space-y-4 px-3 sm:px-4 py-4 overflow-hidden">
@@ -968,6 +959,42 @@ export default function App() {
           onHeightChange={setPlayerHeight}
           liveSong={liveSong}
         />
+
+        {/* BOTTOM NAVIGATION GLOBAL BAR */}
+        <div className="fixed bottom-0 left-0 right-0 h-16 bg-white/95 border-t border-zinc-200 backdrop-blur-xl z-40 flex items-center select-none shadow-[0_-5px_20px_rgba(0,0,0,0.03)] pb-safe">
+          <div className="max-w-sm md:max-w-md mx-auto w-full flex items-center justify-around h-full px-2">
+            {[
+              { id: "home", label: isRTL ? "الرئيسية" : "Home", icon: Home },
+              { id: "music", label: isRTL ? "موسيقى" : "Music", icon: Music },
+              { id: "radio", label: isRTL ? "راديو" : "Radio", icon: Radio },
+              { id: "youtube", label: isRTL ? "يوتيوب" : "YouTube", icon: Youtube }
+            ].map((item) => {
+              const Icon = item.icon;
+              const isActive = activeTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveTab(item.id)}
+                  className={`flex flex-col items-center justify-center flex-1 h-full py-1 text-center transition-all relative ${
+                    isActive 
+                      ? "text-[#1db954] font-black" 
+                      : "text-zinc-500 hover:text-zinc-900"
+                  } cursor-pointer group`}
+                >
+                  <Icon size={18} className={`mb-1 transition-transform duration-200 ${isActive ? "scale-110 text-[#1db954]" : "text-zinc-400 group-hover:text-zinc-800"}`} />
+                  <span className="text-[10px] tracking-tight font-bold">{item.label}</span>
+                  {isActive && (
+                    <motion.div
+                      layoutId="activeBottomTabBorder"
+                      className="absolute top-0 left-1/4 right-1/4 h-[3px] bg-[#1db954] rounded-full"
+                      transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                    />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
     </div>
   );
