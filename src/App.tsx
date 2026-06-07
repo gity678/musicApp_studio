@@ -967,6 +967,14 @@ export default function App() {
           setIsExpanded={setIsPlayerExpanded}
           onHeightChange={setPlayerHeight}
           liveSong={liveSong}
+          onClose={() => {
+            setCurrentTrack(null);
+            setIsPlaying(false);
+            if (audioRef.current) {
+              audioRef.current.pause();
+              audioRef.current.currentTime = 0;
+            }
+          }}
         />
 
         {/* BOTTOM NAVIGATION GLOBAL BAR */}

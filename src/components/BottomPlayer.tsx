@@ -9,7 +9,8 @@ import {
   Shuffle,
   Maximize2,
   Minimize2,
-  Disc
+  Disc,
+  X
 } from "lucide-react";
 import { Track } from "../types";
 
@@ -36,6 +37,7 @@ interface BottomPlayerProps {
   setIsExpanded: (val: boolean) => void;
   onHeightChange: (height: number) => void;
   liveSong?: string;
+  onClose?: () => void;
 }
 
 export default function BottomPlayer({
@@ -61,6 +63,7 @@ export default function BottomPlayer({
   setIsExpanded,
   onHeightChange,
   liveSong = "",
+  onClose,
 }: BottomPlayerProps) {
   const isRTL = false;
   const t = translations[lang];
@@ -251,6 +254,16 @@ export default function BottomPlayer({
               >
                 <Maximize2 size={16} />
               </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onClose?.();
+                }}
+                className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-all cursor-pointer ml-0.5"
+                title="Close player"
+              >
+                <X size={16} />
+              </button>
             </div>
           </div>
 
@@ -333,7 +346,7 @@ export default function BottomPlayer({
               </div>
             </div>
 
-            {/* MINIMIZE BUTTON ONLY */}
+            {/* MINIMIZE AND CLOSE BUTTONS */}
             <div className="flex items-center gap-1 shrink-0">
               <button
                 onClick={() => setIsExpanded(false)}
@@ -341,6 +354,13 @@ export default function BottomPlayer({
                 title="Minimize layout"
               >
                 <Minimize2 size={15} />
+              </button>
+              <button
+                onClick={() => onClose?.()}
+                className="p-1.5 text-red-500 hover:bg-red-55 transition-colors cursor-pointer rounded-lg"
+                title="Close player"
+              >
+                <X size={15} />
               </button>
             </div>
           </div>
