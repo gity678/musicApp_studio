@@ -133,8 +133,8 @@ export default function BottomPlayer({
     };
   }, [isDragging, dragPercent, duration, onSeek, isExpanded]);
 
-  if (!currentTrack) {
-    return null; // Don't render player at all when there is no playing track
+  if (!currentTrack || currentTrack.id.startsWith("yt-")) {
+    return null; // Don't render player at all when there is no playing track or if it's a YouTube video
   }
 
   const formatTime = (secs: number) => {

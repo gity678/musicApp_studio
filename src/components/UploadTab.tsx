@@ -335,6 +335,16 @@ export default function UploadTab({
   };
 
   const startVideoPreview = (item: any) => {
+    // Pause any native HTML5 audio elements on the page to prevent background song overlap
+    const audios = document.querySelectorAll("audio");
+    audios.forEach((audio) => {
+      try {
+        audio.pause();
+      } catch (e) {
+        console.warn(e);
+      }
+    });
+
     const v = item.video;
     setPlayVideoId(v.videoId);
     setPlayVideoTitle(v.title);
