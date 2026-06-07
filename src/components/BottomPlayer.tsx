@@ -183,11 +183,6 @@ export default function BottomPlayer({
                   alt={currentTrack.title}
                   className="w-9 h-9 rounded-xl object-cover border border-zinc-100 shadow-sm"
                 />
-                {isPlaying && (
-                  <div className="absolute inset-0 bg-black/10 flex items-center justify-center rounded-xl">
-                    <Disc size={14} className="text-[#1db954] animate-spin [animation-duration:3s]" />
-                  </div>
-                )}
               </div>
               <div className="min-w-0 flex-1">
                 <h4 className="font-bold text-[13px] md:text-sm truncate text-zinc-900 group-hover:text-[#1db954] transition-colors leading-tight">
@@ -310,11 +305,6 @@ export default function BottomPlayer({
                   alt={currentTrack.title}
                   className="w-10 h-10 rounded-xl object-cover shadow-sm border border-zinc-200"
                 />
-                {isPlaying && (
-                  <div className="absolute inset-0 bg-black/10 flex items-center justify-center rounded-xl">
-                    <Disc size={16} className="text-[#1db954] animate-spin [animation-duration:4s]" />
-                  </div>
-                )}
               </div>
               <div className="min-w-0 flex-1">
                 <h4 className="font-bold text-xs md:text-sm text-zinc-900 truncate">
