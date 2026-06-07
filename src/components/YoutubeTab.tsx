@@ -1,6 +1,6 @@
 import React, { useState, useRef } from "react";
 import { motion } from "motion/react";
-import { Search, Play, Youtube, Eye, Bookmark, Heart, Plus, Trash2 } from "lucide-react";
+import { Search, Play, Youtube, Eye, Bookmark, Heart, Plus, Trash2, X } from "lucide-react";
 import { YouTubeVideo, Track } from "../types";
 
 interface YoutubeTabProps {
@@ -135,14 +135,26 @@ export default function YoutubeTab(props: YoutubeTabProps) {
         <motion.div
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="relative aspect-video rounded-2xl overflow-hidden border border-red-500/20 bg-black shadow-2xl"
+          className="space-y-3 w-full"
         >
-          <iframe
-            id="yt-player"
-            src={`https://www.youtube.com/embed/${activeVideoId}?autoplay=1&enablejsapi=1&origin=${window.location.origin}`}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            style={{ width: "100%", height: "100%", border: "none" }}
-          />
+          <div className="relative aspect-video rounded-2xl overflow-hidden border border-red-500/20 bg-black shadow-2xl w-full">
+            <iframe
+              id="yt-player"
+              src={`https://www.youtube.com/embed/${activeVideoId}?autoplay=1&enablejsapi=1&origin=${window.location.origin}`}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              style={{ width: "100%", height: "100%", border: "none" }}
+            />
+          </div>
+          <div className="flex justify-end">
+            <button
+              onClick={() => setActiveVideoId(null)}
+              className="bg-zinc-800 hover:bg-zinc-700 active:scale-95 text-zinc-200 hover:text-white px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
+              title={isRTL ? "إلغاء الفيديو" : "Cancel playback"}
+            >
+              <X size={13} />
+              <span>{isRTL ? "إلغاء" : "Cancel"}</span>
+            </button>
+          </div>
         </motion.div>
       )}
 
