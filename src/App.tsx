@@ -91,6 +91,52 @@ export default function App() {
   const [isPlayerExpanded, setIsPlayerExpanded] = useState<boolean>(true);
   const [playerHeight, setPlayerHeight] = useState<number>(0);
 
+  // Pull to refresh gesture state
+  const [pullY, setPullY] = useState<number>(0);
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+  const touchStartY = useRef<number | null>(null);
+  const isPulling = useRef<boolean>(false);
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (isRefreshing) return;
+    const scrollTop = scrollContainerRef.current ? scrollContainerRef.current.scrollTop : 0;
+    if (scrollTop <= 1) {
+      touchStartY.current = e.touches[0].clientY;
+      isPulling.current = true;
+    } else {
+      isPulling.current = false;
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (!isPulling.current || touchStartY.current === null || isRefreshing) return;
+    const currentY = e.touches[0].clientY;
+    const deltaY = currentY - touchStartY.current;
+    if (deltaY > 0) {
+      const pull = Math.min(deltaY * 0.4, 64);
+      setPullY(pull);
+      if (pull > 5 && e.cancelable) {
+        e.preventDefault();
+      }
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (!isPulling.current || isRefreshing) return;
+    isPulling.current = false;
+    touchStartY.current = null;
+    if (pullY >= 40) {
+      setIsRefreshing(true);
+      setPullY(45);
+      setTimeout(() => {
+        window.location.reload();
+      }, 800);
+    } else {
+      setPullY(0);
+    }
+  };
+
   useEffect(() => {
     setSearchTerm("");
     setIsSearchActive(false);
@@ -834,6 +880,10 @@ export default function App() {
         {/* Content Viewer viewport */}
         <main className="flex-1 relative z-10 animate-fade-in flex flex-col min-h-0">
           <div 
+            ref={scrollContainerRef}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
             className={`w-full flex-1 no-scrollbar ${
               activeTab === "home" 
                 ? "overflow-hidden flex flex-col justify-center" 
@@ -848,6 +898,27 @@ export default function App() {
             <div className={`w-full max-w-sm md:max-w-md mx-auto overflow-hidden ${
               activeTab === "home" ? "space-y-3 px-3 sm:px-4 py-1.5" : "space-y-4 px-3 sm:px-4 py-4"
             }`}>
+            
+            {/* Pull to refresh indicator */}
+            {(pullY > 0 || isRefreshing) && (
+              <motion.div 
+                style={{ height: pullY }} 
+                className="w-full overflow-hidden flex items-center justify-center pointer-events-none select-none mb-1 shrink-0"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+              >
+                <div className="flex items-center gap-1.5 bg-black/80 border border-white/5 text-white rounded-full px-3 py-1 text-[9px] font-extrabold uppercase tracking-widest shadow-md">
+                  <motion.div
+                    animate={isRefreshing ? { rotate: 360 } : { rotate: pullY * 6 }}
+                    transition={isRefreshing ? { repeat: Infinity, duration: 0.6, ease: "linear" } : undefined}
+                    className="flex shrink-0"
+                  >
+                    <Disc size={11} className="text-[#1db954]" />
+                  </motion.div>
+                  <span className="text-zinc-200">{isRefreshing ? "Refreshing..." : "Pull to Refresh"}</span>
+                </div>
+              </motion.div>
+            )}
             
             {/* Visualizer canvas floating header */}
             {showVisualizer && (

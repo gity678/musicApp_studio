@@ -1,7 +1,6 @@
 @import "tailwindcss";
 
 html, body {
-  overscroll-behavior-y: contain; /* Prevents pull-to-refresh in most mobile browsers */
   height: 100%;
 }
 
