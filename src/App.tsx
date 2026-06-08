@@ -818,7 +818,7 @@ export default function App() {
           <header className="bg-white/90 border-b border-zinc-200 px-4 py-2 z-20 backdrop-blur-md shrink-0 h-14 flex items-center">
             <div className="max-w-sm md:max-w-md mx-auto w-full relative h-full flex items-center justify-between">
               {/* Left side (Balanced spacer or back button placeholder) */}
-              <div className="w-10 flex items-center justify-start">
+              <div className="w-10 flex items-center justify-start z-10">
                 <div className="p-2 opacity-80">
                   {activeTab === "music" && <Music size={18} className="text-[#1db954]" />}
                   {activeTab === "radio" && <Radio size={18} className="text-[#3b82f6]" />}
@@ -903,8 +903,8 @@ export default function App() {
                 : (currentTrack ? `${playerHeight + (isPlayerExpanded ? 20 : 0) + 76}px` : '160px')
             }}
           >
-            <div className={`w-full max-w-sm md:max-w-md mx-auto overflow-hidden ${
-              activeTab === "home" ? "space-y-3 px-3 sm:px-4 py-1.5" : "space-y-4 px-3 sm:px-4 py-4"
+            <div className={`w-full overflow-hidden ${
+              activeTab === "home" ? "h-full flex flex-col" : "max-w-sm md:max-w-md mx-auto space-y-4 px-3 sm:px-4 py-4"
             }`}>
             
             {/* Visualizer canvas floating header */}
