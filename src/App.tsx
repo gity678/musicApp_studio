@@ -22,13 +22,49 @@ const isStaticEnvironment = (): boolean => {
 
 const formatSecondsToMinutes = (seconds: any): string => {
   if (seconds === undefined || seconds === null) return "...";
-  if (typeof seconds === "string" && /^\d+:\d{2}$/.test(seconds)) {
-    return seconds;
+  
+  if (typeof seconds === "string") {
+    // Already in H:MM:SS
+    if (/^\d+:\d{2}:\d{2}$/.test(seconds)) {
+      return seconds;
+    }
+    // Already in MM:SS (e.g. "180:05" or "12:45")
+    if (/^(\d+):(\d{2})$/.test(seconds)) {
+      const match = seconds.match(/^(\d+):(\d{2})$/);
+      if (match) {
+        const minutes = parseInt(match[1], 10);
+        const secs = parseInt(match[2], 10);
+        if (minutes >= 60) {
+          const hours = Math.floor(minutes / 60);
+          const relativeMins = minutes % 60;
+          return `${hours}:${relativeMins < 10 ? "0" : ""}${relativeMins}:${secs < 10 ? "0" : ""}${secs}`;
+        }
+      }
+      return seconds;
+    }
+    // Only digits as string
+    if (/^\d+$/.test(seconds)) {
+      const num = Number(seconds);
+      if (!isNaN(num) && num > 0) {
+        const hours = Math.floor(num / 3600);
+        const mins = Math.floor((num % 3600) / 60);
+        const secs = Math.floor(num % 60);
+        if (hours > 0) {
+          return `${hours}:${mins < 10 ? "0" : ""}${mins}:${secs < 10 ? "0" : ""}${secs}`;
+        }
+        return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
+      }
+    }
   }
+
   const num = Number(seconds);
   if (!isNaN(num) && num > 0) {
-    const mins = Math.floor(num / 60);
+    const hours = Math.floor(num / 3600);
+    const mins = Math.floor((num % 3600) / 60);
     const secs = Math.floor(num % 60);
+    if (hours > 0) {
+      return `${hours}:${mins < 10 ? "0" : ""}${mins}:${secs < 10 ? "0" : ""}${secs}`;
+    }
     return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
   }
   return "...";

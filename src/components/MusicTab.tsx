@@ -9,7 +9,7 @@ const durationCache: Record<string, string> = {};
 function TrackDuration({ audioUrl, fallback, className }: { audioUrl: string; fallback: string; className?: string }) {
   const [duration, setDuration] = useState<string>(() => {
     if (durationCache[audioUrl]) return durationCache[audioUrl];
-    if (fallback && /^\d+:\d{2}$/.test(fallback)) return fallback;
+    if (fallback && /^\d+:\d{2}(:\d{2})?$/.test(fallback)) return fallback;
     return "...";
   });
 
@@ -21,7 +21,7 @@ function TrackDuration({ audioUrl, fallback, className }: { audioUrl: string; fa
     }
 
     if (fallback && !["Cloud", "Direct", "...", "0:00", "Live", "Synced"].includes(fallback)) {
-      if (/^\d+:\d{2}$/.test(fallback)) {
+      if (/^\d+:\d{2}(:\d{2})?$/.test(fallback)) {
         setDuration(fallback);
         durationCache[audioUrl] = fallback;
         return;
@@ -51,9 +51,16 @@ function TrackDuration({ audioUrl, fallback, className }: { audioUrl: string; fa
       const totalSeconds = Math.floor(audio.duration);
       if (isNaN(totalSeconds) || totalSeconds === Infinity || totalSeconds <= 0) return;
       
-      const min = Math.floor(totalSeconds / 60);
+      const hours = Math.floor(totalSeconds / 3600);
+      const min = Math.floor((totalSeconds % 3600) / 60);
       const sec = totalSeconds % 60;
-      const result = `${min}:${sec < 10 ? "0" : ""}${sec}`;
+      
+      let result = "";
+      if (hours > 0) {
+        result = `${hours}:${min < 10 ? "0" : ""}${min}:${sec < 10 ? "0" : ""}${sec}`;
+      } else {
+        result = `${min}:${sec < 10 ? "0" : ""}${sec}`;
+      }
       
       setDuration(result);
       durationCache[audioUrl] = result;

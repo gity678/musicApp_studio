@@ -142,8 +142,12 @@ export default function BottomPlayer({
 
   const formatTime = (secs: number) => {
     if (isNaN(secs)) return "0:00";
-    const minutes = Math.floor(secs / 60);
+    const hours = Math.floor(secs / 3600);
+    const minutes = Math.floor((secs % 3600) / 60);
     const seconds = Math.floor(secs % 60);
+    if (hours > 0) {
+      return `${hours}:${minutes < 10 ? "0" : ""}${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
+    }
     return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
   };
 
