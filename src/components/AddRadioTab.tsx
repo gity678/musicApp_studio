@@ -181,7 +181,7 @@ export default function AddRadioTab({ lang }: AddRadioTabProps) {
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6 pb-20 p-2 sm:p-4">
+    <div className="max-w-2xl mx-auto space-y-4 pb-20">
       {/* Tab Switcher */}
       <div className="bg-zinc-100 p-1.5 rounded-2xl flex gap-1 shadow-inner border border-zinc-200">
         <button 
@@ -208,19 +208,6 @@ export default function AddRadioTab({ lang }: AddRadioTabProps) {
       </div>
 
       <div className="bg-white border border-zinc-200 rounded-3xl p-6 sm:p-8 shadow-sm space-y-6 animate-fade-in">
-        <div className="text-center space-y-1">
-          <h2 className="text-xl font-black tracking-tight text-zinc-900 flex items-center justify-center gap-2 uppercase">
-            {mode === 'modifier' && <Edit2 size={20} className="text-zinc-400" />}
-            {mode === 'ajouter' && <Plus size={20} className="text-[#e91e63]" />}
-            {mode === 'json' && <FileJson size={20} className="text-orange-500" />}
-            <span>
-              {mode === 'modifier' && (isRTL ? "تعديل محطة" : "Modifier la station")}
-              {mode === 'ajouter' && (isRTL ? "إضافة محطة جديدة" : "Ajouter une station")}
-              {mode === 'json' && (isRTL ? "استيراد JSON" : "Importer via JSON")}
-            </span>
-          </h2>
-        </div>
-
         {mode === 'modifier' && (
           <div className="space-y-2">
             <label className="text-[10px] font-mono font-black uppercase text-zinc-400 tracking-widest">{isRTL ? "اختر المحطة" : "Select station"}</label>
