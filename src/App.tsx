@@ -272,7 +272,7 @@ export default function App() {
             audioUrl: song.url || "",
             duration: formatSecondsToMinutes(song.duration),
             genre: song.source === "cloudinary" ? "Cloudinary" : (song.source === "b2" ? "Backblaze B2" : "Remote Feed"),
-          }));
+          })).reverse();
           setWorkerTracks(mappedSongs);
 
           // Map worker radios
@@ -379,7 +379,7 @@ export default function App() {
           audioUrl: song.url || "",
           duration: formatSecondsToMinutes(song.duration),
           genre: song.source === "cloudinary" ? "Cloudinary" : (song.source === "b2" ? "Backblaze B2" : "Remote Feed"),
-        }));
+        })).reverse();
         setWorkerTracks(mapped);
       })
       .catch((err) => {

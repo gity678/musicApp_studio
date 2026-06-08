@@ -92,8 +92,8 @@ export default function ConfirmMetadataModal({
             </button>
             <div className="absolute bottom-2 left-4 right-4">
                <div className="flex items-center gap-2 mb-0.5">
-                 <div className="px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-tight bg-[#1db954] text-white">
-                    {source}
+                 <div className="px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-tight bg-[#facc15] text-black">
+                     {source}
                  </div>
                </div>
                <h3 className="text-white font-bold text-sm truncate drop-shadow-md">{title || "..."}</h3>
@@ -123,7 +123,7 @@ export default function ConfirmMetadataModal({
                   onClick={() => setSource("iTunes")}
                   className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg border transition-all text-[10px] font-bold ${
                     source === "iTunes"
-                      ? "bg-[#1db954] border-[#1db954] text-white shadow-md shadow-[#1db954]/20"
+                      ? "bg-[#facc15] border-[#facc15] text-black shadow-md shadow-[#facc15]/20"
                       : "bg-zinc-50 border-zinc-200 text-zinc-400 hover:bg-zinc-100 disabled:opacity-30 disabled:cursor-not-allowed"
                   }`}
                 >
@@ -135,7 +135,7 @@ export default function ConfirmMetadataModal({
                   onClick={() => setSource("YouTube")}
                   className={`flex items-center justify-center gap-1.5 py-1.5 rounded-lg border transition-all text-[10px] font-bold ${
                     source === "YouTube"
-                      ? "bg-[#1db954] border-[#1db954] text-white shadow-md shadow-[#1db954]/20"
+                      ? "bg-[#facc15] border-[#facc15] text-black shadow-md shadow-[#facc15]/20"
                       : "bg-zinc-50 border-zinc-200 text-zinc-400 hover:bg-zinc-100"
                   }`}
                 >
@@ -155,7 +155,7 @@ export default function ConfirmMetadataModal({
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className={`w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-xs text-zinc-800 focus:outline-none focus:border-[#1db954] transition-all ${isRTL ? "text-right" : "text-left"}`}
+                  className={`w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-xs text-zinc-800 focus:outline-none focus:border-[#facc15] transition-all ${isRTL ? "text-right" : "text-left"}`}
                   placeholder={isRTL ? "عنوان الأغنية..." : "Song title..."}
                 />
               </div>
@@ -167,7 +167,7 @@ export default function ConfirmMetadataModal({
                   type="text"
                   value={artist}
                   onChange={(e) => setArtist(e.target.value)}
-                  className={`w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-xs text-zinc-800 focus:outline-none focus:border-[#1db954] transition-all ${isRTL ? "text-right" : "text-left"}`}
+                  className={`w-full bg-zinc-50 border border-zinc-200 rounded-lg px-3 py-2 text-xs text-zinc-800 focus:outline-none focus:border-[#facc15] transition-all ${isRTL ? "text-right" : "text-left"}`}
                   placeholder={isRTL ? "اسم الفنان..." : "Artist name..."}
                 />
               </div>
@@ -183,7 +183,7 @@ export default function ConfirmMetadataModal({
               </div>
             </div>
 
-            {/* Quick Actions */}
+             {/* Quick Actions */}
             <div className={`flex gap-2 pt-2 ${isRTL ? "flex-row-reverse" : "flex-row"}`}>
               <button
                 onClick={onClose}
@@ -193,7 +193,7 @@ export default function ConfirmMetadataModal({
               </button>
               <button
                 onClick={() => onConfirm({ title, artist, thumb, duration })}
-                className="flex-[2] bg-[#1db954] hover:bg-[#1ed760] text-white font-black py-2.5 rounded-xl text-[10px] transition-all shadow-lg shadow-[#1db954]/20 active:scale-95 flex items-center justify-center gap-1.5"
+                className="flex-[2] bg-[#facc15] hover:bg-yellow-400 text-black font-black py-2.5 rounded-xl text-[10px] transition-all shadow-lg shadow-[#facc15]/20 active:scale-95 flex items-center justify-center gap-1.5"
               >
                 <Check size={14} />
                 <span>{isRTL ? "تأكيد وإرسال" : "Confirm & Send"}</span>
