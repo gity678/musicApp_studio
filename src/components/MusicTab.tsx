@@ -164,8 +164,17 @@ export default function MusicTab({
     e.stopPropagation();
     setMenuIndex(i);
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    
+    const isUpperHalf = i < filteredTracks.length / 2;
+    // Estimated dropdown height: 2 buttons of ~40px + border + padding + small close bar = ~112px
+    const menuHeight = 112;
+    
+    const top = isUpperHalf 
+      ? rect.bottom + window.scrollY + 5 
+      : rect.top + window.scrollY - menuHeight - 5;
+
     setDropdownPos({
-      top: rect.top + window.scrollY + 40,
+      top,
       left: Math.max(10, rect.left - 130)
     });
   };

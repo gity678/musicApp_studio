@@ -9,6 +9,7 @@ interface RadioTabProps {
   workerUrl: string;
   workerRadios: RadioStation[];
   onEditStation?: (station: RadioStation) => void;
+  onDeleteStation?: (stationName: string) => void;
 }
 
 export default function RadioTab({
@@ -18,6 +19,7 @@ export default function RadioTab({
   workerUrl,
   workerRadios,
   onEditStation,
+  onDeleteStation,
 }: RadioTabProps) {
   const isRTL = false;
   const [radios, setRadios] = useState<any[]>([]);
@@ -32,9 +34,11 @@ export default function RadioTab({
     setIsLoading(false);
   }, [workerRadios]);
 
-  const loadRadios = async () => {
-    setIsLoading(true);
-    setError(null);
+  const loadRadios = async (silent = false) => {
+    if (!silent) {
+      setIsLoading(true);
+      setError(null);
+    }
     try {
       let cleanUrl = workerUrl.trim().replace(/\/$/, "");
       if (cleanUrl.includes("music-worker")) {
@@ -124,9 +128,16 @@ export default function RadioTab({
     setMenuIndex(i);
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     
-    // Position dropdown better for mobile/desktop
+    const isUpperHalf = i < radios.length / 2;
+    // Estimated dropdown height: 2 buttons of ~40px + border + padding + small close bar = ~112px
+    const menuHeight = 112;
+
+    const top = isUpperHalf 
+      ? rect.bottom + window.scrollY + 5 
+      : rect.top + window.scrollY - menuHeight - 5;
+
     setDropdownPos({
-      top: rect.top + window.scrollY + 40,
+      top,
       left: Math.max(10, rect.left - 130)
     });
   };
@@ -149,6 +160,16 @@ export default function RadioTab({
     const r = radios[menuIndex];
     closeMenu();
     if (!confirm(isRTL ? `هل متأكد من حذف "${r.name}"؟` : `Delete "${r.name}"?`)) return;
+    
+    // Optimistic UI update: instantly update local list
+    const originalRadios = [...radios];
+    setRadios((prev) => prev.filter((item) => item.name !== r.name));
+    
+    // Notify parent to filter it out from workerRadios state too
+    if (onDeleteStation) {
+      onDeleteStation(r.name);
+    }
+
     try {
       let cleanUrl = workerUrl.trim().replace(/\/$/, "");
       if (cleanUrl.includes("music-worker")) {
@@ -161,12 +182,15 @@ export default function RadioTab({
       });
       const data = await res.json();
       if (data.ok) {
-        loadRadios();
+        // Silently reload in background, no full loading screen
+        loadRadios(true);
       } else {
         alert(isRTL ? 'خطأ في الحذف' : 'Deletion error');
+        setRadios(originalRadios);
       }
     } catch (e) {
       alert(isRTL ? 'خطأ في الاتصال' : 'Connection error');
+      setRadios(originalRadios);
     }
   };
 

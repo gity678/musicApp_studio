@@ -727,6 +727,10 @@ export default function App() {
     }
   };
 
+  const handleDeleteWorkerRadio = (stationName: string) => {
+    setWorkerRadios((prev) => prev.filter((s) => s.name !== stationName));
+  };
+
   // Play YouTube video in general bottom player and view on stream tab
   const handlePlayYoutube = (videoId: string, title: string, artist: string, cover: string) => {
     const ytTrack: Track = {
@@ -939,22 +943,23 @@ export default function App() {
             )}
 
             {activeTab === "radio" && (
-              <RadioTab
-                activeStation={
-                  currentTrack?.genre === "Radio Feed"
-                    ? combinedStations.find((s) => s.name === currentTrack.title) || null
-                    : null
-                }
-                onSelectStation={handleSelectRadio}
-                lang={lang}
-                workerUrl={workerUrl}
-                workerRadios={workerRadios}
-                onEditStation={(station) => {
-                  setStationToEdit(station);
-                  setActiveTab("add_radio");
-                }}
-              />
-            )}
+                <RadioTab
+                  activeStation={
+                    currentTrack?.genre === "Radio Feed"
+                      ? combinedStations.find((s) => s.name === currentTrack.title) || null
+                      : null
+                  }
+                  onSelectStation={handleSelectRadio}
+                  lang={lang}
+                  workerUrl={workerUrl}
+                  workerRadios={workerRadios}
+                  onEditStation={(station) => {
+                    setStationToEdit(station);
+                    setActiveTab("add_radio");
+                  }}
+                  onDeleteStation={handleDeleteWorkerRadio}
+                />
+              )}
 
             {activeTab === "upload" && (
               <UploadTab
