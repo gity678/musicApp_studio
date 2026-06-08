@@ -72,6 +72,7 @@ export default function App() {
   const lang = "en";
 
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
+  const [stationToEdit, setStationToEdit] = useState<RadioStation | null>(null);
 
   // Core Playback State
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
@@ -922,6 +923,10 @@ export default function App() {
                 lang={lang}
                 workerUrl={workerUrl}
                 workerRadios={workerRadios}
+                onEditStation={(station) => {
+                  setStationToEdit(station);
+                  setActiveTab("add_radio");
+                }}
               />
             )}
 
@@ -944,7 +949,11 @@ export default function App() {
             )}
 
             {activeTab === "add_radio" && (
-              <AddRadioTab lang={lang} />
+              <AddRadioTab 
+                lang={lang} 
+                stationToEdit={stationToEdit}
+                onClearStationToEdit={() => setStationToEdit(null)}
+              />
             )}
 
             {activeTab === "youtube" && (

@@ -8,6 +8,7 @@ interface RadioTabProps {
   lang: "en" | "ar";
   workerUrl: string;
   workerRadios: RadioStation[];
+  onEditStation?: (station: RadioStation) => void;
 }
 
 export default function RadioTab({
@@ -16,6 +17,7 @@ export default function RadioTab({
   lang,
   workerUrl,
   workerRadios,
+  onEditStation,
 }: RadioTabProps) {
   const isRTL = false;
   const [radios, setRadios] = useState<any[]>([]);
@@ -137,7 +139,9 @@ export default function RadioTab({
     if (menuIndex === -1) return;
     const r = radios[menuIndex];
     closeMenu();
-    alert(isRTL ? `تعديل: ${r.name}` : `Modify: ${r.name}`);
+    if (onEditStation) {
+      onEditStation(r);
+    }
   };
 
   const supprimerFromMenu = async () => {

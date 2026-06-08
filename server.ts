@@ -395,6 +395,61 @@ app.post("/api/ai/recommend", async (req, res) => {
   }
 });
 
+app.post("/api/supabase/import", async (req, res) => {
+  const { stations, customUrl, customKey, customTable } = req.body;
+
+  if (!stations || !Array.isArray(stations)) {
+    return res.status(400).json({ error: "Missing or invalid stations array" });
+  }
+
+  const supabaseUrl = customUrl || process.env.SUPABASE_URL;
+  const supabaseKey = customKey || process.env.SUPABASE_KEY || process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const tableName = customTable || "radio_channels";
+
+  if (!supabaseUrl || !supabaseKey) {
+    return res.status(400).json({
+      error: "Supabase credentials are not configured. Please fill in the Supabase URL and Key in the app settings or the configuration panel below."
+    });
+  }
+
+  try {
+    const cleanUrl = supabaseUrl.trim().replace(/\/$/, "");
+    const apiEndpoint = `${cleanUrl}/rest/v1/${tableName}`;
+
+    console.log(`Exporting ${stations.length} radio channels to Supabase: ${apiEndpoint}`);
+
+    const response = await fetch(apiEndpoint, {
+      method: "POST",
+      headers: {
+        "apikey": supabaseKey.trim(),
+        "Authorization": `Bearer ${supabaseKey.trim()}`,
+        "Content-Type": "application/json",
+        "Prefer": "return=representation"
+      },
+      body: JSON.stringify(stations)
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error("Supabase REST API Error response:", errText);
+      throw new Error(`Supabase API responded with code ${response.status}: ${errText}`);
+    }
+
+    let responseData = [];
+    try {
+      responseData = await response.json();
+    } catch (e) {
+      // Sometimes representation might not return a valid json or empty string response if nothing is selected or depending on headers
+      console.warn("Could not parse Supabase JSON response, assuming success since response was OK");
+    }
+
+    return res.json({ ok: true, count: stations.length, data: responseData });
+  } catch (error: any) {
+    console.error("Supabase import error:", error);
+    return res.status(500).json({ error: error.message || "Failed to import to Supabase" });
+  }
+});
+
 // Setup Vite middleware for development, static fallback for production
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {
