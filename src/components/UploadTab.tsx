@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { 
   UploadCloud, Play, Trash2, ArrowUpRight, Check, Sparkles, 
-  AlertCircle, RefreshCw, Search, Video, X, ExternalLink
+  AlertCircle, RefreshCw, Search, Video, X, ExternalLink, Edit2, Save
 } from "lucide-react";
 import { Track } from "../types";
 import ConfirmMetadataModal from "./ConfirmMetadataModal";
@@ -21,6 +21,9 @@ interface UploadTabProps {
   isWorkerLoading: boolean;
   onReloadWorkerSongs: () => void;
   workerError?: string;
+  trackToEdit?: Track | null;
+  onClearTrackToEdit?: () => void;
+  onEditTrack?: (trackId: string, updatedFields: Partial<Track>) => void;
 }
 
 export default function UploadTab({
@@ -37,12 +40,97 @@ export default function UploadTab({
   isWorkerLoading,
   onReloadWorkerSongs,
   workerError,
+  trackToEdit,
+  onClearTrackToEdit,
+  onEditTrack,
 }: UploadTabProps) {
-  const isRTL = false;
+  const isRTL = lang === "ar";
   const t = translations[lang];
 
-  // Active sub-tab inside upload: 'search' (default) or 'link'
-  const [activeSubTab, setActiveSubTab] = useState<"link" | "search">("search");
+  // Active sub-tab inside upload: 'search' (default), 'link', or 'modifier'
+  const [activeSubTab, setActiveSubTab] = useState<"link" | "search" | "modifier">("search");
+
+  // Track editor state variables
+  const [editTrackId, setEditTrackId] = useState("");
+  const [editTitle, setEditTitle] = useState("");
+  const [editArtist, setEditArtist] = useState("");
+  const [editCoverUrl, setEditCoverUrl] = useState("");
+  const [editAudioUrl, setEditAudioUrl] = useState("");
+  const [editDuration, setEditDuration] = useState("");
+  const [editStatus, setEditStatus] = useState<{ msg: string; type: "success" | "error" | "loading" } | null>(null);
+
+  const allEditableSongs = [...customTracks, ...workerTracks];
+
+  // Handle incoming trackToEdit changes from App.tsx/MusicTab.tsx
+  useEffect(() => {
+    if (trackToEdit) {
+      setActiveSubTab("modifier");
+      setEditTrackId(trackToEdit.id);
+      setEditTitle(trackToEdit.title);
+      setEditArtist(trackToEdit.artist);
+      setEditCoverUrl(trackToEdit.coverUrl || "");
+      setEditAudioUrl(trackToEdit.audioUrl || "");
+      setEditDuration(trackToEdit.duration || "");
+    }
+  }, [trackToEdit]);
+
+  const handleSelectTrackToEditAndFill = (trackId: string) => {
+    if (!trackId) {
+      setEditTrackId("");
+      setEditTitle("");
+      setEditArtist("");
+      setEditCoverUrl("");
+      setEditAudioUrl("");
+      setEditDuration("");
+      onClearTrackToEdit?.();
+      return;
+    }
+    const track = allEditableSongs.find((tk) => tk.id === trackId);
+    if (track) {
+      setEditTrackId(track.id);
+      setEditTitle(track.title);
+      setEditArtist(track.artist);
+      setEditCoverUrl(track.coverUrl || "");
+      setEditAudioUrl(track.audioUrl || "");
+      setEditDuration(track.duration || "");
+    }
+  };
+
+  const handleSaveTrackEdit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editTrackId) {
+      setEditStatus({
+        msg: isRTL ? "يرجى اختيار أغنية لتعديلها أولاً" : "Please select a song to edit first",
+        type: "error"
+      });
+      return;
+    }
+    if (onEditTrack) {
+      onEditTrack(editTrackId, {
+        title: editTitle,
+        artist: editArtist,
+        coverUrl: editCoverUrl || "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=400&auto=format&fit=crop&q=80",
+        audioUrl: editAudioUrl,
+        duration: editDuration || "3:00"
+      });
+      setEditStatus({
+        msg: isRTL ? "✅ تم حفظ التعديلات بنجاح!" : "✅ Song modified successfully!",
+        type: "success"
+      });
+      setTimeout(() => setEditStatus(null), 3000);
+    }
+  };
+
+  const clearEditForm = () => {
+    setEditTrackId("");
+    setEditTitle("");
+    setEditArtist("");
+    setEditCoverUrl("");
+    setEditAudioUrl("");
+    setEditDuration("");
+    setEditStatus(null);
+    onClearTrackToEdit?.();
+  };
 
   // TAB 1: Direct Link Input States
   const [ytUrl, setYtUrl] = useState("");
@@ -371,9 +459,9 @@ export default function UploadTab({
   return (
     <div className="w-full max-w-4xl mx-auto overflow-hidden space-y-4 pb-12 text-zinc-100">
       
-      {/* Subtab Navigation Buttons to switch between Search & Link, styled in beautiful premium dark theme */}
+      {/* Subtab Navigation Buttons, styled in beautiful premium dark theme */}
       <div className="w-full max-w-full overflow-hidden shrink-0 mb-4">
-        <div className="grid grid-cols-2 bg-[#0c0c0e]/60 border border-[#1e1e24] p-1 rounded-xl gap-1 shadow-sm w-full">
+        <div className="grid grid-cols-3 bg-[#0c0c0e]/60 border border-[#1e1e24] p-1 rounded-xl gap-1 shadow-sm w-full">
           <button
             onClick={() => {
               setActiveSubTab("search");
@@ -382,12 +470,12 @@ export default function UploadTab({
             }}
             className={`py-2 px-1 sm:px-4 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 min-w-0 overflow-hidden ${
               activeSubTab === "search"
-                ? "bg-[#1db954] text-black shadow-md shadow-[#1db954]/10"
+                ? "bg-[#facc15] text-black shadow-md shadow-[#facc15]/10"
                 : "bg-transparent text-zinc-400 hover:text-zinc-200"
             }`}
           >
             <Search size={12} className="shrink-0" />
-            <span className="truncate">{isRTL ? "البحث بالفيديو" : "Upload by Search"}</span>
+            <span className="truncate">{isRTL ? "البحث" : "Search"}</span>
           </button>
 
           <button
@@ -400,12 +488,30 @@ export default function UploadTab({
             }}
             className={`py-2 px-1 sm:px-4 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 min-w-0 overflow-hidden ${
               activeSubTab === "link"
-                ? "bg-[#1db954] text-black shadow-md shadow-[#1db954]/10"
+                ? "bg-[#facc15] text-black shadow-md shadow-[#facc15]/10"
                 : "bg-transparent text-zinc-400 hover:text-zinc-200"
             }`}
           >
             <ExternalLink size={12} className="shrink-0" />
-            <span className="truncate">{isRTL ? "الرفع برابط مباشر" : "Upload by Link"}</span>
+            <span className="truncate">{isRTL ? "الرابط المباشر" : "Direct Link"}</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setActiveSubTab("modifier");
+              setSearchQuery("");
+              setSearchResults([]);
+              setSearchError("");
+              closeVideoPreview();
+            }}
+            className={`py-2 px-1 sm:px-4 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 min-w-0 overflow-hidden ${
+              activeSubTab === "modifier"
+                ? "bg-yellow-400 text-black shadow-md shadow-yellow-400/10"
+                : "bg-transparent text-zinc-400 hover:text-zinc-200"
+            }`}
+          >
+            <Edit2 size={12} className="shrink-0" />
+            <span className="truncate">{isRTL ? "التعديل" : "Modifier"}</span>
           </button>
         </div>
       </div>
@@ -415,7 +521,7 @@ export default function UploadTab({
         <>
           {/* Search Input Section - Premium & spacious like the YouTube Tab */}
           <form onSubmit={handleSearchSubmit} className="flex gap-2 w-full">
-            <div className="flex-1 relative bg-[#141419] border border-[#1e1e24] rounded-xl focus-within:border-[#1db954] transition-colors">
+            <div className="flex-1 relative bg-[#141419] border border-[#1e1e24] rounded-xl focus-within:border-[#facc15] transition-colors">
               <span className={`absolute top-1/2 -translate-y-1/2 ${isRTL ? "right-3.5" : "left-3.5"} text-zinc-400`}>
                 <Search size={16} />
               </span>
@@ -430,7 +536,7 @@ export default function UploadTab({
             <button
               type="submit"
               disabled={searchLoading}
-              className="bg-[#1db954] text-black hover:bg-[#20cf5d] hover:scale-105 active:scale-95 disabled:opacity-40 px-6 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0"
+              className="bg-[#facc15] text-black hover:bg-yellow-300 hover:scale-105 active:scale-95 disabled:opacity-40 px-6 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0"
             >
               {searchLoading ? <RefreshCw size={12} className="animate-spin text-black" /> : null}
               <span>{isRTL ? "ابحث" : "Search"}</span>
@@ -450,7 +556,7 @@ export default function UploadTab({
               animate={{ opacity: 1, scale: 1 }}
               className="space-y-3 w-full"
             >
-              <div className="relative aspect-video rounded-2xl overflow-hidden border border-[#1db954]/20 bg-black shadow-2xl w-full">
+              <div className="relative aspect-video rounded-2xl overflow-hidden border border-[#facc15]/20 bg-black shadow-2xl w-full">
                 <iframe
                   id="yt-player"
                   src={`https://www.youtube.com/embed/${playVideoId}?autoplay=1&enablejsapi=1&origin=${window.location.origin}`}
@@ -481,7 +587,7 @@ export default function UploadTab({
                   <button
                     onClick={() => handleAddSongFromSearch(playVideoId, playVideoTitle, playVideoChannel, playVideoThumb, playVideoDuration)}
                     disabled={songAddStates[playVideoId]?.loading}
-                    className="bg-[#1db954] hover:bg-[#20cf5d] active:scale-95 disabled:opacity-50 text-black px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5"
+                    className="bg-[#facc15] hover:bg-yellow-300 active:scale-95 disabled:opacity-50 text-black px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5"
                   >
                     {songAddStates[playVideoId]?.loading 
                       ? <RefreshCw size={12} className="animate-spin text-black" />
@@ -515,7 +621,7 @@ export default function UploadTab({
                   <div
                     key={v.videoId}
                     className={`bg-[#0c0c0e]/60 border rounded-xl overflow-hidden p-3.5 flex gap-4 hover:bg-[#141419] transition-colors duration-300 group ${
-                      isCurrentPreview ? "border-[#1db954]/30 bg-[#1db954]/5" : "border-[#1e1e24]"
+                      isCurrentPreview ? "border-[#facc15]/30 bg-[#facc15]/5" : "border-[#1e1e24]"
                     }`}
                   >
                     {/* Thumbnail Wrapper */}
@@ -538,7 +644,7 @@ export default function UploadTab({
                       <div>
                         <h4
                           onClick={() => startVideoPreview(item)}
-                          className="font-semibold text-xs text-white truncate group-hover:text-[#1db954] cursor-pointer"
+                          className="font-semibold text-xs text-white truncate group-hover:text-[#facc15] cursor-pointer"
                           title={v.title}
                         >
                           {v.title}
@@ -567,7 +673,7 @@ export default function UploadTab({
                                 ? "bg-emerald-500/10 text-emerald-400" 
                                 : itemState.error 
                                 ? "bg-red-500/10 text-red-400"
-                                : "bg-[#1db954] text-black hover:bg-[#20cf5d]"
+                                : "bg-[#facc15] text-black hover:bg-yellow-300"
                             }`}
                           >
                             {itemState.loading ? (
@@ -595,7 +701,7 @@ export default function UploadTab({
       {activeSubTab === "link" && (
         <div className="bg-[#0c0c0e]/60 border border-[#1e1e24] rounded-2xl p-5 shadow-xl space-y-4 w-full overflow-hidden">
           <div className="pb-3 border-b border-zinc-800/60 flex items-center gap-2">
-            <span className="flex items-center justify-center w-5 h-5 rounded-full bg-[#1db954]/20 text-[#1db954] text-[10px] font-mono font-bold shrink-0">
+            <span className="flex items-center justify-center w-5 h-5 rounded-full bg-[#facc15]/20 text-[#facc15] text-[10px] font-mono font-bold shrink-0">
               2
             </span>
             <h2 className="font-sans font-bold text-xs text-zinc-100 truncate">
@@ -614,7 +720,7 @@ export default function UploadTab({
                 placeholder={isRTL ? "مثال: https://www.youtube.com/watch?v=..." : "Paste YouTube link here..."}
                 value={ytUrl}
                 onChange={(e) => setYtUrl(e.target.value)}
-                className="w-full bg-[#141419] border border-[#1e1e24] rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-[#1db954] transition-colors font-mono min-w-0"
+                className="w-full bg-[#141419] border border-[#1e1e24] rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-[#facc15] transition-colors font-mono min-w-0"
               />
             </div>
 
@@ -636,7 +742,7 @@ export default function UploadTab({
             <button
               type="submit"
               disabled={linkStatus.loading}
-              className="w-full bg-[#1db954] hover:bg-[#20cf5d] active:scale-[0.98] disabled:bg-zinc-800/50 disabled:text-zinc-500 disabled:cursor-not-allowed text-black font-black py-3 rounded-xl text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
+              className="w-full bg-[#facc15] hover:bg-yellow-300 active:scale-[0.98] disabled:bg-zinc-800/50 disabled:text-zinc-500 disabled:cursor-not-allowed text-black font-black py-3 rounded-xl text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
             >
               {linkStatus.loading ? (
                 <RefreshCw size={13} className="animate-spin text-black" />
@@ -657,6 +763,125 @@ export default function UploadTab({
               <span>{isRTL ? "متابعة تدفق العمل على GitHub ↗" : "Follow workflow on GitHub Actions ↗"}</span>
             </a>
           </div>
+        </div>
+      )}
+
+      {/* Conditionally render Edit Tab Content */}
+      {activeSubTab === "modifier" && (
+        <div className="bg-[#0c0c0e]/60 border border-[#1e1e24] rounded-2xl p-5 shadow-xl space-y-4 w-full overflow-hidden">
+          <div className="pb-3 border-b border-zinc-800/60 flex items-center gap-2">
+            <span className="flex items-center justify-center w-5 h-5 rounded-full bg-yellow-400/20 text-yellow-400 text-[10px] font-mono font-bold shrink-0">
+              3
+            </span>
+            <h2 className="font-sans font-bold text-xs text-zinc-100 truncate">
+              {isRTL ? "تعديل بيانات الأغنية" : "Modify Track Details"}
+            </h2>
+          </div>
+
+          {!editTrackId ? (
+            <div className="py-12 px-4 text-center space-y-3.5">
+              <div className="w-12 h-12 bg-yellow-400/10 text-yellow-500 rounded-full flex items-center justify-center mx-auto">
+                <Edit2 size={20} />
+              </div>
+              <p className="text-xs text-zinc-400 leading-relaxed max-w-sm mx-auto">
+                {isRTL 
+                  ? "يرجى الذهاب إلى صفحة الموسيقى والضغط على 'تعديل الأغنية' من القائمة الجانبية للأغنية المراد تعديلها." 
+                  : "Please go to the Music tab and click 'Modify' on any song's option menu to edit its details."}
+              </p>
+            </div>
+          ) : (
+            <form onSubmit={handleSaveTrackEdit} className="space-y-4">
+              <div className="space-y-3.5 pt-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-400">
+                      {isRTL ? "عنوان الأغنية:" : "Song Name:"}
+                    </label>
+                    <input 
+                      type="text" 
+                      required
+                      value={editTitle} 
+                      onChange={(e) => setEditTitle(e.target.value)}
+                      placeholder={isRTL ? "أدخل عنوان الأغنية..." : "Enter song name..."}
+                      className="w-full bg-[#141419] border border-[#1e1e24] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-yellow-400 transition-colors"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-400">
+                      {isRTL ? "الفنان:" : "Artist:"}
+                    </label>
+                    <input 
+                      type="text" 
+                      required
+                      value={editArtist} 
+                      onChange={(e) => setEditArtist(e.target.value)}
+                      placeholder={isRTL ? "أدخل اسم الفنان..." : "Enter artist name..."}
+                      className="w-full bg-[#141419] border border-[#1e1e24] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-yellow-400 transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-400">
+                    {isRTL ? "رابط الصورة (الغلاف):" : "Cover Photo URL:"}
+                  </label>
+                  <input 
+                    type="text" 
+                    value={editCoverUrl} 
+                    onChange={(e) => setEditCoverUrl(e.target.value)}
+                    placeholder="https://images.unsplash.com..."
+                    className="w-full bg-[#141419] border border-[#1e1e24] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-yellow-400 transition-colors font-mono"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-mono font-bold uppercase tracking-wider text-zinc-400">
+                    {isRTL ? "رابط البث أو ملف الصوت:" : "Audio Stream or URL File:"}
+                  </label>
+                  <input 
+                    type="text" 
+                    value={editAudioUrl} 
+                    onChange={(e) => setEditAudioUrl(e.target.value)}
+                    placeholder={isRTL ? "معرف YouTube أو رابط مباشر..." : "YouTube video ID or direct link..."}
+                    className="w-full bg-[#141419] border border-[#1e1e24] rounded-xl px-4 py-2.5 text-xs text-white focus:outline-none focus:border-yellow-400 transition-colors font-mono"
+                  />
+                </div>
+              </div>
+
+              {editStatus && (
+                <motion.div
+                  initial={{ opacity: 0, y: 3 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={`p-3.5 rounded-xl text-xs font-semibold flex items-start gap-2.5 ${
+                    editStatus.type === "success" 
+                      ? "bg-yellow-400/10 border border-yellow-400/20 text-yellow-400" 
+                      : "bg-red-500/10 border border-red-500/20 text-red-400"
+                  }`}
+                >
+                  <AlertCircle size={14} className="shrink-0 mt-0.5" />
+                  <span className="leading-relaxed flex-1">{editStatus.msg}</span>
+                </motion.div>
+              )}
+
+              <div className="flex gap-2 pt-2">
+                <button 
+                  type="button"
+                  onClick={clearEditForm}
+                  className="flex-1 py-3 bg-[#1e1e24]/60 hover:bg-[#1e1e24] active:scale-95 text-zinc-300 rounded-xl text-xs font-bold transition-all cursor-pointer text-center"
+                >
+                  {isRTL ? "إعادة تعيين / إلغاء" : "Clear / Cancel"}
+                </button>
+                <button 
+                  type="submit"
+                  className="flex-1 py-3 bg-yellow-400 hover:bg-yellow-500 active:scale-95 text-black rounded-xl text-xs font-black transition-all cursor-pointer text-center shadow-md shadow-yellow-400/10 flex items-center justify-center gap-1.5"
+                >
+                  <Save size={13} className="text-black" />
+                  <span>{isRTL ? "حفظ التغييرات" : "Save Changes"}</span>
+                </button>
+              </div>
+            </form>
+          )}
         </div>
       )}
 

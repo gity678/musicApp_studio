@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from "react";
-import { Disc, Play } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { Disc, Play, MoreVertical, X, Edit2, Trash2 } from "lucide-react";
 import { Track } from "../types";
 
 // Global cache for track durations to avoid redundant network requests across renders
 const durationCache: Record<string, string> = {};
 
 // Dynamic track duration resolver component with persistent caching
-function TrackDuration({ audioUrl, fallback }: { audioUrl: string; fallback: string }) {
+function TrackDuration({ audioUrl, fallback, className }: { audioUrl: string; fallback: string; className?: string }) {
   const [duration, setDuration] = useState<string>(() => {
     if (durationCache[audioUrl]) return durationCache[audioUrl];
     if (fallback && /^\d+:\d{2}$/.test(fallback)) return fallback;
@@ -114,7 +114,7 @@ function TrackDuration({ audioUrl, fallback }: { audioUrl: string; fallback: str
     };
   }, [audioUrl, fallback]);
 
-  return <span className="font-mono text-[10px] text-zinc-500 shrink-0">{duration}</span>;
+  return <span className={className || "font-mono text-[10px] text-zinc-500 shrink-0"}>{duration}</span>;
 }
 
 interface MusicTabProps {
@@ -126,6 +126,8 @@ interface MusicTabProps {
   translations: any;
   customTracks: Track[];
   searchTerm: string;
+  onDeleteTrack?: (trackId: string) => void;
+  onEditTrackClick?: (track: Track) => void;
 }
 
 export default function MusicTab({
@@ -136,10 +138,60 @@ export default function MusicTab({
   translations,
   customTracks,
   searchTerm,
+  onDeleteTrack,
+  onEditTrackClick,
 }: MusicTabProps) {
   const t = translations[lang];
+  const isRTL = lang === "ar";
+
+  const [menuIndex, setMenuIndex] = useState<number>(-1);
+  const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0 });
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const allTracks = [...(tracks || []), ...(customTracks || [])];
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        closeMenu();
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const openMenu = (i: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setMenuIndex(i);
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    setDropdownPos({
+      top: rect.top + window.scrollY + 40,
+      left: Math.max(10, rect.left - 130)
+    });
+  };
+
+  const closeMenu = () => {
+    setMenuIndex(-1);
+  };
+
+  const modifierFromMenu = () => {
+    if (menuIndex === -1) return;
+    const track = filteredTracks[menuIndex];
+    closeMenu();
+    if (onEditTrackClick) {
+      onEditTrackClick(track);
+    }
+  };
+
+  const supprimerFromMenu = () => {
+    if (menuIndex === -1) return;
+    const track = filteredTracks[menuIndex];
+    closeMenu();
+    if (!confirm(isRTL ? `هل أنت متأكد من حذف "${track.title}"؟` : `Delete "${track.title}"?`)) return;
+    if (onDeleteTrack) {
+      onDeleteTrack(track.id);
+    }
+  };
 
   // Filter tracks only based on the global top-bar searchTerm (title & artist)
   const filteredTracks = (allTracks || []).filter((track) => {
@@ -175,11 +227,11 @@ export default function MusicTab({
                       }`}
                     >
                       {/* 1. Index / Play Icon Container (Fixed Width) */}
-                      <div className="w-6 flex items-center justify-center shrink-0">
-                        <span className="font-mono text-[10px] text-zinc-400 group-hover:hidden">
+                      <div className="w-6 flex items-center justify-start shrink-0 -ml-1.5">
+                        <span className="font-mono text-[10px] text-zinc-400 group-hover:hidden w-full text-center">
                           {idx + 1}
                         </span>
-                        <div className="hidden group-hover:flex items-center justify-center animate-pulse">
+                        <div className="hidden group-hover:flex items-center justify-center w-full animate-pulse">
                           <Play size={10} className={isCurrent ? "text-[#1db954]" : "text-zinc-600"} />
                         </div>
                       </div>
@@ -207,9 +259,19 @@ export default function MusicTab({
                         </p>
                       </div>
 
-                      {/* 4. Duration Container (Fixed Width) */}
-                      <div className="w-10 shrink-0 flex justify-end">
-                        <TrackDuration audioUrl={track.audioUrl} fallback={track.duration} />
+                      {/* 4. Duration & Options Menu Container */}
+                      <div className="shrink-0 flex items-center gap-2">
+                        <TrackDuration 
+                          audioUrl={track.audioUrl} 
+                          fallback={track.duration} 
+                          className="font-mono text-[10px] text-zinc-500 shrink-0"
+                        />
+                        <button 
+                          className="p-2 -mr-1 text-zinc-400 hover:text-zinc-900 transition-colors cursor-pointer"
+                          onClick={(e) => openMenu(idx, e)}
+                        >
+                          <MoreVertical size={14} />
+                        </button>
                       </div>
                     </div>
                   );
@@ -253,6 +315,37 @@ export default function MusicTab({
           </div>
         </div>
       </div>
+
+      {menuIndex !== -1 && (
+        <div 
+          ref={dropdownRef}
+          className="fixed bg-white border border-zinc-200 rounded-xl overflow-hidden z-[100] min-w-[150px] shadow-2xl animate-fade-in"
+          style={{ 
+            top: `${dropdownPos.top}px`, 
+            left: `${dropdownPos.left}px` 
+          }}
+        >
+          <button 
+            className="flex items-center gap-3 w-full px-4 py-3 hover:bg-zinc-50 text-zinc-700 text-xs font-semibold transition-colors text-left"
+            onClick={modifierFromMenu}
+          >
+            <Edit2 size={13} className="text-zinc-400" />
+            {isRTL ? "تعديل" : "Modify Song"}
+          </button>
+          <button 
+            className="flex items-center gap-3 w-full px-4 py-3 hover:bg-zinc-50 text-red-500 text-xs font-semibold transition-colors text-left border-t border-zinc-100"
+            onClick={supprimerFromMenu}
+          >
+            <Trash2 size={13} />
+            {isRTL ? "حذف" : "Remove Song"}
+          </button>
+          <div className="bg-zinc-50 px-4 py-1 flex justify-end border-t border-zinc-100">
+            <button onClick={closeMenu} className="text-[9px] text-zinc-400 hover:text-zinc-650 font-bold uppercase tracking-wider">Close</button>
+          </div>
+        </div>
+      )}
+
+
     </div>
   );
 }

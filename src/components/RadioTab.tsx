@@ -200,16 +200,16 @@ export default function RadioTab({
                 <div
                   key={i}
                   className={`flex items-center gap-2 p-1.5 px-3 hover:bg-zinc-50 transition-all duration-300 cursor-pointer group ${
-                    isActive ? "bg-[#1db954]/10" : ""
+                    isActive ? "bg-[#3b82f6]/10" : ""
                   }`}
                 >
                   {/* 1. Index / Play Icon */}
-                  <div className="w-6 flex items-center justify-center shrink-0" onClick={() => playStation(i)}>
-                    <span className="font-mono text-[10px] text-zinc-400 group-hover:hidden">
+                  <div className="w-6 flex items-center justify-start shrink-0 -ml-1.5" onClick={() => playStation(i)}>
+                    <span className="font-mono text-[10px] text-zinc-400 group-hover:hidden w-full text-center">
                       {i + 1}
                     </span>
-                    <div className="hidden group-hover:flex items-center justify-center animate-pulse">
-                      <Play size={10} className={isActive ? "text-[#1db954]" : "text-zinc-600"} />
+                    <div className="hidden group-hover:flex items-center justify-center w-full animate-pulse">
+                      <Play size={10} className={isActive ? "text-[#3b82f6]" : "text-zinc-600"} />
                     </div>
                   </div>
 
@@ -241,7 +241,7 @@ export default function RadioTab({
                   {/* 3. Name & Frequency */}
                   <div className="flex-1 min-w-0 px-3" onClick={() => playStation(i)}>
                     <h4 className={`font-semibold text-[13px] truncate transition-colors ${
-                       isActive ? "text-[#1db954] font-bold" : "text-zinc-800 group-hover:text-[#1db954]"
+                       isActive ? "text-[#3b82f6] font-bold" : "text-zinc-800 group-hover:text-[#3b82f6]"
                     }`}>
                       {r.name}
                     </h4>
@@ -251,9 +251,9 @@ export default function RadioTab({
                   </div>
 
                   {/* 4. Options Menu */}
-                  <div className="w-10 shrink-0 flex justify-end">
+                  <div className="shrink-0 flex items-center">
                     <button 
-                      className="p-2 text-zinc-400 hover:text-zinc-900 transition-colors"
+                      className="p-2 -mr-1 text-zinc-400 hover:text-zinc-900 transition-colors cursor-pointer"
                       onClick={(e) => openMenu(i, e)}
                     >
                       <MoreVertical size={14} />

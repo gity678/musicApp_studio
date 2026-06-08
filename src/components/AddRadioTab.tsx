@@ -222,7 +222,7 @@ export default function AddRadioTab({ lang, stationToEdit, onClearStationToEdit 
         </button>
         <button 
           onClick={() => { setMode('json'); clearForm(); }}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-bold transition-all uppercase tracking-tight ${mode === 'json' ? 'bg-orange-500 text-white shadow-lg' : 'text-zinc-500 hover:bg-zinc-200'}`}
+          className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-bold transition-all uppercase tracking-tight ${mode === 'json' ? 'bg-[#e91e63] text-white shadow-lg' : 'text-zinc-500 hover:bg-zinc-200'}`}
         >
           <FileJson size={14} />
           <span>JSON</span>
@@ -265,7 +265,7 @@ export default function AddRadioTab({ lang, stationToEdit, onClearStationToEdit 
 
             <button 
               disabled={isLoading}
-              className={`w-full py-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${mode === 'modifier' ? 'bg-zinc-900 text-white' : 'bg-[#e91e63] text-white'} active:scale-95 disabled:opacity-50`}
+              className="w-full py-4 bg-[#e91e63] hover:bg-[#d81b60] text-white rounded-2xl font-bold flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-95 disabled:opacity-50 shadow-sm shadow-pink-100/50"
             >
               {isLoading ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
               <span>{mode === 'modifier' ? (isRTL ? "حفظ التعديلات" : "Sauvegarder") : (isRTL ? "تأكيد الإضافة" : "Confirmer")}</span>
@@ -284,34 +284,37 @@ export default function AddRadioTab({ lang, stationToEdit, onClearStationToEdit 
                 value={jsonInput}
                 onChange={(e) => setJsonInput(e.target.value)}
                 placeholder='[{"name": "BBC Radio", "url": "https://stream.live.vc/..."}, ...]'
-                className="w-full h-48 bg-zinc-50 border border-zinc-200 rounded-2xl p-4 text-xs font-mono outline-none focus:border-zinc-900 transition-colors resize-none overflow-y-auto no-scrollbar"
+                className="w-full h-28 bg-zinc-50 border border-zinc-200 rounded-2xl p-4 text-xs font-mono outline-none focus:border-zinc-900 transition-colors resize-none overflow-y-auto no-scrollbar"
               />
             </div>
 
             {/* AI Generator Helper */}
-            <div className="p-4 bg-orange-50 border border-orange-100 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-3 animate-fade-in">
-              <p id="promptText" className="text-[10px] text-orange-800 leading-relaxed font-mono whitespace-pre-wrap opacity-85 max-w-md">
+            <div className="p-4 bg-pink-50 border border-pink-100 rounded-2xl animate-fade-in">
+              <p id="promptText" className="text-[10px] text-pink-800 leading-relaxed font-mono whitespace-pre-wrap opacity-85">
                 {"Génère une liste de stations de radio en JSON : [{\"name\": \"...\", \"url\": \"...\", \"logo\": \"...\"}]"}
               </p>
+            </div>
+
+            {/* Action Buttons in a single row sharing width */}
+            <div className="flex gap-3">
               <button 
                 onClick={copyPrompt}
                 type="button"
-                className="py-2 px-4 bg-orange-500 text-white rounded-xl text-xs font-bold flex items-center gap-2 self-stretch md:self-auto justify-center hover:bg-orange-600 transition-all shrink-0 active:scale-95 cursor-pointer shadow-sm shadow-orange-100"
+                className="flex-1 py-4 bg-[#e91e63] hover:bg-[#d81b60] text-white rounded-2xl font-bold flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer shadow-sm shadow-pink-100/50 text-[11px] sm:text-xs text-center"
               >
-                <Copy size={12} />
+                <Copy size={14} />
                 <span>{isRTL ? "نسخ مطالبة الـ AI" : "Copy AI Prompt"}</span>
               </button>
-            </div>
 
-            {/* Export Trigger */}
-            <button 
-              disabled={isLoading || !jsonInput}
-              onClick={submitJSON}
-              className="w-full py-4 bg-zinc-900 text-white rounded-2xl font-bold flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50 hover:bg-zinc-850 cursor-pointer shadow-lg shadow-zinc-100"
-            >
-              {isLoading ? <Loader2 className="animate-spin" size={18} /> : <FileJson size={18} />}
-              <span>{isRTL ? "استيراد JSON" : "Import JSON"}</span>
-            </button>
+              <button 
+                disabled={isLoading || !jsonInput}
+                onClick={submitJSON}
+                className="flex-1 py-4 bg-zinc-900 hover:bg-zinc-850 text-white rounded-2xl font-bold flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50 cursor-pointer shadow-sm shadow-zinc-200 text-[11px] sm:text-xs text-center"
+              >
+                {isLoading ? <Loader2 className="animate-spin" size={14} /> : <FileJson size={14} />}
+                <span>{isRTL ? "استيراد JSON" : "Import JSON"}</span>
+              </button>
+            </div>
           </div>
         )}
 

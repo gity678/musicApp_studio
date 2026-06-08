@@ -6,6 +6,7 @@ export const translations = {
     radio: "Live Radio",
     upload: "add music",
     addRadio: "Configure Live Radio",
+    add_radio: "add radio",
     youtube: "YouTube",
     aiAssistant: "AI Music Conductor",
     searchPlaceholder: "Search songs, artists, genres...",

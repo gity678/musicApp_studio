@@ -73,6 +73,7 @@ export default function App() {
 
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
   const [stationToEdit, setStationToEdit] = useState<RadioStation | null>(null);
+  const [trackToEdit, setTrackToEdit] = useState<Track | null>(null);
 
   // Core Playback State
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
@@ -462,6 +463,10 @@ export default function App() {
     localStorage.setItem("spotifyy_youtube_bookmarks", JSON.stringify(savedYoutubeTracks));
   }, [savedYoutubeTracks]);
 
+  useEffect(() => {
+    localStorage.setItem("spotifyy_custom_tracks", JSON.stringify(customTracks));
+  }, [customTracks]);
+
   // Poll currently playing song for live radio feeds
   useEffect(() => {
     if (!currentTrack || !currentTrack.id.includes("radio")) {
@@ -695,6 +700,22 @@ export default function App() {
     }
   };
 
+  const handleEditCustomTrack = (trackId: string, updatedFields: Partial<Track>) => {
+    if (trackId.startsWith("worker-")) {
+      setWorkerTracks((prev) =>
+        prev.map((t) => (t.id === trackId ? { ...t, ...updatedFields } : t))
+      );
+    } else {
+      setCustomTracks((prev) =>
+        prev.map((t) => (t.id === trackId ? { ...t, ...updatedFields } : t))
+      );
+    }
+    // Update active player's metadata if the currently playing song is edited
+    if (currentTrack?.id === trackId) {
+      setCurrentTrack((prev) => (prev ? { ...prev, ...updatedFields } : null));
+    }
+  };
+
   const handleAddCustomStation = (station: RadioStation) => {
     setCustomStations((prev) => [station, ...prev]);
   };
@@ -800,9 +821,9 @@ export default function App() {
               <div className="w-10 flex items-center justify-start">
                 <div className="p-2 opacity-80">
                   {activeTab === "music" && <Music size={18} className="text-[#1db954]" />}
-                  {activeTab === "radio" && <Radio size={18} className="text-teal-400" />}
-                  {activeTab === "upload" && <UploadCloud size={18} className="text-[#1db954]" />}
-                  {activeTab === "add_radio" && <PlusCircle size={18} className="text-[#1db954]" />}
+                  {activeTab === "radio" && <Radio size={18} className="text-[#3b82f6]" />}
+                  {activeTab === "upload" && <UploadCloud size={18} className="text-[#facc15]" />}
+                  {activeTab === "add_radio" && <PlusCircle size={18} className="text-[#e91e63]" />}
                   {activeTab === "youtube" && <Youtube size={18} className="text-red-500" />}
                   {activeTab === "ai" && <Sparkles size={18} className="text-emerald-400" />}
                 </div>
@@ -909,6 +930,11 @@ export default function App() {
                 translations={translations}
                 customTracks={[...customTracks, ...workerTracks]}
                 searchTerm={searchTerm}
+                onDeleteTrack={handleDeleteCustomTrack}
+                onEditTrackClick={(track) => {
+                  setTrackToEdit(track);
+                  setActiveTab("upload"); // switch to Add Songs
+                }}
               />
             )}
 
@@ -945,6 +971,9 @@ export default function App() {
                 isWorkerLoading={isWorkerLoading}
                 onReloadWorkerSongs={reloadWorkerSongs}
                 workerError={workerError}
+                trackToEdit={trackToEdit}
+                onClearTrackToEdit={() => setTrackToEdit(null)}
+                onEditTrack={handleEditCustomTrack}
               />
             )}
 
@@ -1016,22 +1045,35 @@ export default function App() {
             ].map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
+              const tabColor = item.id === "home" 
+                ? "#8b5cf6" 
+                : item.id === "music" 
+                ? "#1db954" 
+                : item.id === "radio" 
+                ? "#3b82f6" 
+                : "#ef4444";
               return (
                 <button
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
                   className={`flex flex-col items-center justify-center flex-1 h-full py-1 text-center transition-all relative ${
                     isActive 
-                      ? "text-[#1db954] font-black" 
+                      ? "font-black" 
                       : "text-zinc-500 hover:text-zinc-900"
                   } cursor-pointer group`}
+                  style={isActive ? { color: tabColor } : {}}
                 >
-                  <Icon size={18} className={`mb-1 transition-transform duration-200 ${isActive ? "scale-110 text-[#1db954]" : "text-zinc-400 group-hover:text-zinc-800"}`} />
+                  <Icon 
+                    size={18} 
+                    className={`mb-1 transition-transform duration-200 ${isActive ? "scale-110" : "text-zinc-400 group-hover:text-zinc-800"}`} 
+                    style={isActive ? { color: tabColor } : {}}
+                  />
                   <span className="text-[10px] tracking-tight font-bold">{item.label}</span>
                   {isActive && (
                     <motion.div
                       layoutId="activeBottomTabBorder"
-                      className="absolute top-0 left-1/4 right-1/4 h-[3px] bg-[#1db954] rounded-full"
+                      className="absolute top-0 left-1/4 right-1/4 h-[3px] rounded-full"
+                      style={{ backgroundColor: tabColor }}
                       transition={{ type: "spring", stiffness: 380, damping: 30 }}
                     />
                   )}

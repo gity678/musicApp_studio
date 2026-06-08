@@ -60,6 +60,14 @@ export default function Sidebar({
           {menuItems.map((item) => {
             const IconComponent = item.icon;
             const isActive = activeTab === item.id;
+            const activeColor = item.id === "radio" 
+              ? "#3b82f6" 
+              : item.id === "upload" 
+              ? "#facc15" 
+              : item.id === "add_radio" 
+              ? "#e91e63" 
+              : "#1db954";
+
             return (
               <button
                 key={item.id}
@@ -69,7 +77,13 @@ export default function Sidebar({
                 }}
                 className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-xl text-sm font-semibold transition-all duration-300 group relative ${
                   isActive
-                    ? "bg-[#1db954]/10 text-[#1db954] border border-[#1db954]/20 shadow-sm"
+                    ? item.id === "radio"
+                      ? "bg-[#3b82f6]/10 text-[#3b82f6] border border-[#3b82f6]/20 shadow-sm"
+                      : item.id === "upload"
+                      ? "bg-[#facc15]/10 text-[#facc15] border border-[#facc15]/20 shadow-sm"
+                      : item.id === "add_radio"
+                      ? "bg-[#e91e63]/10 text-[#e91e63] border border-[#e91e63]/20 shadow-sm"
+                      : "bg-[#1db954]/10 text-[#1db954] border border-[#1db954]/20 shadow-sm"
                     : "text-zinc-500 hover:text-zinc-950 hover:bg-zinc-100 border border-transparent"
                 } ${isRTL ? "flex-row-reverse" : "flex-row"}`}
               >
@@ -78,15 +92,17 @@ export default function Sidebar({
                     layoutId="activeIndicator"
                     className={`absolute ${
                       isRTL ? "right-0" : "left-0"
-                    } top-1/4 h-1/2 w-1.5 rounded-full bg-[#1db954]`}
+                    } top-1/4 h-1/2 w-1.5 rounded-full`}
+                    style={{ backgroundColor: activeColor }}
                     transition={{ type: "spring", stiffness: 350, damping: 30 }}
                   />
                 )}
                 <IconComponent
                   size={20}
                   className={`transition-colors duration-300 ${
-                    isActive ? "text-[#1db954]" : "text-zinc-400 group-hover:text-zinc-900"
+                    !isActive ? "text-zinc-400 group-hover:text-zinc-900" : ""
                   }`}
+                  style={isActive ? { color: activeColor } : {}}
                 />
                 <span className="truncate">{item.label}</span>
               </button>
