@@ -466,6 +466,7 @@ export default function App() {
     const wasPlaying = isPlaying;
     audioRef.current.src = currentTrack.audioUrl;
     audioRef.current.load();
+    setCurrentTime(0);
     
     if (wasPlaying) {
       audioRef.current.play().catch((err) => {
@@ -483,6 +484,7 @@ export default function App() {
       audioRef.current.volume = volume;
     }
   }, [volume]);
+
   const toggleLoopMode = () => {
     setLoopMode((prev) => (prev === 'all' ? 'single' : 'all'));
   };
