@@ -155,7 +155,7 @@ export default function MusicTab({
   const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0 });
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const allTracks = [...(tracks || []), ...(customTracks || [])];
+  const allTracks = [...(customTracks || []), ...(tracks || [])];
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

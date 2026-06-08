@@ -621,7 +621,7 @@ export default function App() {
       return;
     }
 
-    const allTracks = [...CURATED_TRACKS, ...customTracks, ...workerTracks];
+    const allTracks = [...customTracks, ...workerTracks, ...CURATED_TRACKS];
     if (allTracks.length === 0) return;
 
     if (playOrder === 'random') {
@@ -652,7 +652,7 @@ export default function App() {
       return;
     }
 
-    const allTracks = [...CURATED_TRACKS, ...customTracks, ...workerTracks];
+    const allTracks = [...customTracks, ...workerTracks, ...CURATED_TRACKS];
     if (allTracks.length === 0) return;
 
     const currentIdx = allTracks.findIndex((t) => t.id === currentTrack?.id);
@@ -847,7 +847,7 @@ export default function App() {
   const t = translations[lang];
 
   const combinedStations = [...CURATED_STATIONS, ...customStations, ...workerRadios];
-  const combinedTracks = [...CURATED_TRACKS, ...customTracks, ...workerTracks];
+  const combinedTracks = [...customTracks, ...workerTracks, ...CURATED_TRACKS];
 
   return (
     <div className="flex bg-zinc-50 h-[100dvh] overflow-hidden text-zinc-900 overscroll-none touch-pan-y shadow-inner" dir="ltr">
