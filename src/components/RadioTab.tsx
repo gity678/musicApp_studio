@@ -10,6 +10,7 @@ interface RadioTabProps {
   workerRadios: RadioStation[];
   onEditStation?: (station: RadioStation) => void;
   onDeleteStation?: (stationName: string) => void;
+  isPlaying?: boolean;
 }
 
 export default function RadioTab({
@@ -20,6 +21,7 @@ export default function RadioTab({
   workerRadios,
   onEditStation,
   onDeleteStation,
+  isPlaying,
 }: RadioTabProps) {
   const isRTL = false;
   const [radios, setRadios] = useState<any[]>([]);
@@ -196,98 +198,181 @@ export default function RadioTab({
 
   return (
     <div className="space-y-4 text-zinc-800">
-      <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-sm flex flex-col">
-        {isLoading ? (
-          <div className="flex items-center justify-center py-20 text-zinc-500 animate-pulse text-xs font-mono uppercase tracking-widest">
-            {isRTL ? "جاري تحميل المحطات..." : "Synchronizing Radio Frequencies..."}
-          </div>
-        ) : error ? (
-          <div className="flex flex-col items-center justify-center py-20 text-red-500 text-xs font-mono uppercase tracking-widest gap-2">
-            <div>❌ {isRTL ? "فشل التحميل" : "Error loading radios"}</div>
-            <div className="text-[10px] text-zinc-400 normal-case">{error}</div>
-            <button 
-              onClick={loadRadios}
-              className="mt-4 px-4 py-2 bg-zinc-800 text-white rounded-lg hover:bg-zinc-700 transition-colors"
-            >
-              {isRTL ? "إعادة المحاولة" : "Retry"}
-            </button>
-          </div>
-        ) : radios.length === 0 ? (
-          <div className="flex items-center justify-center py-20 text-zinc-500 text-xs font-mono uppercase tracking-widest">
-            {isRTL ? "❌ فشل التحميل أو لا توجد محطات" : "❌ No stations detected"}
-          </div>
-        ) : (
-          <div className="divide-y divide-zinc-100">
-            {radios.map((r, i) => {
-              const isActive = activeStation?.name === r.name;
-              return (
-                <div
-                  key={i}
-                  className={`flex items-center gap-2 p-1.5 px-3 hover:bg-zinc-50 transition-all duration-300 cursor-pointer group ${
-                    isActive ? "bg-[#3b82f6]/10" : ""
-                  }`}
+      <style>{`
+        @keyframes soundBar1 {
+          0%, 100% { height: 4px; }
+          50% { height: 14px; }
+        }
+        @keyframes soundBar2 {
+          0%, 100% { height: 6px; }
+          50% { height: 12px; }
+        }
+        @keyframes soundBar3 {
+          0%, 100% { height: 5px; }
+          50% { height: 16px; }
+        }
+        @keyframes soundBar4 {
+          0%, 100% { height: 3px; }
+          50% { height: 10px; }
+        }
+        .animate-sound-bar-1 { animation: soundBar1 0.7s ease-in-out infinite; }
+        .animate-sound-bar-2 { animation: soundBar2 0.9s ease-in-out infinite; }
+        .animate-sound-bar-3 { animation: soundBar3 0.6s ease-in-out infinite; }
+        .animate-sound-bar-4 { animation: soundBar4 0.8s ease-in-out infinite; }
+      `}</style>
+      {/* Grid: Main library & Info detail */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Main Radio Library */}
+        <div className="lg:col-span-2 space-y-4">
+          <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-sm flex flex-col">
+            {isLoading ? (
+              <div className="flex items-center justify-center py-20 text-zinc-500 animate-pulse text-xs font-mono uppercase tracking-widest">
+                {isRTL ? "جاري تحميل المحطات..." : "Synchronizing Radio Frequencies..."}
+              </div>
+            ) : error ? (
+              <div className="flex flex-col items-center justify-center py-20 text-red-500 text-xs font-mono uppercase tracking-widest gap-2">
+                <div>❌ {isRTL ? "فشل التحميل" : "Error loading radios"}</div>
+                <div className="text-[10px] text-zinc-400 normal-case">{error}</div>
+                <button 
+                  onClick={loadRadios}
+                  className="mt-4 px-4 py-2 bg-zinc-800 text-white rounded-lg hover:bg-zinc-700 transition-colors"
                 >
-                  {/* 1. Index / Play Icon */}
-                  <div className="w-6 flex items-center justify-start shrink-0 -ml-1.5" onClick={() => playStation(i)}>
-                    <span className="font-mono text-[10px] text-zinc-400 group-hover:hidden w-full text-center">
-                      {i + 1}
-                    </span>
-                    <div className="hidden group-hover:flex items-center justify-center w-full animate-pulse">
-                      <Play size={10} className={isActive ? "text-[#3b82f6]" : "text-zinc-600"} />
-                    </div>
-                  </div>
-
-                  {/* 2. Logo */}
-                  <div className="w-12 h-12 shrink-0 flex items-center justify-center" onClick={() => playStation(i)}>
-                    <div className="w-full h-full rounded-xl bg-zinc-100 shadow-sm border border-zinc-100 group-hover:scale-105 transition-transform overflow-hidden flex items-center justify-center">
-                      {r.logoUrl ? (
-                         <img 
-                          src={r.logoUrl} 
-                          alt={r.name} 
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.style.display = 'none';
-                            const parent = target.parentElement;
-                            if (parent) {
-                              const icon = document.createElement('div');
-                              icon.textContent = '📻';
-                              parent.appendChild(icon);
-                            }
-                          }}
-                        />
-                      ) : (
-                        <RadioIcon size={20} className="text-zinc-400" />
-                      )}
-                    </div>
-                  </div>
-
-                  {/* 3. Name & Frequency */}
-                  <div className="flex-1 min-w-0 px-3" onClick={() => playStation(i)}>
-                    <h4 className={`font-semibold text-[13px] truncate transition-colors ${
-                       isActive ? "text-[#3b82f6] font-bold" : "text-zinc-800 group-hover:text-[#3b82f6]"
-                    }`}>
-                      {r.name}
-                    </h4>
-                    <p className="text-[10px] text-zinc-500 truncate mt-0.5">
-                      {r.frequency || r.genre}
-                    </p>
-                  </div>
-
-                  {/* 4. Options Menu */}
-                  <div className="shrink-0 flex items-center">
-                    <button 
-                      className="p-2 -mr-1 text-zinc-400 hover:text-zinc-900 transition-colors cursor-pointer"
-                      onClick={(e) => openMenu(i, e)}
+                  {isRTL ? "إعادة المحاولة" : "Retry"}
+                </button>
+              </div>
+            ) : radios.length === 0 ? (
+              <div className="flex items-center justify-center py-20 text-zinc-500 text-xs font-mono uppercase tracking-widest">
+                {isRTL ? "❌ فشل التحميل أو لا توجد محطات" : "❌ No stations detected"}
+              </div>
+            ) : (
+              <div className="divide-y divide-zinc-100">
+                {radios.map((r, i) => {
+                  const isActive = activeStation?.name === r.name;
+                  return (
+                    <div
+                      key={i}
+                      className={`flex items-center gap-1.5 p-1.5 px-1 sm:px-1.5 hover:bg-zinc-50 transition-all duration-300 cursor-pointer group ${
+                        isActive ? "bg-[#3b82f6]/10" : ""
+                      }`}
+                      onClick={() => playStation(i)}
                     >
-                      <MoreVertical size={14} />
-                    </button>
+                      {/* 1. Index / Play Icon */}
+                      <div className="w-5 flex items-center justify-center shrink-0">
+                        <span className="font-mono text-[10px] text-zinc-400 group-hover:hidden w-full text-center">
+                          {i + 1}
+                        </span>
+                        <div className="hidden group-hover:flex items-center justify-center w-full animate-pulse">
+                          <Play size={10} className={isActive ? "text-[#3b82f6]" : "text-zinc-600"} />
+                        </div>
+                      </div>
+
+                      {/* 2. Logo */}
+                      <div className="w-12 h-12 shrink-0 flex items-center justify-center">
+                        <div className="w-full h-full rounded-xl bg-zinc-100 shadow-sm border border-zinc-100 group-hover:scale-105 transition-transform overflow-hidden flex items-center justify-center">
+                          {r.logoUrl ? (
+                             <img 
+                              src={r.logoUrl} 
+                              alt={r.name} 
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.style.display = 'none';
+                                const parent = target.parentElement;
+                                if (parent) {
+                                  const icon = document.createElement('div');
+                                  icon.textContent = '📻';
+                                  parent.appendChild(icon);
+                                }
+                              }}
+                            />
+                          ) : (
+                            <RadioIcon size={20} className="text-zinc-400" />
+                          )}
+                        </div>
+                      </div>
+
+                      {/* 3. Name & Frequency */}
+                      <div className="flex-1 min-w-0 px-2 flex items-center justify-between gap-4">
+                        <div className="min-w-0 flex-1">
+                          <h4 className={`font-semibold text-[13px] truncate transition-colors ${
+                             isActive ? "text-[#3b82f6] font-bold" : "text-zinc-800 group-hover:text-[#3b82f6]"
+                          }`}>
+                            {r.name}
+                          </h4>
+                          <p className="text-[10px] text-zinc-500 truncate mt-0.5">
+                            {r.frequency || r.genre}
+                          </p>
+                        </div>
+
+                        {/* Inline Sound Bars */}
+                        {isActive && (
+                          <div className="flex items-end gap-[3px] h-4 px-2 shrink-0 self-center" title={isPlaying ? "Playing" : "Paused"}>
+                            <span className={`w-[3px] bg-[#3b82f6] rounded-t-full transition-all duration-300 ${isPlaying ? 'animate-sound-bar-1' : 'h-[3px]'}`} />
+                            <span className={`w-[3px] bg-[#3b82f6] rounded-t-full transition-all duration-300 ${isPlaying ? 'animate-sound-bar-2' : 'h-[6px]'}`} />
+                            <span className={`w-[3px] bg-[#3b82f6] rounded-t-full transition-all duration-300 ${isPlaying ? 'animate-sound-bar-3' : 'h-[4px]'}`} />
+                            <span className={`w-[3px] bg-[#3b82f6] rounded-t-full transition-all duration-300 ${isPlaying ? 'animate-sound-bar-4' : 'h-[2px]'}`} />
+                          </div>
+                        )}
+                      </div>
+
+                      {/* 4. Options Menu */}
+                      <div className="shrink-0 flex items-center">
+                        <button 
+                          className="p-1 px-1.5 -mr-1 text-zinc-400 hover:text-zinc-900 transition-colors cursor-pointer"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openMenu(i, e);
+                          }}
+                        >
+                          <MoreVertical size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Current Insight panel for Radio */}
+        <div className="hidden lg:block space-y-6">
+          <div className="bg-white border border-zinc-200 rounded-2xl p-6 shadow-sm space-y-4 text-center">
+            <h3 className="font-sans font-bold text-xs text-zinc-400 uppercase tracking-widest text-left">
+              {isRTL ? "معلومات البث المباشر" : "Live Stream Insight"}
+            </h3>
+            {activeStation ? (
+              <div className="space-y-4 animate-fade-in">
+                <div className="relative group mx-auto w-24 h-24">
+                  <div className="w-full h-full rounded-2xl bg-zinc-100 shadow-md border border-zinc-100 overflow-hidden flex items-center justify-center">
+                    {activeStation.logoUrl ? (
+                      <img
+                        src={activeStation.logoUrl}
+                        alt={activeStation.name}
+                        className="w-full h-full object-cover animate-pulse"
+                      />
+                    ) : (
+                      <RadioIcon size={32} className="text-[#3b82f6] animate-bounce" />
+                    )}
                   </div>
                 </div>
-              );
-            })}
+                <div>
+                  <h4 className="font-bold text-sm text-[#3b82f6]">{activeStation.name}</h4>
+                  <p className="text-xs text-zinc-500 mt-1">{activeStation.frequency || activeStation.genre || "Live Frequency"}</p>
+                </div>
+                <div className="text-[11px] text-zinc-600 leading-relaxed italic bg-zinc-50 p-3 rounded-xl border border-zinc-100 text-left">
+                  {activeStation.description || (isRTL 
+                    ? "» استمع إلى البث المباشر لمحطة الراديو المفضلة لديك بالتردد الأمثل والتزامن الدائم في الخلفية. «" 
+                    : "» Stream high-fidelity direct audio feeds seamlessly synchronized in the background with premium real-time decoding. «")}
+                </div>
+              </div>
+            ) : (
+              <div className="text-zinc-400 text-xs py-12 italic">
+                {isRTL ? "الرجاء اختيار محطة راديو لعرض تفاصيل التردد والبث المباشر" : "Please select a Radio Station to view dynamic broadcast details"}
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
 
       {menuIndex !== -1 && (

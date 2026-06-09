@@ -948,8 +948,8 @@ export default function App() {
             <div className={`w-full overflow-hidden ${
               activeTab === "home" 
                 ? "h-full flex flex-col" 
-                : activeTab === "music"
-                ? "max-w-5xl mx-auto space-y-4 px-3 sm:px-4 py-4"
+                : (activeTab === "music" || activeTab === "radio")
+                ? "w-full max-w-7xl mx-auto space-y-4 px-1.5 sm:px-6 py-4"
                 : "max-w-sm md:max-w-md mx-auto space-y-4 px-3 sm:px-4 py-4"
             }`}>
             
@@ -981,6 +981,14 @@ export default function App() {
                   setTrackToEdit(track);
                   setActiveTab("upload"); // switch to Add Songs
                 }}
+                currentTime={currentTime}
+                duration={duration}
+                onSeek={handleSeek}
+                onTogglePlay={handleTogglePlay}
+                onNext={handleNext}
+                onPrev={handlePrev}
+                isExpanded={isPlayerExpanded}
+                setIsExpanded={setIsPlayerExpanded}
               />
             )}
 
@@ -1000,6 +1008,7 @@ export default function App() {
                     setActiveTab("add_radio");
                   }}
                   onDeleteStation={handleDeleteWorkerRadio}
+                  isPlaying={isPlaying}
                 />
               )}
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Disc, Play, MoreVertical, X, Edit2, Trash2 } from "lucide-react";
+import { Disc, Play, MoreVertical, X, Edit2, Trash2, Pause, SkipBack, SkipForward, Maximize2 } from "lucide-react";
 import { Track } from "../types";
 
 // Global cache for track durations to avoid redundant network requests across renders
@@ -135,11 +135,20 @@ interface MusicTabProps {
   searchTerm: string;
   onDeleteTrack?: (trackId: string) => void;
   onEditTrackClick?: (track: Track) => void;
+  currentTime?: number;
+  duration?: number;
+  onSeek?: (time: number) => void;
+  onTogglePlay?: () => void;
+  onNext?: () => void;
+  onPrev?: () => void;
+  isExpanded?: boolean;
+  setIsExpanded?: (val: boolean) => void;
 }
 
 export default function MusicTab({
   tracks,
   currentTrack,
+  isPlaying,
   onSelectTrack,
   lang,
   translations,
@@ -147,9 +156,28 @@ export default function MusicTab({
   searchTerm,
   onDeleteTrack,
   onEditTrackClick,
+  currentTime,
+  duration,
+  onSeek,
+  onTogglePlay,
+  onNext,
+  onPrev,
+  isExpanded,
+  setIsExpanded,
 }: MusicTabProps) {
   const t = translations[lang];
   const isRTL = lang === "ar";
+
+  const formatTime = (secs: number) => {
+    if (isNaN(secs)) return "0:00";
+    const hours = Math.floor(secs / 3600);
+    const minutes = Math.floor((secs % 3600) / 60);
+    const seconds = Math.floor(secs % 60);
+    if (hours > 0) {
+      return `${hours}:${minutes < 10 ? "0" : ""}${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
+    }
+    return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
+  };
 
   const [menuIndex, setMenuIndex] = useState<number>(-1);
   const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0 });
@@ -223,6 +251,28 @@ export default function MusicTab({
 
   return (
     <div className="space-y-4 text-zinc-800">
+      <style>{`
+        @keyframes soundBar1 {
+          0%, 100% { height: 4px; }
+          50% { height: 14px; }
+        }
+        @keyframes soundBar2 {
+          0%, 100% { height: 6px; }
+          50% { height: 12px; }
+        }
+        @keyframes soundBar3 {
+          0%, 100% { height: 5px; }
+          50% { height: 16px; }
+        }
+        @keyframes soundBar4 {
+          0%, 100% { height: 3px; }
+          50% { height: 10px; }
+        }
+        .animate-sound-bar-1 { animation: soundBar1 0.7s ease-in-out infinite; }
+        .animate-sound-bar-2 { animation: soundBar2 0.9s ease-in-out infinite; }
+        .animate-sound-bar-3 { animation: soundBar3 0.6s ease-in-out infinite; }
+        .animate-sound-bar-4 { animation: soundBar4 0.8s ease-in-out infinite; }
+      `}</style>
       {/* Grid: Main library & Info detail */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main Track Library */}
@@ -234,16 +284,17 @@ export default function MusicTab({
               <div className="divide-y divide-zinc-100">
                 {filteredTracks.map((track, idx) => {
                   const isCurrent = currentTrack?.id === track.id;
+
                   return (
                     <div
                       key={track.id}
                       onClick={() => onSelectTrack(track)}
-                      className={`flex items-center gap-2 p-1.5 px-3 hover:bg-zinc-50 transition-all duration-300 cursor-pointer group ${
+                      className={`flex items-center gap-1.5 p-1.5 px-1 sm:px-1.5 hover:bg-zinc-50 transition-all duration-300 cursor-pointer group ${
                         isCurrent ? "bg-[#1db954]/10" : ""
                       }`}
                     >
                       {/* 1. Index / Play Icon Container (Fixed Width) */}
-                      <div className="w-6 flex items-center justify-start shrink-0 -ml-1.5">
+                      <div className="w-5 flex items-center justify-center shrink-0">
                         <span className="font-mono text-[10px] text-zinc-400 group-hover:hidden w-full text-center">
                           {idx + 1}
                         </span>
@@ -262,28 +313,40 @@ export default function MusicTab({
                       </div>
 
                       {/* 3. Title & Artist Container */}
-                      <div className="flex-1 min-w-0 px-3">
-                        <h4
-                          className={`font-semibold text-[13px] truncate transition-colors ${
-                            isCurrent ? "text-[#1db954] font-bold" : "text-zinc-800 group-hover:text-[#1db954]"
-                          }`}
-                        >
-                          {track.title}
-                        </h4>
-                        <p className="text-[10px] text-zinc-500 truncate mt-0.5">
-                          {track.artist}
-                        </p>
+                      <div className="flex-1 min-w-0 px-2 flex items-center justify-between gap-4">
+                        <div className="min-w-0 flex-1">
+                          <h4
+                            className={`font-semibold text-[13px] truncate transition-colors ${
+                              isCurrent ? "text-[#1db954] font-bold" : "text-zinc-800 group-hover:text-[#1db954]"
+                            }`}
+                          >
+                            {track.title}
+                          </h4>
+                           <p className="text-[10px] text-zinc-500 truncate mt-0.5">
+                            {track.artist}
+                          </p>
+                        </div>
+
+                        {/* Inline Sound Bars */}
+                        {isCurrent && (
+                          <div className="flex items-end gap-[3px] h-4 px-2 shrink-0 self-center" title={isPlaying ? "Playing" : "Paused"}>
+                            <span className={`w-[3px] bg-[#1db954] rounded-t-full transition-all duration-300 ${isPlaying ? 'animate-sound-bar-1' : 'h-[3px]'}`} />
+                            <span className={`w-[3px] bg-[#1db954] rounded-t-full transition-all duration-300 ${isPlaying ? 'animate-sound-bar-2' : 'h-[6px]'}`} />
+                            <span className={`w-[3px] bg-[#1db954] rounded-t-full transition-all duration-300 ${isPlaying ? 'animate-sound-bar-3' : 'h-[4px]'}`} />
+                            <span className={`w-[3px] bg-[#1db954] rounded-t-full transition-all duration-300 ${isPlaying ? 'animate-sound-bar-4' : 'h-[2px]'}`} />
+                          </div>
+                        )}
                       </div>
 
                       {/* 4. Duration & Options Menu Container */}
-                      <div className="shrink-0 flex items-center gap-2">
+                      <div className="shrink-0 flex items-center gap-1.5">
                         <TrackDuration 
                           audioUrl={track.audioUrl} 
                           fallback={track.duration} 
                           className="font-mono text-[10px] text-zinc-500 shrink-0"
                         />
                         <button 
-                          className="p-2 -mr-1 text-zinc-400 hover:text-zinc-900 transition-colors cursor-pointer"
+                          className="p-1 px-1.5 -mr-1 text-zinc-400 hover:text-zinc-900 transition-colors cursor-pointer animate-fade-in"
                           onClick={(e) => openMenu(idx, e)}
                         >
                           <MoreVertical size={14} />
