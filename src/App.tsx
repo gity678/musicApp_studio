@@ -946,7 +946,11 @@ export default function App() {
             }}
           >
             <div className={`w-full overflow-hidden ${
-              activeTab === "home" ? "h-full flex flex-col" : "max-w-sm md:max-w-md mx-auto space-y-4 px-3 sm:px-4 py-4"
+              activeTab === "home" 
+                ? "h-full flex flex-col" 
+                : activeTab === "music"
+                ? "max-w-5xl mx-auto space-y-4 px-3 sm:px-4 py-4"
+                : "max-w-sm md:max-w-md mx-auto space-y-4 px-3 sm:px-4 py-4"
             }`}>
             
             {/* Visualizer canvas floating header */}
