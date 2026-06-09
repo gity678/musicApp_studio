@@ -552,6 +552,80 @@ export default function App() {
     return () => clearInterval(interval);
   }, [currentTrack, workerUrl]);
 
+  // Track radio play duration and sync to Supabase table
+  useEffect(() => {
+    if (!currentTrack || !isPlaying || !currentTrack.id.startsWith("radio-")) {
+      return;
+    }
+
+    const stationName = currentTrack.title;
+    let accumulatedSeconds = 0;
+
+    const interval = setInterval(async () => {
+      accumulatedSeconds += 1;
+
+      // Every 10 seconds, sync the accumulated playback duration to Supabase table
+      if (accumulatedSeconds >= 10) {
+        const secondsToSync = accumulatedSeconds;
+        accumulatedSeconds = 0; // reset immediately to avoid race condition during async call
+
+        try {
+          await fetch("/api/supabase/update-duration", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ 
+              name: stationName, 
+              durationToAdd: secondsToSync,
+              customUrl: localStorage.getItem("spotifyy_supabase_url") || "",
+              customKey: localStorage.getItem("spotifyy_supabase_key") || "",
+              customTable: localStorage.getItem("spotifyy_supabase_table") || "radio_channels"
+            })
+          });
+          
+          // Also locally update the state of workerRadios to reflect the new duration
+          setWorkerRadios((prev) => 
+            prev.map((r) => 
+              r.name === stationName 
+                ? { ...r, total_duration: (r.total_duration || 0) + secondsToSync } 
+                : r
+            )
+          );
+        } catch (e) {
+          console.error("Failed to sync listening duration to Supabase:", e);
+        }
+      }
+    }, 1000);
+
+    return () => {
+      clearInterval(interval);
+      // Sync remaining accumulated seconds on unmount / pause
+      if (accumulatedSeconds > 0) {
+        const secondsToSync = accumulatedSeconds;
+        fetch("/api/supabase/update-duration", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ 
+            name: stationName, 
+            durationToAdd: secondsToSync,
+            customUrl: localStorage.getItem("spotifyy_supabase_url") || "",
+            customKey: localStorage.getItem("spotifyy_supabase_key") || "",
+            customTable: localStorage.getItem("spotifyy_supabase_table") || "radio_channels"
+          })
+        }).then(() => {
+          setWorkerRadios((prev) => 
+            prev.map((r) => 
+              r.name === stationName 
+                ? { ...r, total_duration: (r.total_duration || 0) + secondsToSync } 
+                : r
+            )
+          );
+        }).catch((e) => {
+          console.error("Final unmount sync of listening duration failed:", e);
+        });
+      }
+    };
+  }, [currentTrack, isPlaying]);
+
   const handleTogglePlay = () => {
     if (!audioRef.current || !currentTrack) return;
 

@@ -450,6 +450,77 @@ app.post("/api/supabase/import", async (req, res) => {
   }
 });
 
+app.post("/api/supabase/update-duration", async (req, res) => {
+  const { name, durationToAdd, customUrl, customKey, customTable } = req.body;
+
+  if (!name || durationToAdd === undefined) {
+    return res.status(400).json({ error: "Missing name or durationToAdd parameters" });
+  }
+
+  const supabaseUrl = customUrl || process.env.SUPABASE_URL;
+  const supabaseKey = customKey || process.env.SUPABASE_KEY || process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const tableName = customTable || "radio_channels";
+
+  if (!supabaseUrl || !supabaseKey) {
+    return res.status(400).json({
+      error: "Supabase credentials are not configured. Cannot update listening duration."
+    });
+  }
+
+  try {
+    const cleanUrl = supabaseUrl.trim().replace(/\/$/, "");
+    const apiEndpoint = `${cleanUrl}/rest/v1/${tableName}?name=eq.${encodeURIComponent(name)}`;
+
+    // 1. Fetch current record
+    const getResponse = await fetch(apiEndpoint, {
+      method: "GET",
+      headers: {
+        "apikey": supabaseKey.trim(),
+        "Authorization": `Bearer ${supabaseKey.trim()}`,
+      }
+    });
+
+    let currentDuration = 0;
+    if (getResponse.ok) {
+      const data = await getResponse.json();
+      if (Array.isArray(data) && data.length > 0) {
+        currentDuration = Number(data[0].total_duration) || 0;
+      }
+    }
+
+    const newDuration = currentDuration + Number(durationToAdd);
+
+    // 2. PATCH the new duration
+    const patchResponse = await fetch(apiEndpoint, {
+      method: "PATCH",
+      headers: {
+        "apikey": supabaseKey.trim(),
+        "Authorization": `Bearer ${supabaseKey.trim()}`,
+        "Content-Type": "application/json",
+        "Prefer": "return=representation"
+      },
+      body: JSON.stringify({ total_duration: newDuration })
+    });
+
+    if (!patchResponse.ok) {
+      const errText = await patchResponse.text();
+      throw new Error(`Supabase PATCH failed: ${errText}`);
+    }
+
+    let updatedData = [];
+    try {
+      updatedData = await patchResponse.json();
+    } catch (e) {
+      // ignore JSON parse if returned representation is empty
+    }
+
+    return res.json({ ok: true, name, total_duration: newDuration, data: updatedData });
+  } catch (error: any) {
+    console.error("Error updating Supabase radio duration:", error);
+    return res.status(500).json({ error: error.message || "Failed to update Supabase duration" });
+  }
+});
+
 // Setup Vite middleware for development, static fallback for production
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {
