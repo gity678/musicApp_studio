@@ -565,8 +565,8 @@ export default function App() {
     const interval = setInterval(async () => {
       accumulatedSeconds += 1;
 
-      // Every 10 seconds, sync the accumulated playback duration to Supabase table
-      if (accumulatedSeconds >= 10) {
+      // Every 2 minutes (120 seconds), sync the accumulated playback duration to Supabase table
+      if (accumulatedSeconds >= 120) {
         const secondsToSync = accumulatedSeconds;
         accumulatedSeconds = 0; // reset immediately to avoid race condition during async call
 
