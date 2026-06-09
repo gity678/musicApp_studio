@@ -558,7 +558,8 @@ export default function App() {
       return;
     }
 
-    const stationName = currentTrack.title;
+    const stationDbIdRaw = currentTrack.id.replace("radio-", "");
+    const stationDbId = isNaN(Number(stationDbIdRaw)) ? stationDbIdRaw : Number(stationDbIdRaw);
     let accumulatedSeconds = 0;
 
     const interval = setInterval(async () => {
@@ -570,28 +571,30 @@ export default function App() {
         accumulatedSeconds = 0; // reset immediately to avoid race condition during async call
 
         try {
-          await fetch("/api/supabase/update-duration", {
-            method: "POST",
+          const res = await fetch("https://radio-worker.ma68.workers.dev/radios/duration", {
+            method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ 
-              name: stationName, 
-              durationToAdd: secondsToSync,
-              customUrl: localStorage.getItem("spotifyy_supabase_url") || "",
-              customKey: localStorage.getItem("spotifyy_supabase_key") || "",
-              customTable: localStorage.getItem("spotifyy_supabase_table") || "radio_channels"
+              id: stationDbId, 
+              seconds: secondsToSync
             })
           });
           
-          // Also locally update the state of workerRadios to reflect the new duration
-          setWorkerRadios((prev) => 
-            prev.map((r) => 
-              r.name === stationName 
-                ? { ...r, total_duration: (r.total_duration || 0) + secondsToSync } 
-                : r
-            )
-          );
+          if (res.ok) {
+            // Also locally update the state of workerRadios to reflect the new duration
+            setWorkerRadios((prev) => {
+              const updated = prev.map((r) => 
+                String(r.id) === String(stationDbId) 
+                  ? { ...r, total_duration: (r.total_duration || 0) + secondsToSync } 
+                  : r
+              );
+              return [...updated].sort((a, b) => (Number(b.total_duration) || 0) - (Number(a.total_duration) || 0));
+            });
+          } else {
+            console.error("Worker returned non-ok response status while syncing duration:", res.status);
+          }
         } catch (e) {
-          console.error("Failed to sync listening duration to Supabase:", e);
+          console.error("Failed to sync listening duration to Cloudflare Worker:", e);
         }
       }
     }, 1000);
@@ -601,24 +604,24 @@ export default function App() {
       // Sync remaining accumulated seconds on unmount / pause
       if (accumulatedSeconds > 0) {
         const secondsToSync = accumulatedSeconds;
-        fetch("/api/supabase/update-duration", {
-          method: "POST",
+        fetch("https://radio-worker.ma68.workers.dev/radios/duration", {
+          method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ 
-            name: stationName, 
-            durationToAdd: secondsToSync,
-            customUrl: localStorage.getItem("spotifyy_supabase_url") || "",
-            customKey: localStorage.getItem("spotifyy_supabase_key") || "",
-            customTable: localStorage.getItem("spotifyy_supabase_table") || "radio_channels"
+            id: stationDbId, 
+            seconds: secondsToSync
           })
-        }).then(() => {
-          setWorkerRadios((prev) => 
-            prev.map((r) => 
-              r.name === stationName 
-                ? { ...r, total_duration: (r.total_duration || 0) + secondsToSync } 
-                : r
-            )
-          );
+        }).then((res) => {
+          if (res.ok) {
+            setWorkerRadios((prev) => {
+              const updated = prev.map((r) => 
+                String(r.id) === String(stationDbId) 
+                  ? { ...r, total_duration: (r.total_duration || 0) + secondsToSync } 
+                  : r
+              );
+              return [...updated].sort((a, b) => (Number(b.total_duration) || 0) - (Number(a.total_duration) || 0));
+            });
+          }
         }).catch((e) => {
           console.error("Final unmount sync of listening duration failed:", e);
         });
