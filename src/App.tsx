@@ -283,9 +283,11 @@ export default function App() {
             genre: r.genre || "Radio Feed",
             logoUrl: r.logo || r.logoUrl || "https://images.unsplash.com/photo-1590602847861-f357a9332bbc?w=400",
             streamUrl: r.url || r.streamUrl,
-            description: r.description || ""
+            description: r.description || "",
+            total_duration: r.total_duration ? Number(r.total_duration) : 0
           }));
-          setWorkerRadios(mappedRadios);
+          const sortedRadios = [...mappedRadios].sort((a, b) => (Number(b.total_duration) || 0) - (Number(a.total_duration) || 0));
+          setWorkerRadios(sortedRadios);
         })
         .catch((err) => {
           console.error("Error loading worker data:", err);

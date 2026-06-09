@@ -17,6 +17,7 @@ export interface RadioStation {
   logoUrl: string;
   frequency: string;
   description: string;
+  total_duration?: number;
 }
 
 export interface ChatMessage {

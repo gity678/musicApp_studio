@@ -32,7 +32,8 @@ export default function RadioTab({
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setRadios(workerRadios);
+    const sorted = [...workerRadios].sort((a, b) => (Number(b.total_duration) || 0) - (Number(a.total_duration) || 0));
+    setRadios(sorted);
     setIsLoading(false);
   }, [workerRadios]);
 
@@ -86,10 +87,12 @@ export default function RadioTab({
         genre: r.genre || "General",
         logoUrl: r.logo || r.logoUrl || "https://images.unsplash.com/photo-1590602847861-f357a9332bbc?w=400",
         streamUrl: r.url || r.streamUrl || "",
-        description: r.description || ""
+        description: r.description || "",
+        total_duration: r.total_duration ? Number(r.total_duration) : 0
       }));
 
-      setRadios(mappedRadios);
+      const sortedMapped = [...mappedRadios].sort((a, b) => (Number(b.total_duration) || 0) - (Number(a.total_duration) || 0));
+      setRadios(sortedMapped);
     } catch (e: any) {
       console.error("Error loading radios:", e);
       let errMsg = e.message || "Failed to fetch";
