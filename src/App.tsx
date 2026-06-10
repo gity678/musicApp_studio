@@ -1088,6 +1088,7 @@ export default function App() {
                   }}
                   onDeleteStation={handleDeleteWorkerRadio}
                   isPlaying={isPlaying}
+                  liveSong={liveSong}
                 />
               )}
 

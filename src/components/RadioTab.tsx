@@ -11,6 +11,7 @@ interface RadioTabProps {
   onEditStation?: (station: RadioStation) => void;
   onDeleteStation?: (stationName: string) => void;
   isPlaying?: boolean;
+  liveSong?: string;
 }
 
 export default function RadioTab({
@@ -22,6 +23,7 @@ export default function RadioTab({
   onEditStation,
   onDeleteStation,
   isPlaying,
+  liveSong,
 }: RadioTabProps) {
   const isRTL = false;
   const [radios, setRadios] = useState<any[]>([]);
@@ -303,7 +305,7 @@ export default function RadioTab({
                             {r.name}
                           </h4>
                           <p className="text-[10px] text-zinc-500 truncate mt-0.5">
-                            {r.frequency || r.genre}
+                            {(isActive && liveSong) ? liveSong : (r.frequency || r.genre)}
                           </p>
                         </div>
 
@@ -361,7 +363,7 @@ export default function RadioTab({
                 </div>
                 <div>
                   <h4 className="font-bold text-sm text-[#3b82f6]">{activeStation.name}</h4>
-                  <p className="text-xs text-zinc-500 mt-1">{activeStation.frequency || activeStation.genre || "Live Frequency"}</p>
+                  <p className="text-xs text-zinc-500 mt-1">{liveSong || activeStation.frequency || activeStation.genre || "Live Frequency"}</p>
                 </div>
                 <div className="text-[11px] text-zinc-600 leading-relaxed italic bg-zinc-50 p-3 rounded-xl border border-zinc-100 text-left">
                   {activeStation.description || (isRTL 
