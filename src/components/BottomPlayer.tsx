@@ -75,6 +75,95 @@ export default function BottomPlayer({
 
   const previousNodeRef = React.useRef<HTMLDivElement | null>(null);
 
+  // Custom seeking hooks/state for long-press
+  const currentTimeRef = React.useRef(currentTime);
+  const durationRef = React.useRef(duration);
+  const rewardIntervalRef = React.useRef<any>(null);
+  const forwardIntervalRef = React.useRef<any>(null);
+  const pressTimeoutRef = React.useRef<any>(null);
+  const wasLongPress = React.useRef<boolean>(false);
+
+  React.useEffect(() => {
+    currentTimeRef.current = currentTime;
+  }, [currentTime]);
+
+  React.useEffect(() => {
+    durationRef.current = duration;
+  }, [duration]);
+
+  React.useEffect(() => {
+    return () => {
+      if (pressTimeoutRef.current) clearTimeout(pressTimeoutRef.current);
+      if (rewardIntervalRef.current) clearInterval(rewardIntervalRef.current);
+      if (forwardIntervalRef.current) clearInterval(forwardIntervalRef.current);
+    };
+  }, []);
+
+  const startSeeking = (direction: "back" | "forward") => {
+    const isLiveTrack = currentTrack?.duration === "Live" || currentTrack?.id.startsWith("radio-");
+    if (isLiveTrack) return;
+    wasLongPress.current = false;
+    
+    // Clear any existing timeouts/intervals
+    if (pressTimeoutRef.current) clearTimeout(pressTimeoutRef.current);
+    if (rewardIntervalRef.current) clearInterval(rewardIntervalRef.current);
+    if (forwardIntervalRef.current) clearInterval(forwardIntervalRef.current);
+
+    pressTimeoutRef.current = setTimeout(() => {
+      wasLongPress.current = true;
+      
+      const seekStep = Math.max(1.5, durationRef.current / 100); // 1% of duration or minimum 1.5 seconds
+
+      let currentSeekVal = currentTimeRef.current;
+
+      const intervalId = setInterval(() => {
+        if (direction === "back") {
+          currentSeekVal = Math.max(0, currentSeekVal - seekStep);
+        } else {
+          currentSeekVal = Math.min(durationRef.current, currentSeekVal + seekStep);
+        }
+        onSeek(currentSeekVal);
+      }, 80);
+      
+      if (direction === "back") {
+        rewardIntervalRef.current = intervalId;
+      } else {
+        forwardIntervalRef.current = intervalId;
+      }
+    }, 350);
+  };
+
+  const stopSeeking = (e?: React.MouseEvent | React.TouchEvent, actionType?: "prev" | "next") => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
+    if (pressTimeoutRef.current) {
+      clearTimeout(pressTimeoutRef.current);
+      pressTimeoutRef.current = null;
+    }
+    if (rewardIntervalRef.current) {
+      clearInterval(rewardIntervalRef.current);
+      rewardIntervalRef.current = null;
+    }
+    if (forwardIntervalRef.current) {
+      clearInterval(forwardIntervalRef.current);
+      forwardIntervalRef.current = null;
+    }
+
+    if (e && actionType) {
+      if (!wasLongPress.current) {
+        if (actionType === "prev") {
+          onPrev();
+        } else {
+          onNext();
+        }
+      }
+    }
+    wasLongPress.current = false;
+  };
+
   const playerRef = React.useCallback(
     (node: HTMLDivElement | null) => {
       // Cleanup old observer if it exists
@@ -417,8 +506,15 @@ export default function BottomPlayer({
 
             {/* PREV BUTTON */}
             <button
-              onClick={onPrev}
-              className="border border-zinc-200 rounded-lg text-zinc-500 hover:text-zinc-900 p-2 flex items-center justify-center cursor-pointer transition-all hover:border-zinc-300 bg-transparent"
+              onMouseDown={() => startSeeking("back")}
+              onTouchStart={(e) => {
+                e.stopPropagation();
+                startSeeking("back");
+              }}
+              onMouseUp={(e) => stopSeeking(e, "prev")}
+              onMouseLeave={(e) => stopSeeking(e, "prev")}
+              onTouchEnd={(e) => stopSeeking(e, "prev")}
+              className="border border-zinc-200 rounded-lg text-zinc-500 hover:text-zinc-900 p-2 flex items-center justify-center cursor-pointer transition-all hover:border-zinc-300 bg-transparent select-none touch-none"
             >
               <SkipBack size={14} />
             </button>
@@ -433,8 +529,15 @@ export default function BottomPlayer({
 
             {/* NEXT BUTTON */}
             <button
-              onClick={onNext}
-              className="border border-zinc-200 rounded-lg text-zinc-500 hover:text-zinc-900 p-2 flex items-center justify-center cursor-pointer transition-all hover:border-zinc-300 bg-transparent"
+              onMouseDown={() => startSeeking("forward")}
+              onTouchStart={(e) => {
+                e.stopPropagation();
+                startSeeking("forward");
+              }}
+              onMouseUp={(e) => stopSeeking(e, "next")}
+              onMouseLeave={(e) => stopSeeking(e, "next")}
+              onTouchEnd={(e) => stopSeeking(e, "next")}
+              className="border border-zinc-200 rounded-lg text-zinc-500 hover:text-zinc-900 p-2 flex items-center justify-center cursor-pointer transition-all hover:border-zinc-300 bg-transparent select-none touch-none"
             >
               <SkipForward size={14} />
             </button>
