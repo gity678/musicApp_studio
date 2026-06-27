@@ -1,5 +1,5 @@
 import React from "react";
-import { Youtube, Music, Compass, Play, Plus, Search, Heart, ArrowRight } from "lucide-react";
+import { Youtube, Music, Compass, Play, Plus, Search, Heart, ArrowRight, LogOut } from "lucide-react";
 import Radio from "./ClassicRadioIcon";
 import { motion } from "motion/react";
 
@@ -55,6 +55,19 @@ export default function HomeTab({
       {/* SINGLE Magnificent Integrated Container */}
       <section className="relative overflow-hidden w-full h-full flex-1 flex flex-col justify-center sm:justify-between bg-zinc-950/95 backdrop-blur-xl p-5 sm:p-8 space-y-6">
         
+        {/* Absolute Logout Button */}
+        <div className="absolute top-4 right-4 z-20">
+          <button
+            onClick={() => {
+              window.location.href = "/logout";
+            }}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-zinc-900/90 hover:bg-red-950/40 text-zinc-400 hover:text-red-400 border border-zinc-800 hover:border-red-900/50 text-[10px] font-bold tracking-wide transition-all active:scale-95 cursor-pointer select-none"
+          >
+            <LogOut size={12} />
+            <span>Logout</span>
+          </button>
+        </div>
+
         {/* Animated fluid ambient glow inside the container */}
         <div className="absolute inset-0 bg-gradient-to-tr from-emerald-500/10 via-zinc-900/40 to-emerald-400/5 -z-10" />
         

@@ -91,20 +91,19 @@ async function verifyPassword(password: string, hash: string): Promise<boolean> 
   return password === hash;
 }
 
-// A beautiful, highly-polished bilingual HTML Login screen
+// A beautiful, highly-polished HTML Login screen (English-only, minimal, elegant)
 function getLoginHtml(error?: string, systemInfo?: string): string {
-  const isRTL = true; // Support gorgeous styling
   return `<!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>دخول آمن | Secure Login</title>
+    <title>Sign In</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Kufi+Arabic:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: 'Noto Kufi Arabic', 'Inter', sans-serif;
+            font-family: 'Inter', sans-serif;
             background-color: #09090b;
         }
     </style>
@@ -123,19 +122,13 @@ function getLoginHtml(error?: string, systemInfo?: string): string {
                     <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
                 </svg>
             </div>
-            
-            <div class="space-y-1">
-                <h1 class="text-xl md:text-2xl font-black text-white tracking-wide">دخول آمن</h1>
-                <p class="text-xs text-zinc-400 font-medium">هذا الموقع محمي بكلمة مرور</p>
-                <p class="text-[10px] text-zinc-500 font-sans tracking-wide mt-1 uppercase">Secure Password Protection</p>
-            </div>
         </div>
 
         <!-- Verification Form -->
         <form method="POST" class="space-y-5">
             <div class="space-y-2">
-                <label for="password" class="block text-xs font-bold text-zinc-400 tracking-wide pr-1">
-                    أدخل كلمة المرور / Enter Password
+                <label for="password" class="block text-xs font-bold text-zinc-400 tracking-wide pl-1">
+                    Enter Password
                 </label>
                 <div class="relative">
                     <input 
@@ -152,7 +145,7 @@ function getLoginHtml(error?: string, systemInfo?: string): string {
 
             <!-- Error message feedback -->
             ${error ? `
-            <div class="bg-red-950/40 border border-red-900/50 rounded-2xl p-4 flex items-start gap-3 animate-head-shake">
+            <div class="bg-red-950/40 border border-red-900/50 rounded-2xl p-4 flex items-start gap-3">
                 <svg class="text-red-500 shrink-0 mt-0.5" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <circle cx="12" cy="12" r="10"></circle>
                     <line x1="12" y1="8" x2="12" y2="12"></line>
@@ -168,7 +161,7 @@ function getLoginHtml(error?: string, systemInfo?: string): string {
                 type="submit" 
                 class="w-full h-12 bg-gradient-to-r from-[#e91e63] to-[#ff4081] hover:opacity-95 text-white rounded-2xl font-bold text-sm tracking-wide shadow-lg shadow-[#e91e63]/10 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
-                <span>دخول | Enter</span>
+                <span>Enter</span>
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="5" y1="12" x2="19" y2="12"></line>
                     <polyline points="12 5 19 12 12 19"></polyline>
@@ -183,11 +176,6 @@ function getLoginHtml(error?: string, systemInfo?: string): string {
             <p>${systemInfo}</p>
         </div>
         ` : ""}
-
-        <!-- Footer -->
-        <div class="text-center pt-2">
-            <p class="text-[10px] text-zinc-600 font-medium">محمي بالكامل بـ HMAC-SHA256 • HttpOnly Session</p>
-        </div>
     </div>
 </body>
 </html>`;
@@ -212,6 +200,17 @@ export async function onRequest(context: {
     systemAlert = `Missing environment variables in Cloudflare Pages. Please define SUPABASE_URL and SUPABASE_KEY in settings.`;
   }
 
+  // Handle Logout Endpoint
+  if (url.pathname === "/api/logout" || url.pathname === "/logout") {
+    return new Response(null, {
+      status: 302,
+      headers: {
+        "Location": "/",
+        "Set-Cookie": "site_session=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0; Expires=Thu, 01 Jan 1970 00:00:00 GMT",
+      },
+    });
+  }
+
   // 1. Parse existing cookies
   const cookies = parseCookies(request.headers.get("Cookie"));
   const sessionToken = cookies["site_session"];
@@ -231,14 +230,14 @@ export async function onRequest(context: {
       const password = formData.get("password")?.toString();
 
       if (!password) {
-        return new Response(getLoginHtml("الرجاء إدخال كلمة المرور | Password is required", systemAlert), {
+        return new Response(getLoginHtml("Password is required", systemAlert), {
           status: 400,
           headers: { "Content-Type": "text/html; charset=utf-8" },
         });
       }
 
       if (!supabaseUrl || !supabaseKey) {
-        return new Response(getLoginHtml("قاعدة البيانات غير مهيأة بعد | Database is not configured yet", systemAlert), {
+        return new Response(getLoginHtml("Database is not configured yet", systemAlert), {
           status: 500,
           headers: { "Content-Type": "text/html; charset=utf-8" },
         });
@@ -260,7 +259,7 @@ export async function onRequest(context: {
       if (!dbResponse.ok) {
         const errText = await dbResponse.text();
         console.error("Supabase auth table query failed:", errText);
-        return new Response(getLoginHtml(`فشل الاتصال بـ Supabase (تأكد من وجود جدول auth وعمود password_hash)<br/><span class="text-[10px] font-mono text-red-400">${errText}</span>`, systemAlert), {
+        return new Response(getLoginHtml(`Connection to Supabase failed (Ensure auth table and password_hash column exist)<br/><span class="text-[10px] font-mono text-red-400">${errText}</span>`, systemAlert), {
           status: 500,
           headers: { "Content-Type": "text/html; charset=utf-8" },
         });
@@ -268,7 +267,7 @@ export async function onRequest(context: {
 
       const data = await dbResponse.json() as any[];
       if (!data || data.length === 0) {
-        return new Response(getLoginHtml("لم يتم العثور على كلمة مرور مخزنة في جدول auth", systemAlert), {
+        return new Response(getLoginHtml("No password configured in auth table", systemAlert), {
           status: 400,
           headers: { "Content-Type": "text/html; charset=utf-8" },
         });
@@ -294,14 +293,14 @@ export async function onRequest(context: {
           },
         });
       } else {
-        return new Response(getLoginHtml("كلمة المرور غير صحيحة | Incorrect Password", systemAlert), {
+        return new Response(getLoginHtml("Incorrect Password", systemAlert), {
           status: 401,
           headers: { "Content-Type": "text/html; charset=utf-8" },
         });
       }
     } catch (err: any) {
       console.error("Authentication handling error:", err);
-      return new Response(getLoginHtml(`خطأ أثناء معالجة الطلب: ${err.message || err}`, systemAlert), {
+      return new Response(getLoginHtml(`Error processing request: ${err.message || err}`, systemAlert), {
         status: 500,
         headers: { "Content-Type": "text/html; charset=utf-8" },
       });
