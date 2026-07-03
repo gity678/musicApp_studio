@@ -179,11 +179,29 @@ export default function MusicTab({
     return `${minutes}:${seconds < 10 ? "0" : ""}${seconds}`;
   };
 
+  const [selectedArtist, setSelectedArtist] = useState<string>("All");
   const [menuIndex, setMenuIndex] = useState<number>(-1);
   const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0 });
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const allTracks = [...(customTracks || []), ...(tracks || [])];
+
+  // Extract and sort unique artists by frequency of occurrence in allTracks
+  const sortedArtists = React.useMemo(() => {
+    const artistCounts: Record<string, number> = {};
+    (allTracks || []).forEach((track) => {
+      if (track && track.artist) {
+        const artist = track.artist.trim();
+        if (artist) {
+          artistCounts[artist] = (artistCounts[artist] || 0) + 1;
+        }
+      }
+    });
+    return Object.keys(artistCounts).sort((a, b) => artistCounts[b] - artistCounts[a]);
+  }, [allTracks]);
+
+  const artistExists = selectedArtist === "All" || sortedArtists.some(a => a.toLowerCase() === selectedArtist.toLowerCase());
+  const activeArtistFilter = artistExists ? selectedArtist : "All";
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -237,9 +255,19 @@ export default function MusicTab({
     }
   };
 
-  // Filter tracks only based on the global top-bar searchTerm (title & artist)
+  // Filter tracks only based on the global top-bar searchTerm (title & artist) and artist filter
   const filteredTracks = (allTracks || []).filter((track) => {
     if (!track) return false;
+
+    // Filter by selected artist in horizontal filter
+    if (activeArtistFilter !== "All") {
+      const artistName = (track.artist || "").trim().toLowerCase();
+      if (artistName !== activeArtistFilter.trim().toLowerCase()) {
+        return false;
+      }
+    }
+
+    // Filter by search term
     const term = (searchTerm || "").toLowerCase().trim();
     if (!term) return true;
     
@@ -272,12 +300,55 @@ export default function MusicTab({
         .animate-sound-bar-2 { animation: soundBar2 0.9s ease-in-out infinite; }
         .animate-sound-bar-3 { animation: soundBar3 0.6s ease-in-out infinite; }
         .animate-sound-bar-4 { animation: soundBar4 0.8s ease-in-out infinite; }
+        .no-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        .no-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
       `}</style>
       {/* Grid: Main library & Info detail */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main Track Library */}
-        <div className="lg:col-span-2 space-y-4">
+        <div className="lg:col-span-2 space-y-2">
           
+          {/* Horizontal Artist Filtering List */}
+          {sortedArtists.length > 0 && (
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar select-none whitespace-nowrap scroll-smooth -mt-3">
+              <button
+                onClick={() => setSelectedArtist("All")}
+                className={`w-24 h-9 flex items-center justify-center rounded-xl text-xs font-bold transition-all duration-300 shrink-0 cursor-pointer border text-center ${
+                  activeArtistFilter === "All"
+                    ? "bg-[#1db954] text-white border-[#1db954] shadow-sm"
+                    : "bg-white text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 border-zinc-200"
+                }`}
+              >
+                <span className="truncate w-full text-center px-1">
+                  {isRTL ? "الكل" : "All"}
+                </span>
+              </button>
+              {sortedArtists.map((artist) => {
+                const isSelected = activeArtistFilter.toLowerCase() === artist.toLowerCase();
+                return (
+                  <button
+                    key={artist}
+                    onClick={() => setSelectedArtist(artist)}
+                    className={`w-24 h-9 flex items-center justify-center rounded-xl text-xs font-bold transition-all duration-300 shrink-0 cursor-pointer border text-center ${
+                      isSelected
+                        ? "bg-[#1db954] text-white border-[#1db954] shadow-sm"
+                        : "bg-white text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 border-zinc-200"
+                    }`}
+                  >
+                    <span className="truncate w-full text-center px-1">
+                      {artist}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
           {/* Table List of tracks */}
           <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-sm flex flex-col">
             {filteredTracks.length > 0 ? (
