@@ -25,7 +25,7 @@ export default function RadioTab({
   isPlaying,
   liveSong,
 }: RadioTabProps) {
-  const isRTL = false;
+  const isRTL = lang === "ar";
   const [radios, setRadios] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -33,11 +33,41 @@ export default function RadioTab({
   const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0 });
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  const [selectedGenre, setSelectedGenre] = useState<string>("All");
+
   useEffect(() => {
     const sorted = [...workerRadios].sort((a, b) => (Number(b.total_duration) || 0) - (Number(a.total_duration) || 0));
     setRadios(sorted);
     setIsLoading(false);
   }, [workerRadios]);
+
+  // Extract and sort unique genres by frequency of occurrence in radios
+  const sortedGenres = React.useMemo(() => {
+    const genreCounts: Record<string, number> = {};
+    (radios || []).forEach((r) => {
+      if (r && r.genre) {
+        const genre = r.genre.trim();
+        if (genre) {
+          genreCounts[genre] = (genreCounts[genre] || 0) + 1;
+        }
+      }
+    });
+    return Object.keys(genreCounts).sort((a, b) => genreCounts[b] - genreCounts[a]);
+  }, [radios]);
+
+  const genreExists = selectedGenre === "All" || sortedGenres.some(g => g.toLowerCase() === selectedGenre.toLowerCase());
+  const activeGenreFilter = genreExists ? selectedGenre : "All";
+
+  const filteredRadios = (radios || []).filter((r) => {
+    if (!r) return false;
+    if (activeGenreFilter !== "All") {
+      const gName = (r.genre || "").trim().toLowerCase();
+      if (gName !== activeGenreFilter.trim().toLowerCase()) {
+        return false;
+      }
+    }
+    return true;
+  });
 
   const loadRadios = async (silent = false) => {
     if (!silent) {
@@ -126,16 +156,19 @@ export default function RadioTab({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const playStation = (i: number) => {
-    onSelectStation(radios[i]);
+  const playStation = (indexInFiltered: number) => {
+    const targetStation = filteredRadios[indexInFiltered];
+    if (targetStation) {
+      onSelectStation(targetStation);
+    }
   };
 
-  const openMenu = (i: number, e: React.MouseEvent) => {
+  const openMenu = (indexInFiltered: number, e: React.MouseEvent) => {
     e.stopPropagation();
-    setMenuIndex(i);
+    setMenuIndex(indexInFiltered);
     const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
     
-    const isUpperHalf = i < radios.length / 2;
+    const isUpperHalf = indexInFiltered < filteredRadios.length / 2;
     // Estimated dropdown height: 2 buttons of ~40px + border + padding + small close bar = ~112px
     const menuHeight = 112;
 
@@ -155,7 +188,8 @@ export default function RadioTab({
 
   const modifierFromMenu = () => {
     if (menuIndex === -1) return;
-    const r = radios[menuIndex];
+    const r = filteredRadios[menuIndex];
+    if (!r) return;
     closeMenu();
     if (onEditStation) {
       onEditStation(r);
@@ -164,7 +198,8 @@ export default function RadioTab({
 
   const supprimerFromMenu = async () => {
     if (menuIndex === -1) return;
-    const r = radios[menuIndex];
+    const r = filteredRadios[menuIndex];
+    if (!r) return;
     closeMenu();
     if (!confirm(isRTL ? `هل متأكد من حذف "${r.name}"؟` : `Delete "${r.name}"?`)) return;
     
@@ -224,11 +259,55 @@ export default function RadioTab({
         .animate-sound-bar-2 { animation: soundBar2 0.9s ease-in-out infinite; }
         .animate-sound-bar-3 { animation: soundBar3 0.6s ease-in-out infinite; }
         .animate-sound-bar-4 { animation: soundBar4 0.8s ease-in-out infinite; }
+        .no-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        .no-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
       `}</style>
       {/* Grid: Main library & Info detail */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main Radio Library */}
-        <div className="lg:col-span-2 space-y-4">
+        <div className="lg:col-span-2 space-y-2">
+          
+          {/* Horizontal Genre Filtering List */}
+          {sortedGenres.length > 0 && (
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar select-none whitespace-nowrap scroll-smooth -mt-3">
+              <button
+                onClick={() => setSelectedGenre("All")}
+                className={`w-20 h-8 flex items-center justify-center rounded-xl text-[11px] font-bold transition-all duration-300 shrink-0 cursor-pointer border text-center ${
+                  activeGenreFilter === "All"
+                    ? "bg-[#3b82f6] text-white border-[#3b82f6] shadow-sm"
+                    : "bg-white text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 border-zinc-200"
+                }`}
+              >
+                <span className="truncate w-full text-center px-1">
+                  {isRTL ? "الكل" : "All"}
+                </span>
+              </button>
+              {sortedGenres.map((genre) => {
+                const isSelected = activeGenreFilter.toLowerCase() === genre.toLowerCase();
+                return (
+                  <button
+                    key={genre}
+                    onClick={() => setSelectedGenre(genre)}
+                    className={`w-20 h-8 flex items-center justify-center rounded-xl text-[11px] font-bold transition-all duration-300 shrink-0 cursor-pointer border text-center ${
+                      isSelected
+                        ? "bg-[#3b82f6] text-white border-[#3b82f6] shadow-sm"
+                        : "bg-white text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 border-zinc-200"
+                    }`}
+                  >
+                    <span className="truncate w-full text-center px-1">
+                      {genre}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
           <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden shadow-sm flex flex-col">
             {isLoading ? (
               <div className="flex items-center justify-center py-20 text-zinc-500 animate-pulse text-xs font-mono uppercase tracking-widest">
@@ -249,9 +328,13 @@ export default function RadioTab({
               <div className="flex items-center justify-center py-20 text-zinc-500 text-xs font-mono uppercase tracking-widest">
                 {isRTL ? "❌ فشل التحميل أو لا توجد محطات" : "❌ No stations detected"}
               </div>
+            ) : filteredRadios.length === 0 ? (
+              <div className="flex items-center justify-center py-20 text-zinc-500 text-xs font-mono uppercase tracking-widest">
+                {isRTL ? "❌ لا توجد محطات في هذا القسم" : "❌ No stations in this category"}
+              </div>
             ) : (
               <div className="divide-y divide-zinc-100">
-                {radios.map((r, i) => {
+                {filteredRadios.map((r, i) => {
                   const isActive = activeStation?.name === r.name;
                   return (
                     <div

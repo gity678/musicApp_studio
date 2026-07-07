@@ -39,6 +39,7 @@ export default function AddRadioTab({ lang, stationToEdit, onClearStationToEdit,
   const [radioName, setRadioName] = useState("");
   const [radioStream, setRadioStream] = useState("");
   const [radioPhoto, setRadioPhoto] = useState("");
+  const [radioGenre, setRadioGenre] = useState("");
   const [jsonInput, setJsonInput] = useState("");
 
   // Supabase settings state
@@ -79,6 +80,7 @@ export default function AddRadioTab({ lang, stationToEdit, onClearStationToEdit,
       setRadioName(stationToEdit.name);
       setRadioStream(stationToEdit.streamUrl || "");
       setRadioPhoto(stationToEdit.logoUrl || "");
+      setRadioGenre(stationToEdit.genre || "");
     }
   }, [stationToEdit]);
 
@@ -86,6 +88,7 @@ export default function AddRadioTab({ lang, stationToEdit, onClearStationToEdit,
     setRadioName("");
     setRadioStream("");
     setRadioPhoto("");
+    setRadioGenre("");
     setOriginalName("");
     setJsonInput("");
     setStatus(null);
@@ -102,6 +105,7 @@ export default function AddRadioTab({ lang, stationToEdit, onClearStationToEdit,
     setRadioName(r.name);
     setRadioStream(r.url || r.streamUrl || "");
     setRadioPhoto(r.logo || "");
+    setRadioGenre(r.genre || "");
   };
 
   const copyPrompt = () => {
@@ -131,7 +135,7 @@ export default function AddRadioTab({ lang, stationToEdit, onClearStationToEdit,
         const res = await fetch(WORKER + '/radios', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: radioName, url: radioStream, logo: radioPhoto })
+          body: JSON.stringify({ name: radioName, url: radioStream, logo: radioPhoto, genre: radioGenre })
         });
         const data = await res.json();
         if (data.ok) {
@@ -163,7 +167,8 @@ export default function AddRadioTab({ lang, stationToEdit, onClearStationToEdit,
           ...existingRadio,
           name: radioName,
           url: radioStream,
-          logo: radioPhoto
+          logo: radioPhoto,
+          genre: radioGenre
         };
 
         const res = await fetch(WORKER + '/radios', {
@@ -203,12 +208,13 @@ export default function AddRadioTab({ lang, stationToEdit, onClearStationToEdit,
     setIsLoading(true);
     setStatus({ msg: isRTL ? "جاري استيراد المحطات..." : "Importing stations...", type: 'loading' });
 
-    // Automatically detect standard keys and map them to standard { name, url, logo } for the worker
+    // Automatically detect standard keys and map them to standard { name, url, logo, genre } for the worker
     const validStations = parsedData.map((item: any) => {
       const name = item.name || item.title || item.stationName || item.station_name || "";
       const url = item.url || item.stream_url || item.streamUrl || item.stream || item.audioUrl || "";
       const logo = item.logo || item.logo_url || item.logoUrl || item.image || item.photo || item.imageUrl || "";
-      return { name, url, logo };
+      const genre = item.genre || item.category || item.type || "";
+      return { name, url, logo, genre };
     }).filter((r: any) => r.name && r.url);
 
     if (validStations.length === 0) {
@@ -296,6 +302,16 @@ export default function AddRadioTab({ lang, stationToEdit, onClearStationToEdit,
                 value={radioPhoto}
                 onChange={(e) => setRadioPhoto(e.target.value)}
                 placeholder="https://..." 
+                className="w-full h-12 bg-zinc-50 border border-zinc-200 rounded-2xl px-5 text-sm outline-none focus:border-zinc-900 transition-colors placeholder:text-zinc-300"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-mono font-black uppercase text-zinc-400 tracking-widest">{isRTL ? "نوع المحطة (Genre)" : "Genre (Category)"}</label>
+              <input 
+                type="text" 
+                value={radioGenre}
+                onChange={(e) => setRadioGenre(e.target.value)}
+                placeholder="Ex: Quran, News, Music, Sport..." 
                 className="w-full h-12 bg-zinc-50 border border-zinc-200 rounded-2xl px-5 text-sm outline-none focus:border-zinc-900 transition-colors placeholder:text-zinc-300"
               />
             </div>
