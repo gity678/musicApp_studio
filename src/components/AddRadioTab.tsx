@@ -22,9 +22,10 @@ interface AddRadioTabProps {
   lang: "en" | "ar";
   stationToEdit?: RadioStation | null;
   onClearStationToEdit?: () => void;
+  onReloadRadios?: () => void;
 }
 
-export default function AddRadioTab({ lang, stationToEdit, onClearStationToEdit }: AddRadioTabProps) {
+export default function AddRadioTab({ lang, stationToEdit, onClearStationToEdit, onReloadRadios }: AddRadioTabProps) {
   const isRTL = lang === "ar";
   
   // App State
@@ -137,6 +138,7 @@ export default function AddRadioTab({ lang, stationToEdit, onClearStationToEdit 
           setStatus({ msg: isRTL ? "✅ تم إضافة المحطة!" : "✅ Station added!", type: 'success' });
           clearForm();
           loadRadios();
+          onReloadRadios?.();
         } else {
           setStatus({ msg: `Error: ${data.error || 'Unknown'}`, type: 'error' });
         }
@@ -146,21 +148,34 @@ export default function AddRadioTab({ lang, stationToEdit, onClearStationToEdit 
           setIsLoading(false);
           return;
         }
+
+        // Find the existing radio inside the radios state array to preserve all stats (e.g. total_duration, id, listens, etc.)
+        const existingRadio = radios.find((r: any) => r.name === originalName) || {};
+
         // Worker pattern from snippet: DELETE then POST
         await fetch(WORKER + '/radios', {
           method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name: originalName })
         });
+        
+        const payload = {
+          ...existingRadio,
+          name: radioName,
+          url: radioStream,
+          logo: radioPhoto
+        };
+
         const res = await fetch(WORKER + '/radios', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: radioName, url: radioStream, logo: radioPhoto })
+          body: JSON.stringify(payload)
         });
         const data = await res.json();
         if (data.ok) {
           setStatus({ msg: isRTL ? "✅ تم التعديل!" : "✅ Station modified!", type: 'success' });
           loadRadios();
+          onReloadRadios?.();
         } else {
           setStatus({ msg: "Error modifying station", type: 'error' });
         }
@@ -213,6 +228,7 @@ export default function AddRadioTab({ lang, stationToEdit, onClearStationToEdit 
         setStatus({ msg: isRTL ? `✅ تم استيراد ${validStations.length} محطة بنجاح!` : `✅ ${validStations.length} stations imported!`, type: 'success' });
         setJsonInput("");
         loadRadios();
+        onReloadRadios?.();
       } else {
         setStatus({ msg: `Error: ${result.error || 'Unknown'}`, type: 'error' });
       }

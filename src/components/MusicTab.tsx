@@ -318,7 +318,7 @@ export default function MusicTab({
             <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar select-none whitespace-nowrap scroll-smooth -mt-3">
               <button
                 onClick={() => setSelectedArtist("All")}
-                className={`w-24 h-9 flex items-center justify-center rounded-xl text-xs font-bold transition-all duration-300 shrink-0 cursor-pointer border text-center ${
+                className={`w-20 h-8 flex items-center justify-center rounded-xl text-[11px] font-bold transition-all duration-300 shrink-0 cursor-pointer border text-center ${
                   activeArtistFilter === "All"
                     ? "bg-[#1db954] text-white border-[#1db954] shadow-sm"
                     : "bg-white text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 border-zinc-200"
@@ -334,7 +334,7 @@ export default function MusicTab({
                   <button
                     key={artist}
                     onClick={() => setSelectedArtist(artist)}
-                    className={`w-24 h-9 flex items-center justify-center rounded-xl text-xs font-bold transition-all duration-300 shrink-0 cursor-pointer border text-center ${
+                    className={`w-20 h-8 flex items-center justify-center rounded-xl text-[11px] font-bold transition-all duration-300 shrink-0 cursor-pointer border text-center ${
                       isSelected
                         ? "bg-[#1db954] text-white border-[#1db954] shadow-sm"
                         : "bg-white text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 border-zinc-200"

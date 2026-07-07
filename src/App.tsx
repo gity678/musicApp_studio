@@ -261,18 +261,28 @@ export default function App() {
       fetchSongsAndRadios()
         .then(({ songs, radios }) => {
           // Map worker songs into unified Track format
-          const mappedSongs: Track[] = (songs || []).map((song: any) => ({
-            id: `worker-${song.id}`,
-            title: song.title || "Untitled",
-            artist: song.artist || (song.source === "cloudinary" ? "Cloudinary Storage" : (song.source === "b2" ? "Backblaze B2" : "Worker Audio")),
-            album: song.source ? song.source.toUpperCase() : "CLOUD",
-            coverUrl: song.thumb || (song.source === "cloudinary"
-              ? "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&auto=format&fit=crop&q=80"
-              : "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=400&auto=format&fit=crop&q=80"),
-            audioUrl: song.url || "",
-            duration: formatSecondsToMinutes(song.duration),
-            genre: song.source === "cloudinary" ? "Cloudinary" : (song.source === "b2" ? "Backblaze B2" : "Remote Feed"),
-          })).reverse();
+          const savedEdits = localStorage.getItem("spotifyy_worker_track_edits");
+          const edits = savedEdits ? JSON.parse(savedEdits) : {};
+
+          const mappedSongs: Track[] = (songs || []).map((song: any) => {
+            const trackId = `worker-${song.id}`;
+            const baseTrack = {
+              id: trackId,
+              title: song.title || "Untitled",
+              artist: song.artist || (song.source === "cloudinary" ? "Cloudinary Storage" : (song.source === "b2" ? "Backblaze B2" : "Worker Audio")),
+              album: song.source ? song.source.toUpperCase() : "CLOUD",
+              coverUrl: song.thumb || (song.source === "cloudinary"
+                ? "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&auto=format&fit=crop&q=80"
+                : "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=400&auto=format&fit=crop&q=80"),
+              audioUrl: song.url || "",
+              duration: formatSecondsToMinutes(song.duration),
+              genre: song.source === "cloudinary" ? "Cloudinary" : (song.source === "b2" ? "Backblaze B2" : "Remote Feed"),
+            };
+            if (edits[trackId]) {
+              return { ...baseTrack, ...edits[trackId] };
+            }
+            return baseTrack;
+          }).reverse();
           setWorkerTracks(mappedSongs);
 
           // Map worker radios
@@ -370,18 +380,28 @@ export default function App() {
 
     fetchSongs()
       .then((songs) => {
-        const mapped: Track[] = (songs || []).map((song: any) => ({
-          id: `worker-${song.id}`,
-          title: song.title || "Untitled",
-          artist: song.artist || (song.source === "cloudinary" ? "Cloudinary Storage" : (song.source === "b2" ? "Backblaze B2" : "Worker Audio")),
-          album: song.source ? song.source.toUpperCase() : "CLOUD",
-          coverUrl: song.thumb || (song.source === "cloudinary"
-            ? "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&auto=format&fit=crop&q=80"
-            : "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=400&auto=format&fit=crop&q=80"),
-          audioUrl: song.url || "",
-          duration: formatSecondsToMinutes(song.duration),
-          genre: song.source === "cloudinary" ? "Cloudinary" : (song.source === "b2" ? "Backblaze B2" : "Remote Feed"),
-        })).reverse();
+        const savedEdits = localStorage.getItem("spotifyy_worker_track_edits");
+        const edits = savedEdits ? JSON.parse(savedEdits) : {};
+
+        const mapped: Track[] = (songs || []).map((song: any) => {
+          const trackId = `worker-${song.id}`;
+          const baseTrack = {
+            id: trackId,
+            title: song.title || "Untitled",
+            artist: song.artist || (song.source === "cloudinary" ? "Cloudinary Storage" : (song.source === "b2" ? "Backblaze B2" : "Worker Audio")),
+            album: song.source ? song.source.toUpperCase() : "CLOUD",
+            coverUrl: song.thumb || (song.source === "cloudinary"
+              ? "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=400&auto=format&fit=crop&q=80"
+              : "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?w=400&auto=format&fit=crop&q=80"),
+            audioUrl: song.url || "",
+            duration: formatSecondsToMinutes(song.duration),
+            genre: song.source === "cloudinary" ? "Cloudinary" : (song.source === "b2" ? "Backblaze B2" : "Remote Feed"),
+          };
+          if (edits[trackId]) {
+            return { ...baseTrack, ...edits[trackId] };
+          }
+          return baseTrack;
+        }).reverse();
         setWorkerTracks(mapped);
       })
       .catch((err) => {
@@ -392,6 +412,54 @@ export default function App() {
       .finally(() => {
         setIsWorkerLoading(false);
       });
+  };
+
+  const reloadWorkerRadios = async () => {
+    if (!workerUrl.trim()) return;
+    const cleanUrl = workerUrl.trim().replace(/\/$/, "");
+    let radioWorkerUrl = cleanUrl;
+    if (cleanUrl.includes("music-worker")) radioWorkerUrl = "https://radio-worker.ma68.workers.dev";
+    
+    const tryFetchRadios = async () => {
+      try {
+        const res = await fetch(`/api/worker/radios?workerUrl=${encodeURIComponent(radioWorkerUrl)}`);
+        if (res.ok) {
+          const data = await res.json();
+          return Array.isArray(data) ? data : [];
+        }
+      } catch (e) {
+        console.warn("Proxy radios fetch failed", e);
+      }
+
+      try {
+        const res = await fetch(`${radioWorkerUrl}/radios`);
+        if (res.ok) {
+          const data = await res.json();
+          return Array.isArray(data) ? data : [];
+        }
+      } catch (e) {
+        console.warn("Direct radios fetch failed", e);
+      }
+      return [];
+    };
+
+    try {
+      const radios = await tryFetchRadios();
+      const mappedRadios: RadioStation[] = radios.map((r: any, i: number) => ({
+        id: r.id || `worker-radio-${i}`,
+        name: r.name,
+        frequency: r.genre || "Global",
+        genre: r.genre || "Radio Feed",
+        logoUrl: r.logo || r.logoUrl || "https://images.unsplash.com/photo-1590602847861-f357a9332bbc?w=400",
+        streamUrl: r.url || r.streamUrl,
+        description: r.description || "",
+        total_duration: r.total_duration ? Number(r.total_duration) : 0
+      }));
+      const sortedRadios = [...mappedRadios].sort((a, b) => (Number(b.total_duration) || 0) - (Number(a.total_duration) || 0));
+      setWorkerRadios(sortedRadios);
+    } catch (err) {
+      console.error("Error reloading worker radios:", err);
+    }
   };
 
   // HTML5 audio elements reference
@@ -819,6 +887,11 @@ export default function App() {
 
   const handleEditCustomTrack = (trackId: string, updatedFields: Partial<Track>) => {
     if (trackId.startsWith("worker-")) {
+      const savedEdits = localStorage.getItem("spotifyy_worker_track_edits");
+      const edits = savedEdits ? JSON.parse(savedEdits) : {};
+      edits[trackId] = { ...(edits[trackId] || {}), ...updatedFields };
+      localStorage.setItem("spotifyy_worker_track_edits", JSON.stringify(edits));
+
       setWorkerTracks((prev) =>
         prev.map((t) => (t.id === trackId ? { ...t, ...updatedFields } : t))
       );
@@ -1118,6 +1191,7 @@ export default function App() {
                 lang={lang} 
                 stationToEdit={stationToEdit}
                 onClearStationToEdit={() => setStationToEdit(null)}
+                onReloadRadios={reloadWorkerRadios}
               />
             )}
 
