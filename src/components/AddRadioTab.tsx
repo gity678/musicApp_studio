@@ -155,8 +155,47 @@ export default function AddRadioTab({ lang, stationToEdit, onClearStationToEdit,
 
         // Find the existing radio inside the radios state array to preserve all stats (e.g. total_duration, id, listens, etc.)
         const existingRadio = radios.find((r: any) => r.name === originalName) || {};
+        const savedDuration = Number(existingRadio.total_duration) || 0;
 
-        // Worker pattern from snippet: DELETE then POST
+        // Check if client-side direct Supabase credentials are configured
+        const localUrl = localStorage.getItem("spotifyy_supabase_url");
+        const localKey = localStorage.getItem("spotifyy_supabase_key");
+        const localTable = localStorage.getItem("spotifyy_supabase_table") || "radio_channels";
+
+        if (localUrl && localKey) {
+          // Direct Supabase PATCH update by id or name
+          const query = existingRadio.id 
+            ? `id=eq.${existingRadio.id}` 
+            : `name=eq.${encodeURIComponent(originalName)}`;
+
+          const res = await fetch(`${localUrl}/rest/v1/${localTable}?${query}`, {
+            method: 'PATCH',
+            headers: {
+              'apikey': localKey,
+              'Authorization': `Bearer ${localKey}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              name: radioName,
+              url: radioStream,
+              logo: radioPhoto,
+              genre: radioGenre
+            })
+          });
+
+          if (res.ok) {
+            setStatus({ msg: isRTL ? "✅ تم التعديل!" : "✅ Station modified!", type: 'success' });
+            loadRadios();
+            onReloadRadios?.();
+          } else {
+            const errData = await res.json().catch(() => ({}));
+            setStatus({ msg: `Error: ${errData.message || 'Unknown'}`, type: 'error' });
+          }
+          setIsLoading(false);
+          return;
+        }
+
+        // Worker pattern: DELETE then POST, and then restore the duration
         await fetch(WORKER + '/radios', {
           method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
@@ -178,6 +217,26 @@ export default function AddRadioTab({ lang, stationToEdit, onClearStationToEdit,
         });
         const data = await res.json();
         if (data.ok) {
+          // If we had a duration > 0, restore it via the worker's PATCH /radios/duration
+          if (savedDuration > 0) {
+            try {
+              // 1. Fetch radios to find the newly created radio's ID
+              const getRes = await fetch(WORKER + '/radios');
+              const radiosList = await getRes.json();
+              const newRadio = radiosList.find((r: any) => r.name === radioName);
+              if (newRadio && newRadio.id) {
+                // 2. Patch the duration to restore the previous duration
+                await fetch(WORKER + '/radios/duration', {
+                  method: 'PATCH',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ id: newRadio.id, seconds: savedDuration })
+                });
+              }
+            } catch (patchErr) {
+              console.error("Error restoring duration:", patchErr);
+            }
+          }
+
           setStatus({ msg: isRTL ? "✅ تم التعديل!" : "✅ Station modified!", type: 'success' });
           loadRadios();
           onReloadRadios?.();
