@@ -1,0 +1,166 @@
+name: 🎵 Upload Song
+on:
+  workflow_dispatch:
+    inputs:
+      youtube_url:
+        description: 'رابط يوتيوب'
+        required: true
+        type: string
+      song_name:
+        description: 'اسم الأغنية'
+        required: true
+        type: string
+      title:
+        description: 'عنوان الأغنية'
+        required: false
+        type: string
+      artist:
+        description: 'اسم الفنان'
+        required: false
+        type: string
+      thumb:
+        description: 'رابط الصورة'
+        required: false
+        type: string
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: pip install requests cloudinary boto3 mutagen
+      - name: Download & Upload
+        run: |
+          python - <<EOF
+          import re, requests, cloudinary, cloudinary.uploader, tempfile, os, boto3
+          from botocore.client import Config
+          from mutagen.mp3 import MP3
+
+          SUPABASE_URL = os.environ["SUPABASE_URL"]
+          SUPABASE_KEY = os.environ["SUPABASE_KEY"]
+
+          def get_key(name):
+              r = requests.get(
+                  f"{SUPABASE_URL}/rest/v1/music_keys?key=eq.{name}&select=value",
+                  headers={
+                      "apikey": SUPABASE_KEY,
+                      "Authorization": f"Bearer {SUPABASE_KEY}"
+                  }
+              ).json()
+              if not r:
+                  print(f"❌ المتغير {name} غير موجود في Supabase"); exit(1)
+              return r[0]["value"]
+
+          cloudinary.config(
+              cloud_name = get_key("CLOUDINARY_NAME"),
+              api_key    = get_key("CLOUDINARY_KEY"),
+              api_secret = get_key("CLOUDINARY_SECRET")
+          )
+
+          B2_KEY_ID   = get_key("B2_KEY_ID")
+          B2_APP_KEY  = get_key("B2_APP_KEY")
+          B2_BUCKET   = get_key("B2_BUCKET")
+          B2_ENDPOINT = get_key("B2_ENDPOINT")
+          KEY         = get_key("DOWNLOAD_RAPIDAPI_KEY")
+          HOST        = get_key("DOWNLOAD_RAPIDAPI_HOST")
+
+          YT_URL     = "${{ github.event.inputs.youtube_url }}"
+          RAW_NAME   = "${{ github.event.inputs.song_name }}"
+          TITLE      = "${{ github.event.inputs.title }}"
+          ARTIST     = "${{ github.event.inputs.artist }}"
+          THUMB      = "${{ github.event.inputs.thumb }}"
+          CLEAN_NAME = RAW_NAME.replace(" ", "_")
+
+          m = re.search(r"(?:v=|youtu\.be/|shorts/)([a-zA-Z0-9_-]{11})", YT_URL)
+          if not m:
+              print("❌ رابط غير صالح"); exit(1)
+          vid = m.group(1)
+          print(f"✅ Video ID: {vid}")
+
+          res = requests.get(f"https://{HOST}/dl", params={"id": vid},
+                               headers={"x-rapidapi-host": HOST, "x-rapidapi-key": KEY},
+                               timeout=30).json()
+          if res.get("status") != "ok":
+              print("❌ فشل جلب الرابط"); exit(1)
+
+          print(f"🎵 الاسم: {CLEAN_NAME}")
+          print(f"📝 العنوان: {TITLE}")
+          print(f"🎤 الفنان: {ARTIST}")
+          print(f"🖼 الصورة: {THUMB}")
+          print("⏳ جاري التحميل...")
+
+          r = requests.get(res["link"], timeout=120, headers={
+              "User-Agent": "Mozilla/5.0",
+              "Referer": f"https://{HOST}/"
+          })
+          if r.status_code != 200 or len(r.content) < 100000:
+              print(f"❌ فشل التحميل ({r.status_code})"); exit(1)
+
+          size_mb = len(r.content) / (1024 * 1024)
+          print(f"✅ حجم الملف: {size_mb:.1f} MB")
+
+          with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as tmp:
+              tmp.write(r.content)
+              tmp_path = tmp.name
+
+          duration = round(MP3(tmp_path).info.length, 2)
+          print(f"⏱ المدة: {duration} ثانية")
+
+          if size_mb < 95:
+              print("☁️ الرفع على Cloudinary...")
+              result = cloudinary.uploader.upload_large(tmp_path, **{
+                  "resource_type": "video",
+                  "public_id": f"music/{CLEAN_NAME}",
+                  "overwrite": True,
+                  "chunk_size": 20000000
+              })
+              print(f"🚀 تم الرفع على Cloudinary!")
+              print(f"🔗 {result['secure_url']}")
+              source = "cloudinary"
+          else:
+              print("☁️ الرفع على Backblaze B2...")
+              s3 = boto3.client(
+                  's3',
+                  endpoint_url=f"https://{B2_ENDPOINT}",
+                  aws_access_key_id=B2_KEY_ID,
+                  aws_secret_access_key=B2_APP_KEY,
+                  config=Config(signature_version='s3v4')
+              )
+              s3.upload_file(
+                  tmp_path,
+                  B2_BUCKET,
+                  f"music/{CLEAN_NAME}.mp3",
+                  ExtraArgs={"ContentType": "audio/mpeg"}
+              )
+              print(f"🚀 تم الرفع على Backblaze!")
+              source = "b2"
+
+          os.unlink(tmp_path)
+
+          print("💾 حفظ البيانات في Supabase...")
+          song_data = {
+              "id": f"music/{CLEAN_NAME}",
+              "title": TITLE or CLEAN_NAME.replace("_", " "),
+              "artist": ARTIST or "",
+              "thumb": THUMB or "",
+              "duration": duration,
+              "source": source
+          }
+          requests.post(
+              f"{SUPABASE_URL}/rest/v1/songs",
+              json=song_data,
+              headers={
+                  "apikey": SUPABASE_KEY,
+                  "Authorization": f"Bearer {SUPABASE_KEY}",
+                  "Content-Type": "application/json",
+                  "Prefer": "resolution=merge-duplicates"
+              }
+          )
+          print("✅ تم الحفظ في Supabase!")
+          EOF
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
