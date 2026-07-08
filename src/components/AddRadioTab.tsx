@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { RadioStation } from "../types";
 
-const WORKER = 'https://radio-worker.ma68.workers.dev';
+const WORKER = '/api';
 
 interface AddRadioTabProps {
   lang: "en" | "ar";

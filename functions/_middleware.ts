@@ -218,8 +218,246 @@ export async function onRequest(context: {
   // 2. Verify cookie session token
   const isAuthorized = await verifySession(sessionToken, secretKey);
 
-  // If already authorized, proceed to the actual site
+  // If already authorized, proceed to the actual site or handle internal radio API routes
   if (isAuthorized) {
+    if (url.pathname.startsWith("/api/radios") || url.pathname === "/api/nowplaying") {
+      // 1. GET /api/radios
+      if (request.method === "GET" && url.pathname === "/api/radios") {
+        const genre = url.searchParams.get('genre');
+        let query = `${supabaseUrl}/rest/v1/radio_channels?select=*&order=total_duration.desc`;
+        if (genre) {
+          query += `&genre=eq.${encodeURIComponent(genre)}`;
+        }
+        const res = await fetch(query, {
+          headers: {
+            'apikey': supabaseKey || "",
+            'Authorization': `Bearer ${supabaseKey || ""}`
+          }
+        });
+        const radios = await res.json();
+        return new Response(JSON.stringify(radios), {
+          headers: { 
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+          }
+        });
+      }
+
+      // 2. POST /api/radios/batch
+      if (request.method === "POST" && url.pathname === "/api/radios/batch") {
+        let newRadios;
+        try {
+          newRadios = await request.json() as any;
+        } catch {
+          return new Response(JSON.stringify({ ok: false, error: 'Invalid JSON' }), {
+            status: 400, headers: { 'Content-Type': 'application/json' }
+          });
+        }
+
+        if (!Array.isArray(newRadios) || newRadios.length === 0) {
+          return new Response(JSON.stringify({ ok: false, error: 'Array required' }), {
+            status: 400, headers: { 'Content-Type': 'application/json' }
+          });
+        }
+
+        const invalid = newRadios.filter((r: any) => !r.name || !r.url);
+        if (invalid.length > 0) {
+          return new Response(JSON.stringify({ ok: false, error: 'name and url required for all items' }), {
+            status: 400, headers: { 'Content-Type': 'application/json' }
+          });
+        }
+
+        const res = await fetch(
+          `${supabaseUrl}/rest/v1/radio_channels`,
+          {
+            method: 'POST',
+            headers: {
+              'apikey': supabaseKey || "",
+              'Authorization': `Bearer ${supabaseKey || ""}`,
+              'Content-Type': 'application/json',
+              'Prefer': 'resolution=ignore-duplicates'
+            },
+            body: JSON.stringify(newRadios.map((r: any) => ({ name: r.name, url: r.url, logo: r.logo || '', genre: r.genre || '' })))
+          }
+        );
+
+        return new Response(JSON.stringify({ ok: res.ok, added: newRadios.length }), {
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+
+      // 3. POST /api/radios
+      if (request.method === "POST" && url.pathname === "/api/radios") {
+        let body;
+        try {
+          body = await request.json() as any;
+        } catch {
+          return new Response(JSON.stringify({ ok: false, error: 'Invalid JSON' }), {
+            status: 400, headers: { 'Content-Type': 'application/json' }
+          });
+        }
+
+        const { name, url: streamUrl, logo, genre } = body;
+        if (!name || !streamUrl) {
+          return new Response(JSON.stringify({ ok: false, error: 'name and url required' }), {
+            status: 400, headers: { 'Content-Type': 'application/json' }
+          });
+        }
+
+        const res = await fetch(
+          `${supabaseUrl}/rest/v1/radio_channels`,
+          {
+            method: 'POST',
+            headers: {
+              'apikey': supabaseKey || "",
+              'Authorization': `Bearer ${supabaseKey || ""}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ name, url: streamUrl, logo: logo || '', genre: genre || '' })
+          }
+        );
+
+        return new Response(JSON.stringify({ ok: res.ok }), {
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+
+      // 4. PATCH /api/radios/duration
+      if (request.method === "PATCH" && url.pathname === "/api/radios/duration") {
+        let body;
+        try {
+          body = await request.json() as any;
+        } catch {
+          return new Response(JSON.stringify({ ok: false, error: 'Invalid JSON' }), {
+            status: 400, headers: { 'Content-Type': 'application/json' }
+          });
+        }
+
+        const { id, seconds } = body;
+        if (!id || !seconds || seconds <= 0) {
+          return new Response(JSON.stringify({ ok: false, error: 'id and seconds required' }), {
+            status: 400, headers: { 'Content-Type': 'application/json' }
+          });
+        }
+
+        const getRes = await fetch(
+          `${supabaseUrl}/rest/v1/radio_channels?id=eq.${id}&select=total_duration`,
+          {
+            headers: {
+              'apikey': supabaseKey || "",
+              'Authorization': `Bearer ${supabaseKey || ""}`
+            }
+          }
+        );
+        const rows = await getRes.json() as any[];
+        const current = rows?.[0]?.total_duration || 0;
+
+        const patchRes = await fetch(
+          `${supabaseUrl}/rest/v1/radio_channels?id=eq.${id}`,
+          {
+            method: 'PATCH',
+            headers: {
+              'apikey': supabaseKey || "",
+              'Authorization': `Bearer ${supabaseKey || ""}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ total_duration: current + seconds })
+          }
+        );
+
+        return new Response(JSON.stringify({ ok: patchRes.ok }), {
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+
+      // 5. DELETE /api/radios
+      if (request.method === "DELETE" && url.pathname === "/api/radios") {
+        let body;
+        try {
+          body = await request.json() as any;
+        } catch {
+          return new Response(JSON.stringify({ ok: false, error: 'Invalid JSON' }), {
+            status: 400, headers: { 'Content-Type': 'application/json' }
+          });
+        }
+
+        const { name } = body;
+        if (!name) {
+          return new Response(JSON.stringify({ ok: false, error: 'name required' }), {
+            status: 400, headers: { 'Content-Type': 'application/json' }
+          });
+        }
+
+        const res = await fetch(
+          `${supabaseUrl}/rest/v1/radio_channels?name=eq.${encodeURIComponent(name)}`,
+          {
+            method: 'DELETE',
+            headers: {
+              'apikey': supabaseKey || "",
+              'Authorization': `Bearer ${supabaseKey || ""}`
+            }
+          }
+        );
+
+        return new Response(JSON.stringify({ ok: res.ok }), {
+          headers: { 'Content-Type': 'application/json' }
+        });
+      }
+
+      // 6. GET /api/nowplaying
+      if (request.method === "GET" && url.pathname === "/api/nowplaying") {
+        const streamUrl = url.searchParams.get('url');
+        if (!streamUrl) {
+          return new Response(JSON.stringify({ ok: false, error: 'url required' }), {
+            status: 400, headers: { 'Content-Type': 'application/json' }
+          });
+        }
+
+        try {
+          const res = await fetch(streamUrl, {
+            headers: {
+              'Icy-MetaData': '1',
+              'User-Agent': 'Mozilla/5.0',
+              'Range': 'bytes=0-65536'
+            },
+            signal: AbortSignal.timeout(5000)
+          });
+          const metaInt = parseInt(res.headers.get('icy-metaint') || '0');
+          if (!metaInt) {
+            return new Response(JSON.stringify({ ok: false, song: '' }), {
+              headers: { 'Content-Type': 'application/json' }
+            });
+          }
+          const reader = res.body.getReader();
+          let buffer = new Uint8Array(0);
+          while (buffer.length < metaInt + 256) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            const tmp = new Uint8Array(buffer.length + value.length);
+            tmp.set(buffer); tmp.set(value, buffer.length);
+            buffer = tmp;
+          }
+          reader.cancel();
+          const metaLen = buffer[metaInt] * 16;
+          if (!metaLen) {
+            return new Response(JSON.stringify({ ok: false, song: '' }), {
+              headers: { 'Content-Type': 'application/json' }
+            });
+          }
+          const metaBytes = buffer.slice(metaInt + 1, metaInt + 1 + metaLen);
+          const metaStr = new TextDecoder().decode(metaBytes);
+          const song = metaStr.match(/StreamTitle='([^']+)'/)?.[1] || '';
+          return new Response(JSON.stringify({ ok: true, song }), {
+            headers: { 'Content-Type': 'application/json' }
+          });
+        } catch {
+          return new Response(JSON.stringify({ ok: false, song: '' }), {
+            headers: { 'Content-Type': 'application/json' }
+          });
+        }
+      }
+    }
+
     return context.next();
   }
 

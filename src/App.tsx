@@ -226,23 +226,8 @@ export default function App() {
         // 2. Load Radios
         let radios: any[] = [];
         const tryFetchRadios = async () => {
-          let radioWorkerUrl = cleanUrl;
-          if (cleanUrl.includes("music-worker")) radioWorkerUrl = "https://radio-worker.ma68.workers.dev";
-          
-          // Attempt 1: Local Proxy
           try {
-            const res = await fetch(`/api/worker/radios?workerUrl=${encodeURIComponent(radioWorkerUrl)}`);
-            if (res.ok) {
-              const data = await res.json();
-              return Array.isArray(data) ? data : [];
-            }
-          } catch (e) {
-            console.warn("Proxy radios fetch failed", e);
-          }
-
-          // Attempt 2: Direct Fetch
-          try {
-            const res = await fetch(`${radioWorkerUrl}/radios`);
+            const res = await fetch("/api/radios");
             if (res.ok) {
               const data = await res.json();
               return Array.isArray(data) ? data : [];
@@ -415,24 +400,9 @@ export default function App() {
   };
 
   const reloadWorkerRadios = async () => {
-    if (!workerUrl.trim()) return;
-    const cleanUrl = workerUrl.trim().replace(/\/$/, "");
-    let radioWorkerUrl = cleanUrl;
-    if (cleanUrl.includes("music-worker")) radioWorkerUrl = "https://radio-worker.ma68.workers.dev";
-    
     const tryFetchRadios = async () => {
       try {
-        const res = await fetch(`/api/worker/radios?workerUrl=${encodeURIComponent(radioWorkerUrl)}`);
-        if (res.ok) {
-          const data = await res.json();
-          return Array.isArray(data) ? data : [];
-        }
-      } catch (e) {
-        console.warn("Proxy radios fetch failed", e);
-      }
-
-      try {
-        const res = await fetch(`${radioWorkerUrl}/radios`);
+        const res = await fetch("/api/radios");
         if (res.ok) {
           const data = await res.json();
           return Array.isArray(data) ? data : [];
@@ -583,27 +553,8 @@ export default function App() {
     }
 
     const fetchNowPlaying = async () => {
-      // Try local Express proxy first
       try {
-        const res = await fetch(`/api/worker/nowplaying?workerUrl=${encodeURIComponent(workerUrl)}&url=${encodeURIComponent(currentTrack.audioUrl)}`);
-        if (res.ok) {
-          const data = await res.json();
-          if (data.ok && data.song) {
-            setLiveSong(data.song);
-            return;
-          }
-        }
-      } catch (e) {
-        console.warn("Express proxy failed to fetch now playing, trying direct...", e);
-      }
-
-      // Fallback: fetch directly from worker
-      try {
-        let cleanUrl = workerUrl.trim().replace(/\/$/, "");
-        if (cleanUrl.includes("music-worker")) {
-          cleanUrl = "https://radio-worker.ma68.workers.dev";
-        }
-        const res = await fetch(`${cleanUrl}/nowplaying?url=${encodeURIComponent(currentTrack.audioUrl)}`);
+        const res = await fetch(`/api/nowplaying?url=${encodeURIComponent(currentTrack.audioUrl)}`);
         if (res.ok) {
           const data = await res.json();
           if (data.ok && data.song) {
@@ -611,14 +562,14 @@ export default function App() {
           }
         }
       } catch (e) {
-        console.warn("Direct fetch of now playing info failed:", e);
+        console.warn("Failed to fetch live radio now playing metadata:", e);
       }
     };
 
     fetchNowPlaying();
     const interval = setInterval(fetchNowPlaying, 10000); // Poll every 10 seconds for real-time meta update
     return () => clearInterval(interval);
-  }, [currentTrack, workerUrl]);
+  }, [currentTrack]);
 
   // Track radio play duration and sync to Supabase table
   useEffect(() => {
@@ -639,7 +590,7 @@ export default function App() {
         accumulatedSeconds = 0; // reset immediately to avoid race condition during async call
 
         try {
-          const res = await fetch("https://radio-worker.ma68.workers.dev/radios/duration", {
+          const res = await fetch("/api/radios/duration", {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ 
@@ -659,10 +610,10 @@ export default function App() {
               return [...updated].sort((a, b) => (Number(b.total_duration) || 0) - (Number(a.total_duration) || 0));
             });
           } else {
-            console.error("Worker returned non-ok response status while syncing duration:", res.status);
+            console.error("Local API returned non-ok response status while syncing duration:", res.status);
           }
         } catch (e) {
-          console.error("Failed to sync listening duration to Cloudflare Worker:", e);
+          console.error("Failed to sync listening duration to local API:", e);
         }
       }
     }, 1000);
@@ -672,7 +623,7 @@ export default function App() {
       // Sync remaining accumulated seconds on unmount / pause
       if (accumulatedSeconds > 0) {
         const secondsToSync = accumulatedSeconds;
-        fetch("https://radio-worker.ma68.workers.dev/radios/duration", {
+        fetch("/api/radios/duration", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ 

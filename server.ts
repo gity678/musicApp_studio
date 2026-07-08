@@ -196,6 +196,229 @@ app.get("/api/worker/songs", async (req, res) => {
   }
 });
 
+app.get("/api/radios", async (req, res) => {
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_KEY;
+  if (!supabaseUrl || !supabaseKey) {
+    return res.status(500).json({ error: "Supabase environment variables are missing." });
+  }
+
+  try {
+    const { genre } = req.query;
+    let query = `${supabaseUrl}/rest/v1/radio_channels?select=*&order=total_duration.desc`;
+    if (genre) {
+      query += `&genre=eq.${encodeURIComponent(genre as string)}`;
+    }
+    const response = await fetch(query, {
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`
+      }
+    });
+    const radios = await response.json();
+    res.json(radios);
+  } catch (error: any) {
+    console.error("Error in GET /api/radios:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/api/radios/batch", async (req, res) => {
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_KEY;
+  if (!supabaseUrl || !supabaseKey) {
+    return res.status(500).json({ error: "Supabase environment variables are missing." });
+  }
+
+  try {
+    const newRadios = req.body;
+    if (!Array.isArray(newRadios) || newRadios.length === 0) {
+      return res.status(400).json({ ok: false, error: 'Array required' });
+    }
+
+    const invalid = newRadios.filter(r => !r.name || !r.url);
+    if (invalid.length > 0) {
+      return res.status(400).json({ ok: false, error: 'name and url required for all items' });
+    }
+
+    const response = await fetch(
+      `${supabaseUrl}/rest/v1/radio_channels`,
+      {
+        method: 'POST',
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'resolution=ignore-duplicates'
+        },
+        body: JSON.stringify(newRadios.map(r => ({ name: r.name, url: r.url, logo: r.logo || '', genre: r.genre || '' })))
+      }
+    );
+
+    res.json({ ok: response.ok, added: newRadios.length });
+  } catch (error: any) {
+    console.error("Error in POST /api/radios/batch:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post("/api/radios", async (req, res) => {
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_KEY;
+  if (!supabaseUrl || !supabaseKey) {
+    return res.status(500).json({ error: "Supabase environment variables are missing." });
+  }
+
+  try {
+    const { name, url: streamUrl, logo, genre } = req.body;
+    if (!name || !streamUrl) {
+      return res.status(400).json({ ok: false, error: 'name and url required' });
+    }
+
+    const response = await fetch(
+      `${supabaseUrl}/rest/v1/radio_channels`,
+      {
+        method: 'POST',
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ name, url: streamUrl, logo: logo || '', genre: genre || '' })
+      }
+    );
+
+    res.json({ ok: response.ok });
+  } catch (error: any) {
+    console.error("Error in POST /api/radios:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.patch("/api/radios/duration", async (req, res) => {
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_KEY;
+  if (!supabaseUrl || !supabaseKey) {
+    return res.status(500).json({ error: "Supabase environment variables are missing." });
+  }
+
+  try {
+    const { id, seconds } = req.body;
+    if (!id || !seconds || seconds <= 0) {
+      return res.status(400).json({ ok: false, error: 'id and seconds required' });
+    }
+
+    const getRes = await fetch(
+      `${supabaseUrl}/rest/v1/radio_channels?id=eq.${id}&select=total_duration`,
+      {
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`
+        }
+      }
+    );
+    const rows = await getRes.json() as any[];
+    const current = rows?.[0]?.total_duration || 0;
+
+    const patchRes = await fetch(
+      `${supabaseUrl}/rest/v1/radio_channels?id=eq.${id}`,
+      {
+        method: 'PATCH',
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ total_duration: current + seconds })
+      }
+    );
+
+    res.json({ ok: patchRes.ok });
+  } catch (error: any) {
+    console.error("Error in PATCH /api/radios/duration:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete("/api/radios", async (req, res) => {
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_KEY;
+  if (!supabaseUrl || !supabaseKey) {
+    return res.status(500).json({ error: "Supabase environment variables are missing." });
+  }
+
+  try {
+    const { name } = req.body;
+    if (!name) {
+      return res.status(400).json({ ok: false, error: 'name required' });
+    }
+
+    const response = await fetch(
+      `${supabaseUrl}/rest/v1/radio_channels?name=eq.${encodeURIComponent(name)}`,
+      {
+        method: 'DELETE',
+        headers: {
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`
+        }
+      }
+    );
+
+    res.json({ ok: response.ok });
+  } catch (error: any) {
+    console.error("Error in DELETE /api/radios:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get("/api/nowplaying", async (req, res) => {
+  const { url: streamUrl } = req.query;
+  if (!streamUrl) {
+    return res.status(400).json({ ok: false, error: 'url required' });
+  }
+
+  try {
+    const response = await fetch(streamUrl as string, {
+      headers: {
+        'Icy-MetaData': '1',
+        'User-Agent': 'Mozilla/5.0',
+        'Range': 'bytes=0-65536'
+      },
+      signal: AbortSignal.timeout(5000)
+    });
+    const metaInt = parseInt(response.headers.get('icy-metaint') || '0');
+    if (!metaInt) {
+      return res.json({ ok: false, song: '' });
+    }
+    
+    if (!response.body) {
+      return res.json({ ok: false, song: '' });
+    }
+
+    const reader = response.body as any;
+    let buffer = Buffer.alloc(0);
+    
+    for await (const chunk of reader) {
+      buffer = Buffer.concat([buffer, chunk]);
+      if (buffer.length >= metaInt + 256) {
+        break;
+      }
+    }
+
+    const metaLen = buffer[metaInt] * 16;
+    if (!metaLen) {
+      return res.json({ ok: false, song: '' });
+    }
+    const metaBytes = buffer.subarray(metaInt + 1, metaInt + 1 + metaLen);
+    const metaStr = new TextDecoder().decode(metaBytes);
+    const song = metaStr.match(/StreamTitle='([^']+)'/)?.[1] || '';
+    res.json({ ok: true, song });
+  } catch (error: any) {
+    console.error("Error in GET /api/nowplaying:", error);
+    res.json({ ok: false, song: '' });
+  }
+});
+
 app.get("/api/worker/radios", async (req, res) => {
   const { workerUrl } = req.query;
   if (!workerUrl) {

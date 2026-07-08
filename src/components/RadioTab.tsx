@@ -75,41 +75,9 @@ export default function RadioTab({
       setError(null);
     }
     try {
-      let cleanUrl = workerUrl.trim().replace(/\/$/, "");
-      if (cleanUrl.includes("music-worker")) {
-        cleanUrl = "https://radio-worker.ma68.workers.dev";
-      }
-      let data;
-
-      // Try local Express proxy first if available
-      try {
-        const res = await fetch(`/api/worker/radios?workerUrl=${encodeURIComponent(cleanUrl)}`);
-        if (res.ok) {
-          data = await res.json();
-        } else {
-          console.warn("Proxy fetch failed, trying direct fetch...");
-        }
-      } catch (proxyErr) {
-        console.warn("Proxy fetch threw error, trying direct fetch...", proxyErr);
-      }
-
-      // Fallback to direct fetch
-      if (!data) {
-        const res = await fetch(cleanUrl + '/radios');
-        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-        
-        const contentType = res.headers.get("content-type") || "";
-        if (contentType.includes("application/json")) {
-          data = await res.json();
-        } else {
-          const text = await res.text();
-          if (text.trim() === "OK") {
-            data = [];
-          } else {
-            throw new Error(isRTL ? "تنسيق غير مدعوم من الخادم" : "Unsupported response format from worker");
-          }
-        }
-      }
+      const res = await fetch("/api/radios");
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+      const data = await res.json();
 
       const rawRadios = Array.isArray(data) ? data : [];
       const mappedRadios: RadioStation[] = rawRadios.map((r: any, i: number) => ({
@@ -130,8 +98,8 @@ export default function RadioTab({
       let errMsg = e.message || "Failed to fetch";
       if (errMsg === "Failed to fetch") {
         errMsg = isRTL 
-          ? "فشل في الاتصال بالخادم. يرجى التحقق من اتصال الإنترنت أو رابط Worker."
-          : "Could not connect to the worker. Check your Internet or Worker URL.";
+          ? "فشل في الاتصال بالخادم. يرجى التحقق من اتصال الإنترنت أو إعدادات قاعدة البيانات."
+          : "Could not connect to the server. Check your Internet or Database settings.";
       }
       setError(errMsg);
     } finally {
@@ -213,11 +181,7 @@ export default function RadioTab({
     }
 
     try {
-      let cleanUrl = workerUrl.trim().replace(/\/$/, "");
-      if (cleanUrl.includes("music-worker")) {
-        cleanUrl = "https://radio-worker.ma68.workers.dev";
-      }
-      const res = await fetch(cleanUrl + '/radios', {
+      const res = await fetch('/api/radios', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: r.name })
