@@ -196,6 +196,69 @@ app.get("/api/worker/songs", async (req, res) => {
   }
 });
 
+app.get("/api/songs", async (req, res) => {
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_KEY;
+  if (!supabaseUrl || !supabaseKey) {
+    return res.status(500).json({ error: "Supabase environment variables are missing." });
+  }
+
+  try {
+    const query = `${supabaseUrl}/rest/v1/songs?select=*`;
+    const response = await fetch(query, {
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`
+      }
+    });
+    
+    if (!response.ok) {
+      const errText = await response.text();
+      return res.status(response.status).json({ error: "Supabase error", details: errText });
+    }
+
+    const songs = await response.json();
+    res.json(songs);
+  } catch (error: any) {
+    console.error("Error in GET /api/songs:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete("/api/songs", async (req, res) => {
+  const { id } = req.body;
+  if (!id) {
+    return res.status(400).json({ error: "Missing song id parameter" });
+  }
+
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_KEY;
+  if (!supabaseUrl || !supabaseKey) {
+    return res.status(500).json({ error: "Supabase environment variables are missing." });
+  }
+
+  try {
+    const query = `${supabaseUrl}/rest/v1/songs?id=eq.${encodeURIComponent(id)}`;
+    const response = await fetch(query, {
+      method: "DELETE",
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`
+      }
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      return res.status(response.status).json({ error: "Supabase DELETE error", details: errText });
+    }
+
+    res.json({ ok: true });
+  } catch (error: any) {
+    console.error("Error in DELETE /api/songs:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.get("/api/radios", async (req, res) => {
   const supabaseUrl = process.env.SUPABASE_URL;
   const supabaseKey = process.env.SUPABASE_KEY;

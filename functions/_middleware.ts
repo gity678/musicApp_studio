@@ -220,7 +220,7 @@ export async function onRequest(context: {
 
   // If already authorized, proceed to the actual site or handle internal radio API routes
   if (isAuthorized) {
-    if (url.pathname.startsWith("/api/radios") || url.pathname === "/api/nowplaying") {
+    if (url.pathname.startsWith("/api/radios") || url.pathname === "/api/nowplaying" || url.pathname.startsWith("/api/songs")) {
       // 1. GET /api/radios
       if (request.method === "GET" && url.pathname === "/api/radios") {
         const genre = url.searchParams.get('genre');
@@ -452,6 +452,58 @@ export async function onRequest(context: {
           });
         } catch {
           return new Response(JSON.stringify({ ok: false, song: '' }), {
+            headers: { 'Content-Type': 'application/json' }
+          });
+        }
+      }
+
+      // 7. GET and DELETE /api/songs
+      if (url.pathname === "/api/songs") {
+        if (request.method === "GET") {
+          const res = await fetch(`${supabaseUrl}/rest/v1/songs?select=*`, {
+            headers: {
+              'apikey': supabaseKey || "",
+              'Authorization': `Bearer ${supabaseKey || ""}`
+            }
+          });
+          const songs = await res.json();
+          return new Response(JSON.stringify(songs), {
+            headers: { 
+              'Content-Type': 'application/json',
+              'Access-Control-Allow-Origin': '*'
+            }
+          });
+        }
+
+        if (request.method === "DELETE") {
+          let body;
+          try {
+            body = await request.json() as any;
+          } catch {
+            return new Response(JSON.stringify({ ok: false, error: 'Invalid JSON' }), {
+              status: 400, headers: { 'Content-Type': 'application/json' }
+            });
+          }
+
+          const { id } = body;
+          if (!id) {
+            return new Response(JSON.stringify({ ok: false, error: 'id required' }), {
+              status: 400, headers: { 'Content-Type': 'application/json' }
+            });
+          }
+
+          const res = await fetch(
+            `${supabaseUrl}/rest/v1/songs?id=eq.${encodeURIComponent(id)}`,
+            {
+              method: 'DELETE',
+              headers: {
+                'apikey': supabaseKey || "",
+                'Authorization': `Bearer ${supabaseKey || ""}`
+              }
+            }
+          );
+
+          return new Response(JSON.stringify({ ok: res.ok }), {
             headers: { 'Content-Type': 'application/json' }
           });
         }

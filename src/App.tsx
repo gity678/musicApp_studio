@@ -197,20 +197,8 @@ export default function App() {
         // 1. Load Tracks
         let songs: any[] = [];
         const tryFetchSongs = async () => {
-          // Attempt 1: Local Proxy
           try {
-            const res = await fetch(`/api/worker/songs?workerUrl=${encodeURIComponent(workerUrl.trim())}`);
-            if (res.ok) {
-              const data = await res.json();
-              return Array.isArray(data) ? data : (data.songs || []);
-            }
-          } catch (e) {
-            console.warn("Proxy songs fetch failed", e);
-          }
-
-          // Attempt 2: Direct Fetch
-          try {
-            const res = await fetch(`${cleanUrl}/songs`);
+            const res = await fetch("/api/songs");
             if (res.ok) {
               const data = await res.json();
               return Array.isArray(data) ? data : (data.songs || []);
@@ -298,68 +286,19 @@ export default function App() {
   }, [workerUrl]);
 
   const reloadWorkerSongs = () => {
-    if (!workerUrl.trim()) return;
     setIsWorkerLoading(true);
     setWorkerError("");
 
-    const cleanUrl = workerUrl.trim().replace(/\/$/, "");
-
     const fetchSongs = async () => {
-      const useDirect = isStaticEnvironment();
-      
-      if (useDirect) {
-        try {
-          console.log("Static environment reload: Querying Cloudflare Worker directly...");
-          const directRes = await fetch(`${cleanUrl}/songs`);
-          if (directRes.ok) {
-            const contentType = directRes.headers.get("content-type") || "";
-            if (contentType.includes("json")) {
-              const data = await directRes.json();
-              return Array.isArray(data) ? data : (data.songs || []);
-            } else {
-              const text = await directRes.text();
-              if (text.trim() === "OK") return [];
-            }
-          }
-        } catch (directErr) {
-          console.warn("Static reload directly failed, falling back to proxy search", directErr);
-        }
-      }
-
       try {
-        const res = await fetch(`/api/worker/songs?workerUrl=${encodeURIComponent(workerUrl.trim())}`);
+        const res = await fetch("/api/songs");
         if (res.ok) {
-          const contentType = res.headers.get("content-type") || "";
-          if (contentType.includes("json")) {
-            const text = await res.text();
-            const data = JSON.parse(text);
-            if (data && data.songs) return data.songs;
-            if (data && Array.isArray(data)) return data;
-            if (data && data.error) throw new Error(data.error);
-          } else {
-            console.warn("Proxy reload returned non-JSON.");
-          }
-        }
-      } catch (proxyErr) {
-        console.warn("Proxy reload failed, trying direct fallback", proxyErr);
-      }
-
-      try {
-        const directRes = await fetch(`${cleanUrl}/songs`);
-        if (!directRes.ok) {
-          throw new Error(`Direct query returned code: ${directRes.status}`);
-        }
-        const contentType = directRes.headers.get("content-type") || "";
-        if (contentType.includes("json")) {
-          const data = await directRes.json();
+          const data = await res.json();
           return Array.isArray(data) ? data : (data.songs || []);
-        } else {
-          const text = await directRes.text();
-          if (text.trim() === "OK") return [];
-          throw new Error(`Non-JSON response: ${text.slice(0, 50)}`);
         }
-      } catch (directErr: any) {
-        throw new Error(`Could not reload tracks directly from worker: ${directErr.message}`);
+        throw new Error(`Failed to load: ${res.status}`);
+      } catch (err: any) {
+        throw new Error(`Could not reload tracks directly: ${err.message}`);
       }
     };
 
@@ -391,7 +330,7 @@ export default function App() {
       })
       .catch((err) => {
         console.error("Error reloading worker songs:", err);
-        setWorkerError(err.message || "Failed to communicate with worker query.");
+        setWorkerError(err.message || "Failed to communicate with database query.");
         setWorkerTracks([]);
       })
       .finally(() => {
@@ -777,52 +716,19 @@ export default function App() {
   const handleDeleteCustomTrack = async (trackId: string) => {
     if (trackId.startsWith("worker-")) {
       const publicId = trackId.replace("worker-", "");
-      if (workerUrl.trim()) {
-        let isSuccess = false;
-        
-        // 1. Try local Express proxy first
-        try {
-          const response = await fetch("/api/worker/delete", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ workerUrl: workerUrl.trim(), public_id: publicId }),
-          });
-          const text = await response.text();
-          try {
-            const data = JSON.parse(text);
-            if (data.ok || data.success) {
-              isSuccess = true;
-            }
-          } catch {
-            console.warn("Proxy returned invalid non-JSON on delete, falling back to direct DELETE");
-          }
-        } catch (e) {
-          console.warn("Error deleting via worker proxy, trying direct", e);
+      try {
+        const response = await fetch("/api/songs", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: publicId }),
+        });
+        if (response.ok) {
+          // Success
         }
-
-        // 2. Fallback: Direct CORs-compliant DELETE from client browser to worker
-        if (!isSuccess) {
-          try {
-            const cleanUrl = workerUrl.trim().replace(/\/$/, "");
-            const response = await fetch(`${cleanUrl}/delete`, {
-              method: "DELETE",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ public_id: publicId }),
-            });
-            const data = await response.json();
-            if (data.ok || data.success) {
-              isSuccess = true;
-            }
-          } catch (directErr) {
-            console.error("Direct deletion failed:", directErr);
-          }
-        }
-
-        // Filter track out of local UI anyway
-        setWorkerTracks((prev) => prev.filter((t) => t.id !== trackId));
-      } else {
-        setWorkerTracks((prev) => prev.filter((t) => t.id !== trackId));
+      } catch (e) {
+        console.error("Error deleting song:", e);
       }
+      setWorkerTracks((prev) => prev.filter((t) => t.id !== trackId));
     } else {
       setCustomTracks((prev) => prev.filter((t) => t.id !== trackId));
     }

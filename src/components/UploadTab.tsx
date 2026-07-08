@@ -176,17 +176,39 @@ export default function UploadTab({
   // Helper metadata lookups from iTunes API
   const fetchItunesMetadata = async (query: string) => {
     const cleanWorkerUrl = workerUrl.trim().replace(/\/$/, "");
-    try {
-      const res = await fetch(`${cleanWorkerUrl}/itunes?q=${encodeURIComponent(query)}`);
-      if (res.ok) {
-        const data = await res.json();
-        if (data && data.trackTimeMillis && !data.duration) {
-          data.duration = formatMillis(data.trackTimeMillis);
+    
+    if (cleanWorkerUrl) {
+      try {
+        const res = await fetch(`${cleanWorkerUrl}/itunes?q=${encodeURIComponent(query)}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.trackTimeMillis && !data.duration) {
+            data.duration = formatMillis(data.trackTimeMillis);
+          }
+          return data; 
         }
-        return data; 
+      } catch (e) {
+        console.warn("iTunes search via worker failed, falling back to public iTunes API", e);
+      }
+    }
+
+    try {
+      const res = await fetch(`https://itunes.apple.com/search?media=music&entity=song&limit=1&term=${encodeURIComponent(query)}`);
+      if (res.ok) {
+        const raw = await res.json();
+        const item = raw?.results?.[0];
+        if (item) {
+          return {
+            title: item.trackName,
+            artist: item.artistName,
+            thumb: (item.artworkUrl100 || "").replace("100x100bb", "400x400bb"),
+            duration: formatMillis(item.trackTimeMillis || 0),
+            trackTimeMillis: item.trackTimeMillis
+          };
+        }
       }
     } catch (e) {
-      console.warn("iTunes search failed", e);
+      console.warn("Direct public iTunes search failed", e);
     }
     return null;
   };
