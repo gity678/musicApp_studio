@@ -30,7 +30,51 @@ const getGeminiClient = () => {
 };
 
 // 1. YouTube Search Helper (Using clean public query method)
-async function searchYoutube(query: string) {
+async function searchYoutube(query: string, searchHost?: string, searchKey?: string) {
+  if (searchHost && searchKey) {
+    try {
+      const host = searchHost.trim();
+      const apiKey = searchKey.trim();
+      const url = `https://${host}/search/?q=${encodeURIComponent(query)}&hl=en&gl=US`;
+      
+      const response = await fetch(url, {
+        headers: {
+          "x-rapidapi-host": host,
+          "x-rapidapi-key": apiKey
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json() as any;
+        const videos: any[] = [];
+        if (data && data.contents && Array.isArray(data.contents)) {
+          for (const item of data.contents) {
+            if (item.type === "video" && item.video) {
+              const v = item.video;
+              const videoId = v.videoId;
+              if (videoId) {
+                videos.push({
+                  id: videoId,
+                  title: v.title || "Unknown Title",
+                  channelTitle: v.author?.title || v.author?.name || "Unknown Channel",
+                  thumbnailUrl: v.thumbnails?.[0]?.url || `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+                  publishedAt: v.publishedTimeText || "Recent"
+                });
+              }
+            }
+          }
+        }
+        if (videos.length > 0) {
+          return videos;
+        }
+      } else {
+        console.warn(`RapidAPI search failed with status ${response.status}`);
+      }
+    } catch (apiErr: any) {
+      console.error("RapidAPI search failed, falling back to scraping:", apiErr.message);
+    }
+  }
+
   try {
     const url = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}&sp=EgIQAQ%253D%253D`;
     
@@ -159,7 +203,23 @@ app.post("/api/youtube/search", async (req, res) => {
     }
   }
 
-  const results = await searchYoutube(query);
+  // Load search API keys dynamically from Supabase
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_KEY;
+  let searchHost: string | undefined;
+  let searchKey: string | undefined;
+
+  if (supabaseUrl && supabaseKey) {
+    try {
+      const supaEnv = await getEnvFromSupabase(supabaseUrl, supabaseKey);
+      searchHost = supaEnv.SEARCH_RAPIDAPI_HOST;
+      searchKey = supaEnv.SEARCH_RAPIDAPI_KEY;
+    } catch (e: any) {
+      console.error("Error loading search keys from Supabase inside local search route:", e.message);
+    }
+  }
+
+  const results = await searchYoutube(query, searchHost, searchKey);
   res.json({ results });
 });
 
