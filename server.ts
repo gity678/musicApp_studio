@@ -3,6 +3,7 @@ import path from "path";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
+import crypto from "crypto";
 
 dotenv.config();
 
@@ -196,6 +197,101 @@ app.get("/api/worker/songs", async (req, res) => {
   }
 });
 
+// Helpers to replicate Cloudflare Worker logic directly in our full-stack server
+async function getEnvFromSupabase(supabaseUrl: string, supabaseKey: string) {
+  try {
+    const res = await fetch(`${supabaseUrl}/rest/v1/music_keys?select=key,value`, {
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`
+      }
+    });
+    if (!res.ok) {
+      throw new Error(`Supabase music_keys fetch failed: ${res.status}`);
+    }
+    const data: any = await res.json();
+    const e: Record<string, string> = {};
+    if (Array.isArray(data)) {
+      data.forEach((row: any) => {
+        if (row.key) e[row.key] = row.value;
+      });
+    }
+    return e;
+  } catch (err) {
+    console.error("Error loading music_keys from Supabase:", err);
+    return {};
+  }
+}
+
+async function signB2Url(key: string, env: any) {
+  const B2_KEY_ID = env.B2_KEY_ID;
+  const B2_APP_KEY = env.B2_APP_KEY;
+  const B2_BUCKET = env.B2_BUCKET;
+  const B2_ENDPOINT = env.B2_ENDPOINT;
+
+  if (!B2_KEY_ID || !B2_APP_KEY || !B2_BUCKET || !B2_ENDPOINT) {
+    console.warn("B2 environment variables are missing.");
+    return "";
+  }
+
+  const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+  const datetime = new Date().toISOString().replace(/[:-]|\.\d{3}/g, '').slice(0, 15) + 'Z';
+  const expires = 3600;
+
+  const subtle = (crypto as any).webcrypto?.subtle || globalThis.crypto?.subtle;
+  if (!subtle) {
+    throw new Error("Web Crypto API (crypto.subtle) is not available.");
+  }
+
+  const signKey = async (k: Uint8Array, msg: string) => {
+    const imported = await subtle.importKey(
+      'raw',
+      k,
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+    const signed = await subtle.sign('HMAC', imported, new TextEncoder().encode(msg));
+    return new Uint8Array(signed);
+  };
+
+  const hex = (buf: Uint8Array) => Array.from(buf).map(b => b.toString(16).padStart(2, '0')).join('');
+  
+  const hash = async (msg: string) => {
+    const digest = await subtle.digest('SHA-256', new TextEncoder().encode(msg));
+    return hex(new Uint8Array(digest));
+  };
+
+  const credScope = `${date}/eu-central-003/s3/aws4_request`;
+  const encodedKey = key.split('/').map(encodeURIComponent).join('/');
+  const queryString = [
+    `X-Amz-Algorithm=AWS4-HMAC-SHA256`,
+    `X-Amz-Credential=${encodeURIComponent(B2_KEY_ID + '/' + credScope)}`,
+    `X-Amz-Date=${datetime}`,
+    `X-Amz-Expires=${expires}`,
+    `X-Amz-SignedHeaders=host`
+  ].join('&');
+
+  const canonicalRequest = [
+    'GET',
+    `/${B2_BUCKET}/${encodedKey}`,
+    queryString,
+    `host:${B2_ENDPOINT}\n`,
+    'host',
+    'UNSIGNED-PAYLOAD'
+  ].join('\n');
+
+  const stringToSign = `AWS4-HMAC-SHA256\n${datetime}\n${credScope}\n${await hash(canonicalRequest)}`;
+
+  const kDate = await signKey(new TextEncoder().encode('AWS4' + B2_APP_KEY), date);
+  const kRegion = await signKey(kDate, 'eu-central-003');
+  const kService = await signKey(kRegion, 's3');
+  const kSigning = await signKey(kService, 'aws4_request');
+  const signature = hex(await signKey(kSigning, stringToSign));
+
+  return `https://${B2_ENDPOINT}/${B2_BUCKET}/${encodedKey}?${queryString}&X-Amz-Signature=${signature}`;
+}
+
 app.get("/api/songs", async (req, res) => {
   const supabaseUrl = process.env.SUPABASE_URL;
   const supabaseKey = process.env.SUPABASE_KEY;
@@ -204,6 +300,7 @@ app.get("/api/songs", async (req, res) => {
   }
 
   try {
+    const supaEnv = await getEnvFromSupabase(supabaseUrl, supabaseKey);
     const query = `${supabaseUrl}/rest/v1/songs?select=*`;
     const response = await fetch(query, {
       headers: {
@@ -218,6 +315,18 @@ app.get("/api/songs", async (req, res) => {
     }
 
     const songs = await response.json();
+    if (Array.isArray(songs)) {
+      const allSongs = await Promise.all(songs.map(async (s: any) => {
+        let songUrl = s.url || '';
+        if (s.source === 'cloudinary') {
+          songUrl = `https://res.cloudinary.com/${supaEnv.CLOUDINARY_NAME}/video/upload/${s.id}.mp3`;
+        } else if (s.source === 'b2') {
+          songUrl = await signB2Url(`${s.id}.mp3`, supaEnv);
+        }
+        return { ...s, url: songUrl };
+      }));
+      return res.json(allSongs);
+    }
     res.json(songs);
   } catch (error: any) {
     console.error("Error in GET /api/songs:", error);
@@ -545,60 +654,102 @@ app.get("/api/worker/nowplaying", async (req, res) => {
 });
 
 app.post("/api/worker/upload", async (req, res) => {
-  const { workerUrl, youtube_url, song_name } = req.body;
-  if (!workerUrl || !youtube_url || !song_name) {
-    return res.status(400).json({ error: "Missing required parameters (workerUrl, youtube_url, song_name)" });
+  const { youtube_url, song_name, title, artist, thumb } = req.body;
+  if (!youtube_url || !song_name) {
+    return res.status(400).json({ error: "Missing required parameters (youtube_url, song_name)" });
+  }
+
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_KEY;
+  if (!supabaseUrl || !supabaseKey) {
+    return res.status(500).json({ error: "Supabase environment variables are missing." });
   }
 
   try {
-    const cleanUrl = workerUrl.replace(/\/$/, "");
-    console.log(`Proxying workflow dispatch request to: ${cleanUrl}`);
-    const response = await fetch(cleanUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ youtube_url, song_name }),
-    });
-
-    if (!response.ok) {
-      throw new Error(`Worker returned status: ${response.status}`);
+    const supaEnv = await getEnvFromSupabase(supabaseUrl, supabaseKey);
+    if (!supaEnv.GITHUB_TOKEN) {
+      throw new Error("GITHUB_TOKEN is missing in Supabase music_keys.");
     }
 
-    const data = await response.json();
-    res.json(data);
+    console.log(`Dispatching GitHub Actions workflow directly for: ${song_name}`);
+    const response = await fetch(
+      'https://api.github.com/repos/gity678/Spotify/actions/workflows/cloudinary.yml/dispatches',
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${supaEnv.GITHUB_TOKEN}`,
+          'Accept': 'application/vnd.github+json',
+          'Content-Type': 'application/json',
+          'User-Agent': 'music-worker'
+        },
+        body: JSON.stringify({
+          ref: 'main',
+          inputs: {
+            youtube_url,
+            song_name,
+            title: title || '',
+            artist: artist || '',
+            thumb: thumb || ''
+          }
+        })
+      }
+    );
+
+    if (response.status !== 204) {
+      const errText = await response.text();
+      throw new Error(`GitHub API returned status ${response.status}: ${errText}`);
+    }
+
+    res.json({ ok: true });
   } catch (error: any) {
-    console.error("Error proxying upload dispatch to worker:", error);
-    res.status(500).json({ error: "Failed to dispatch build via worker", details: error.message });
+    console.error("Error dispatching GitHub Actions upload workflow:", error);
+    res.status(500).json({ error: "Failed to dispatch build workflow", details: error.message });
   }
 });
 
 app.post("/api/worker/delete", async (req, res) => {
-  const { workerUrl, public_id } = req.body;
-  if (!workerUrl || !public_id) {
-    return res.status(400).json({ error: "Missing required parameters (workerUrl, public_id)" });
+  const { public_id } = req.body;
+  if (!public_id) {
+    return res.status(400).json({ error: "Missing required parameter (public_id)" });
+  }
+
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_KEY;
+  if (!supabaseUrl || !supabaseKey) {
+    return res.status(500).json({ error: "Supabase environment variables are missing." });
   }
 
   try {
-    const cleanUrl = workerUrl.replace(/\/$/, "");
-    console.log(`Proxying delete request to: ${cleanUrl}/delete`);
-    const response = await fetch(`${cleanUrl}/delete`, {
+    const supaEnv = await getEnvFromSupabase(supabaseUrl, supabaseKey);
+
+    // 1. Delete from Supabase
+    const query = `${supabaseUrl}/rest/v1/songs?id=eq.${encodeURIComponent(public_id)}`;
+    await fetch(query, {
       method: "DELETE",
       headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ public_id }),
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`
+      }
     });
 
-    if (!response.ok) {
-      throw new Error(`Worker returned status: ${response.status}`);
+    // 2. Delete from Cloudinary
+    let cloudinaryDeleted = false;
+    if (supaEnv.CLOUDINARY_KEY && supaEnv.CLOUDINARY_SECRET && supaEnv.CLOUDINARY_NAME) {
+      const auth = Buffer.from(`${supaEnv.CLOUDINARY_KEY}:${supaEnv.CLOUDINARY_SECRET}`).toString('base64');
+      const response = await fetch(
+        `https://api.cloudinary.com/v1_1/${supaEnv.CLOUDINARY_NAME}/resources/video/upload?public_ids[]=${encodeURIComponent(public_id)}`,
+        { method: 'DELETE', headers: { 'Authorization': `Basic ${auth}` } }
+      );
+      if (response.ok) {
+        const delResult = await response.json() as any;
+        cloudinaryDeleted = !!(delResult.deleted && delResult.deleted[public_id] === 'deleted');
+      }
     }
 
-    const data = await response.json();
-    res.json(data);
+    res.json({ ok: true, cloudinaryDeleted });
   } catch (error: any) {
-    console.error("Error proxying media deletion to worker:", error);
-    res.status(500).json({ error: "Failed to delete from remote storage", details: error.message });
+    console.error("Error deleting media directly:", error);
+    res.status(500).json({ error: "Failed to delete media", details: error.message });
   }
 });
 

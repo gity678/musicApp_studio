@@ -91,6 +91,96 @@ async function verifyPassword(password: string, hash: string): Promise<boolean> 
   return password === hash;
 }
 
+// Helpers to replicate Cloudflare Worker logic directly in serverless middleware
+async function getEnvFromSupabase(supabaseUrl: string, supabaseKey: string) {
+  try {
+    const res = await fetch(`${supabaseUrl}/rest/v1/music_keys?select=key,value`, {
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`
+      }
+    });
+    if (!res.ok) {
+      throw new Error(`Supabase music_keys fetch failed: ${res.status}`);
+    }
+    const data: any = await res.json();
+    const e: Record<string, string> = {};
+    if (Array.isArray(data)) {
+      data.forEach((row: any) => {
+        if (row.key) e[row.key] = row.value;
+      });
+    }
+    return e;
+  } catch (err) {
+    console.error("Error loading music_keys from Supabase:", err);
+    return {};
+  }
+}
+
+async function signB2Url(key: string, env: any) {
+  const B2_KEY_ID = env.B2_KEY_ID;
+  const B2_APP_KEY = env.B2_APP_KEY;
+  const B2_BUCKET = env.B2_BUCKET;
+  const B2_ENDPOINT = env.B2_ENDPOINT;
+
+  if (!B2_KEY_ID || !B2_APP_KEY || !B2_BUCKET || !B2_ENDPOINT) {
+    console.warn("B2 environment variables are missing.");
+    return "";
+  }
+
+  const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+  const datetime = new Date().toISOString().replace(/[:-]|\.\d{3}/g, '').slice(0, 15) + 'Z';
+  const expires = 3600;
+
+  const signKey = async (k: Uint8Array, msg: string) => {
+    const imported = await crypto.subtle.importKey(
+      'raw',
+      k,
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+    const signed = await crypto.subtle.sign('HMAC', imported, new TextEncoder().encode(msg));
+    return new Uint8Array(signed);
+  };
+
+  const hex = (buf: Uint8Array) => Array.from(buf).map(b => b.toString(16).padStart(2, '0')).join('');
+  
+  const hash = async (msg: string) => {
+    const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(msg));
+    return hex(new Uint8Array(digest));
+  };
+
+  const credScope = `${date}/eu-central-003/s3/aws4_request`;
+  const encodedKey = key.split('/').map(encodeURIComponent).join('/');
+  const queryString = [
+    `X-Amz-Algorithm=AWS4-HMAC-SHA256`,
+    `X-Amz-Credential=${encodeURIComponent(B2_KEY_ID + '/' + credScope)}`,
+    `X-Amz-Date=${datetime}`,
+    `X-Amz-Expires=${expires}`,
+    `X-Amz-SignedHeaders=host`
+  ].join('&');
+
+  const canonicalRequest = [
+    'GET',
+    `/${B2_BUCKET}/${encodedKey}`,
+    queryString,
+    `host:${B2_ENDPOINT}\n`,
+    'host',
+    'UNSIGNED-PAYLOAD'
+  ].join('\n');
+
+  const stringToSign = `AWS4-HMAC-SHA256\n${datetime}\n${credScope}\n${await hash(canonicalRequest)}`;
+
+  const kDate = await signKey(new TextEncoder().encode('AWS4' + B2_APP_KEY), date);
+  const kRegion = await signKey(kDate, 'eu-central-003');
+  const kService = await signKey(kRegion, 's3');
+  const kSigning = await signKey(kService, 'aws4_request');
+  const signature = hex(await signKey(kSigning, stringToSign));
+
+  return `https://${B2_ENDPOINT}/${B2_BUCKET}/${encodedKey}?${queryString}&X-Amz-Signature=${signature}`;
+}
+
 // A beautiful, highly-polished HTML Login screen (English-only, minimal, elegant)
 function getLoginHtml(error?: string, systemInfo?: string): string {
   return `<!DOCTYPE html>
@@ -467,6 +557,24 @@ export async function onRequest(context: {
             }
           });
           const songs = await res.json();
+          if (Array.isArray(songs)) {
+            const supaEnv = await getEnvFromSupabase(supabaseUrl || "", supabaseKey || "");
+            const allSongs = await Promise.all(songs.map(async (s: any) => {
+              let songUrl = s.url || '';
+              if (s.source === 'cloudinary') {
+                songUrl = `https://res.cloudinary.com/${supaEnv.CLOUDINARY_NAME}/video/upload/${s.id}.mp3`;
+              } else if (s.source === 'b2') {
+                songUrl = await signB2Url(`${s.id}.mp3`, supaEnv);
+              }
+              return { ...s, url: songUrl };
+            }));
+            return new Response(JSON.stringify(allSongs), {
+              headers: { 
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': '*'
+              }
+            });
+          }
           return new Response(JSON.stringify(songs), {
             headers: { 
               'Content-Type': 'application/json',

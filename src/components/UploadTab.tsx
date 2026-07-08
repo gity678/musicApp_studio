@@ -216,14 +216,6 @@ export default function UploadTab({
   // Upload Workflow Stage 1 (Extract metadata from URL)
   const handleLinkUpload = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!workerUrl.trim()) {
-      setLinkStatus({
-        loading: false,
-        msg: isRTL ? "يرجى تهيئة الخادم السحابي أولاً." : "Cloud server setup is not configured.",
-        success: false
-      });
-      return;
-    }
     if (!ytUrl.trim()) return;
 
     const videoId = ytUrl.match(/(?:v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/watch\?v=)([^&?/]+)/)?.[1];
@@ -272,19 +264,26 @@ export default function UploadTab({
       let finalDuration = itunesData?.duration || "";
       if (!finalDuration && videoId) {
         try {
-          const cleanWorkerUrl = workerUrl.trim().replace(/\/$/, "");
-          const searchRes = await fetch(`${cleanWorkerUrl}/search?q=${encodeURIComponent(videoId)}`);
+          const searchRes = await fetch("/api/youtube/search", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ query: videoId, workerUrl })
+          });
           if (searchRes.ok) {
             const searchData = await searchRes.json();
-            const foundVideo = searchData?.contents?.find((c: any) => c.video?.videoId === videoId);
-            if (foundVideo?.video?.lengthText) {
-              finalDuration = foundVideo.video.lengthText;
-            } else if (foundVideo?.video?.duration) {
-              finalDuration = foundVideo.video.duration;
+            if (searchData?.results?.[0]?.publishedAt) {
+              finalDuration = searchData.results[0].publishedAt;
+            } else {
+              const foundVideo = searchData?.contents?.find((c: any) => c.video?.videoId === videoId);
+              if (foundVideo?.video?.lengthText) {
+                finalDuration = foundVideo.video.lengthText;
+              } else if (foundVideo?.video?.duration) {
+                finalDuration = foundVideo.video.duration;
+              }
             }
           }
         } catch (e) {
-          console.warn("Worker search fallback for duration failed", e);
+          console.warn("Search fallback for duration failed", e);
         }
       }
 
@@ -334,32 +333,24 @@ export default function UploadTab({
     };
 
     try {
-      const response = await fetch(cleanWorkerUrl, {
+      const response = await fetch("/api/worker/upload", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({ workerUrl, ...payload })
       });
-
       if (response.ok) {
         const data = await response.json();
-        if (data.ok || data.success) isSuccess = true;
-        else errorMsg = data.body || data.error || "Server error";
+        if (data.ok || data.success) {
+          isSuccess = true;
+        } else {
+          errorMsg = data.error || "Server rejected dispatch";
+        }
       } else {
-        errorMsg = `Status ${response.status}`;
+        const errText = await response.text();
+        errorMsg = errText || `Status ${response.status}`;
       }
     } catch (e: any) {
-      // Proxy backup try
-      try {
-        const response = await fetch("/api/worker/upload", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ workerUrl, ...payload })
-        });
-        if (response.ok) isSuccess = true;
-        else errorMsg = "Proxy route failed.";
-      } catch (e2) {
-        errorMsg = "Network error communicating with worker server.";
-      }
+      errorMsg = e.message || "Network error communicating with server.";
     }
 
     if (isSuccess) {
@@ -389,24 +380,34 @@ export default function UploadTab({
     if (e) e.preventDefault();
     if (!searchQuery.trim()) return;
 
-    if (!workerUrl.trim()) {
-      setSearchError(isRTL ? "خادم الرفع غير مهيأ." : "Cloud engine is not configured.");
-      return;
-    }
-
     setSearchLoading(true);
     setSearchError("");
     setSearchResults([]);
     setPlayVideoId(""); // Terminate live player instance to secure width
 
-    const cleanWorkerUrl = workerUrl.trim().replace(/\/$/, "");
     try {
-      const res = await fetch(`${cleanWorkerUrl}/search?q=${encodeURIComponent(searchQuery.trim())}`);
+      const res = await fetch("/api/youtube/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: searchQuery.trim(), workerUrl })
+      });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       if (data && data.contents && data.contents.length > 0) {
         const videosOnly = data.contents.filter((item: any) => item.type === "video");
         setSearchResults(videosOnly);
+      } else if (data && data.results && data.results.length > 0) {
+        const contents = data.results.map((v: any) => ({
+          type: "video",
+          video: {
+            videoId: v.id,
+            title: v.title,
+            author: { title: v.channelTitle },
+            thumbnails: [{ url: v.thumbnailUrl }],
+            lengthText: v.publishedAt || ""
+          }
+        }));
+        setSearchResults(contents);
       } else {
         setSearchError(isRTL ? "❌ عذراً، لم نعثر على أي نتائج مطابقة." : "❌ No YouTube videos matched your search query.");
       }
