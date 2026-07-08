@@ -396,8 +396,7 @@ export async function onRequest(context: {
       url.pathname.startsWith("/api/songs") ||
       url.pathname === "/api/youtube/search" ||
       url.pathname === "/api/worker/upload" ||
-      url.pathname === "/api/worker/delete" ||
-      url.pathname === "/api/ai/recommend"
+      url.pathname === "/api/worker/delete"
     ) {
       // 1. GET /api/radios
       if (request.method === "GET" && url.pathname === "/api/radios") {
@@ -725,35 +724,10 @@ export async function onRequest(context: {
             const cleanUrl = workerUrl.replace(/\/$/, "");
             const response = await fetch(`${cleanUrl}/search?q=${encodeURIComponent(query)}`);
             if (response.ok) {
-              const data = await response.json() as any;
-              let results: any[] = [];
-              if (data && data.contents && Array.isArray(data.contents)) {
-                for (const item of data.contents) {
-                  if (item.video) {
-                    const v = item.video;
-                    results.push({
-                      id: v.videoId,
-                      title: v.title || "Unknown Title",
-                      channelTitle: v.author?.name || "Unknown Channel",
-                      thumbnailUrl: v.thumbnails?.[0]?.url || `https://i.ytimg.com/vi/${v.videoId}/hqdefault.jpg`,
-                      publishedAt: v.publishedTimeText || "Recent"
-                    });
-                  }
-                }
-              } else if (Array.isArray(data)) {
-                results = data.map((item: any) => ({
-                  id: item.id || item.videoId,
-                  title: item.title,
-                  channelTitle: item.channelTitle || item.author,
-                  thumbnailUrl: item.thumbnailUrl || item.thumbnail,
-                  publishedAt: item.publishedAt || ""
-                }));
-              }
-              if (results.length > 0) {
-                return new Response(JSON.stringify({ results }), {
-                  headers: { 'Content-Type': 'application/json' }
-                });
-              }
+              const data = await response.json();
+              return new Response(JSON.stringify(data), {
+                headers: { 'Content-Type': 'application/json' }
+              });
             }
           } catch (e: any) {
             console.warn("Worker search failed, falling back:", e.message);
@@ -887,107 +861,6 @@ export async function onRequest(context: {
           });
         } catch (error: any) {
           return new Response(JSON.stringify({ error: "Failed to delete media", details: error.message }), {
-            status: 500,
-            headers: { 'Content-Type': 'application/json' }
-          });
-        }
-      }
-
-      // 11. POST /api/ai/recommend
-      if (request.method === "POST" && url.pathname === "/api/ai/recommend") {
-        let body: any = {};
-        try {
-          body = await request.json();
-        } catch {}
-
-        const { prompt } = body;
-        if (!prompt) {
-          return new Response(JSON.stringify({ error: "Missing prompt parameter" }), {
-            status: 400,
-            headers: { 'Content-Type': 'application/json' }
-          });
-        }
-
-        const geminiKey = context.env.GEMINI_API_KEY;
-
-        if (!geminiKey) {
-          const isArabic = /[\u0600-\u06FF]/.test(prompt);
-          const mockRecommendations = [
-            {
-              title: isArabic ? "نسيم الرياض" : "Desert Mirage",
-              artist: "Arabic Ambient project",
-              genre: "Acoustic Lounge",
-              description: isArabic ? "لحن هادئ من وحي رمال الصحراء الذهبية للاسترخاء." : "Soothing acoustic soundscape inspired by golden deserts."
-            },
-            {
-              title: isArabic ? "أضواء المدينة" : "Neon Citylights",
-              artist: "Tokyo Synth",
-              genre: "Synthwave",
-              description: isArabic ? "موسيقى ذات طابع مستقبلي وحيوي لتنشيط ذهنك." : "Energetic futuristic synth music to elevate focus."
-            },
-            {
-              title: isArabic ? "مطر خفيف" : "Gentle Rain Café",
-              artist: "Lofi Dreamer",
-              genre: "Lo-Fi Beats",
-              description: isArabic ? "نغمات بيانو دافئة مع رذاذ المطر الهادئ للمذاكرة والتركيز." : "Warm piano tracks backed by soft rain for study sessions."
-            }
-          ];
-          return new Response(JSON.stringify({ recommendations: mockRecommendations, simulated: true }), {
-            headers: { 'Content-Type': 'application/json' }
-          });
-        }
-
-        try {
-          const isArabic = /[\u0600-\u06FF]/.test(prompt);
-          const systemIns = `You are "Spotifyy Assistant", a premium music recommendation intelligence built in the Spotifyy player. 
-Your task is to analyze the user's mood, request, activity, or language (Arabic or English) and recommend a curated set of 4-6 perfect songs.
-For each song, provide:
-1. title (The name of the song)
-2. artist (The artist name)
-3. genre (The suitable genre)
-4. description (A beautiful 1-sentence explanation of why it fits their prompt perfectly, written in the SAME language as their query: Arabic if they wrote in Arabic, English if English).
-
-Important instructions:
-- If the user wrote in Arabic, write the descriptions in beautiful, warm, professional Arabic.
-- Return the results strictly conforming to the requested JSON JSON Schema array format.`;
-
-          const gResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              contents: [{ parts: [{ text: prompt }] }],
-              systemInstruction: { parts: [{ text: systemIns }] },
-              generationConfig: {
-                responseMimeType: "application/json",
-                responseSchema: {
-                  type: "ARRAY",
-                  items: {
-                    type: "OBJECT",
-                    properties: {
-                      title: { type: "STRING" },
-                      artist: { type: "STRING" },
-                      genre: { type: "STRING" },
-                      description: { type: "STRING" }
-                    },
-                    required: ["title", "artist", "genre", "description"]
-                  }
-                }
-              }
-            })
-          });
-
-          if (!gResponse.ok) {
-            throw new Error(`Gemini API returned status ${gResponse.status}`);
-          }
-
-          const gData = await gResponse.json() as any;
-          const text = gData.candidates?.[0]?.content?.parts?.[0]?.text || "[]";
-          const recommendations = JSON.parse(text);
-          return new Response(JSON.stringify({ recommendations }), {
-            headers: { 'Content-Type': 'application/json' }
-          });
-        } catch (error: any) {
-          return new Response(JSON.stringify({ error: "Failed to generate recommendations", details: error.message }), {
             status: 500,
             headers: { 'Content-Type': 'application/json' }
           });
