@@ -841,7 +841,9 @@ export async function onRequest(context: {
                   song_name,
                   title: title || '',
                   artist: artist || '',
-                  thumb: thumb || ''
+                  thumb: thumb || '',
+                  supabase_url: supabaseUrl,
+                  supabase_key: supabaseKey
                 }
               })
             }

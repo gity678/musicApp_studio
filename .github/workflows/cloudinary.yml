@@ -22,6 +22,14 @@ on:
         description: 'رابط الصورة'
         required: false
         type: string
+      supabase_url:
+        description: 'Supabase URL'
+        required: false
+        type: string
+      supabase_key:
+        description: 'Supabase Key'
+        required: false
+        type: string
 jobs:
   upload:
     runs-on: ubuntu-latest
@@ -39,8 +47,14 @@ jobs:
           from botocore.client import Config
           from mutagen.mp3 import MP3
 
-          SUPABASE_URL = os.environ["SUPABASE_URL"]
-          SUPABASE_KEY = os.environ["SUPABASE_KEY"]
+          SUPABASE_URL = os.environ.get("SUPABASE_URL") or "${{ github.event.inputs.supabase_url }}"
+          SUPABASE_KEY = os.environ.get("SUPABASE_KEY") or "${{ github.event.inputs.supabase_key }}"
+          SUPABASE_URL = SUPABASE_URL.strip() if SUPABASE_URL else ""
+          SUPABASE_KEY = SUPABASE_KEY.strip() if SUPABASE_KEY else ""
+
+          if not SUPABASE_URL or not SUPABASE_KEY:
+              print("❌ SUPABASE_URL or SUPABASE_KEY is missing!")
+              exit(1)
 
           def get_key(name):
               r = requests.get(
@@ -50,7 +64,7 @@ jobs:
                       "Authorization": f"Bearer {SUPABASE_KEY}"
                   }
               ).json()
-              if not r:
+              if not r or not isinstance(r, list):
                   print(f"❌ المتغير {name} غير موجود في Supabase"); exit(1)
               return r[0]["value"]
 

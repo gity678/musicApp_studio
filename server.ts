@@ -749,7 +749,9 @@ app.post("/api/worker/upload", async (req, res) => {
             song_name,
             title: title || '',
             artist: artist || '',
-            thumb: thumb || ''
+            thumb: thumb || '',
+            supabase_url: supabaseUrl,
+            supabase_key: supabaseKey
           }
         })
       }
