@@ -782,7 +782,7 @@ export default function UploadTab({
 
           <div className="pt-2 text-center select-none">
             <a
-              href="https://github.com/gity678/Spotify/actions"
+              href="https://github.com/gity678/musicApp_studio/actions"
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center gap-1.5 text-[10px] text-zinc-500 hover:text-zinc-300 transition-colors font-semibold"

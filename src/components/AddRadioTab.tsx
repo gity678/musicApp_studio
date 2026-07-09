@@ -29,7 +29,7 @@ export default function AddRadioTab({ lang, stationToEdit, onClearStationToEdit,
   const isRTL = lang === "ar";
   
   // App State
-  const [mode, setMode] = useState<'modifier' | 'ajouter' | 'json'>('modifier');
+  const [mode, setMode] = useState<'modifier' | 'ajouter' | 'json'>('json');
   const [radios, setRadios] = useState<any[]>([]);
   const [originalName, setOriginalName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -309,6 +309,13 @@ export default function AddRadioTab({ lang, stationToEdit, onClearStationToEdit,
       {/* Tab Switcher */}
       <div className="bg-zinc-100 p-1.5 rounded-2xl flex gap-1 shadow-inner border border-zinc-200">
         <button 
+          onClick={() => { setMode('json'); clearForm(); }}
+          className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-bold transition-all uppercase tracking-tight ${mode === 'json' ? 'bg-[#e91e63] text-white shadow-lg' : 'text-zinc-500 hover:bg-zinc-200'}`}
+        >
+          <FileJson size={14} />
+          <span>JSON</span>
+        </button>
+        <button 
           onClick={() => { setMode('modifier'); clearForm(); }}
           className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-bold transition-all uppercase tracking-tight ${mode === 'modifier' ? 'bg-zinc-900 text-white shadow-lg' : 'text-zinc-500 hover:bg-zinc-200'}`}
         >
@@ -321,13 +328,6 @@ export default function AddRadioTab({ lang, stationToEdit, onClearStationToEdit,
         >
           <Plus size={14} />
           <span>{isRTL ? "إضافة" : "Ajouter"}</span>
-        </button>
-        <button 
-          onClick={() => { setMode('json'); clearForm(); }}
-          className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-bold transition-all uppercase tracking-tight ${mode === 'json' ? 'bg-[#e91e63] text-white shadow-lg' : 'text-zinc-500 hover:bg-zinc-200'}`}
-        >
-          <FileJson size={14} />
-          <span>JSON</span>
         </button>
       </div>
 
@@ -389,13 +389,24 @@ export default function AddRadioTab({ lang, stationToEdit, onClearStationToEdit,
           <div className="space-y-5">
             {/* Original Input Textarea */}
             <div className="space-y-2">
-              <label className="text-[10px] font-mono font-black uppercase text-zinc-400 tracking-widest">
-                {isRTL ? "ألصق بيانات JSON هنا" : "Paste JSON Array Data"}
-              </label>
+              <div className="flex justify-between items-center">
+                <label className="text-[10px] font-mono font-black uppercase text-zinc-400 tracking-widest">
+                  {isRTL ? "ألصق بيانات JSON هنا" : "Paste JSON Array Data"}
+                </label>
+                {jsonInput && (
+                  <button 
+                    type="button"
+                    onClick={() => setJsonInput("")}
+                    className="text-[10px] font-mono font-black uppercase text-[#e91e63] hover:text-[#d81b60] transition-colors cursor-pointer select-none"
+                  >
+                    {isRTL ? "إفراغ حاوية اللصق" : "Clear Paste Container"}
+                  </button>
+                )}
+              </div>
               <textarea 
                 value={jsonInput}
                 onChange={(e) => setJsonInput(e.target.value)}
-                placeholder='[{"name": "BBC Radio", "url": "https://stream.live.vc/..."}, ...]'
+                placeholder='[{"name": "BBC Radio", "url": "https://stream.live.vc/...", "logo": "https://...", "genre": "News"}, ...]'
                 className="w-full h-28 bg-zinc-50 border border-zinc-200 rounded-2xl p-4 text-xs font-mono outline-none focus:border-zinc-900 transition-colors resize-none overflow-y-auto no-scrollbar"
               />
             </div>
@@ -403,7 +414,7 @@ export default function AddRadioTab({ lang, stationToEdit, onClearStationToEdit,
             {/* AI Generator Helper */}
             <div className="p-4 bg-pink-50 border border-pink-100 rounded-2xl animate-fade-in">
               <p id="promptText" className="text-[10px] text-pink-800 leading-relaxed font-mono whitespace-pre-wrap opacity-85">
-                {"Génère une liste de stations de radio en JSON : [{\"name\": \"...\", \"url\": \"...\", \"logo\": \"...\"}]"}
+                {"Génère une liste de stations de radio en JSON : [{\"name\": \"...\", \"url\": \"...\", \"logo\": \"...\", \"genre\": \"...\"}]"}
               </p>
             </div>
 
