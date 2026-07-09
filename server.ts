@@ -733,7 +733,7 @@ app.post("/api/worker/upload", async (req, res) => {
 
     console.log(`Dispatching GitHub Actions workflow directly for: ${song_name}`);
     const response = await fetch(
-      'https://api.github.com/repos/gity678/Spotify/actions/workflows/cloudinary.yml/dispatches',
+      'https://api.github.com/repos/gity678/musicApp_studio/actions/workflows/cloudinary.yml/dispatches',
       {
         method: 'POST',
         headers: {
