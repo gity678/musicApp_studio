@@ -851,7 +851,7 @@ app.post("/api/ai/recommend", async (req, res) => {
 
   try {
     const isArabic = /[\u0600-\u06FF]/.test(prompt);
-    const systemIns = `You are "Spotifyy Assistant", a premium music recommendation intelligence built in the Spotifyy player. 
+    const systemIns = `You are "Musicy Assistant", a premium music recommendation intelligence built in the Musicy player. 
       Your task is to analyze the user's mood, request, activity, or language (Arabic or English) and recommend a curated set of 4-6 perfect songs.
       For each song, provide:
       1. title (The name of the song)

@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from "motion/react";
 import { Music, Youtube, Sparkles, Menu, X, Disc, Home, UploadCloud, PlusCircle } from "lucide-react";
 import Radio from "./ClassicRadioIcon";
+import MusicyLogo from "../assets/images/musicy_logo_1783689026074.jpg";
 
 interface SidebarProps {
   activeTab: string;
@@ -39,8 +40,13 @@ export default function Sidebar({
         {/* Brand Header */}
         <div className={`flex items-center justify-between ${isRTL ? "flex-row-reverse" : "flex-row"}`}>
           <div className={`flex items-center gap-3 ${isRTL ? "flex-row-reverse" : "flex-row"}`}>
-            <div className="p-2 bg-[#1db954] rounded-full text-white shadow-[0_4px_12px_rgba(29,185,84,0.3)] animate-pulse">
-              <Disc size={22} className="animate-spin [animation-duration:6s]" />
+            <div className="w-9 h-9 rounded-xl overflow-hidden shadow-[0_4px_12px_rgba(29,185,84,0.25)] flex items-center justify-center bg-zinc-900 border border-zinc-200">
+              <img 
+                src={MusicyLogo} 
+                alt="Musicy Logo" 
+                className="w-full h-full object-cover animate-spin [animation-duration:15s]"
+                referrerPolicy="no-referrer"
+              />
             </div>
             <span className="font-sans font-extrabold text-2xl tracking-tighter bg-gradient-to-r from-zinc-900 to-[#1db928] bg-clip-text text-transparent">
               {t.appName}

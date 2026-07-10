@@ -1,6 +1,6 @@
 export const translations = {
   en: {
-    appName: "Spotifyy",
+    appName: "Musicy",
     home: "Home Dashboard",
     music: "Music Library",
     radio: "Live Radio",

@@ -35,3 +35,4 @@ export interface YouTubeVideo {
   thumbnailUrl: string;
   publishedAt: string;
 }
+
