@@ -23,9 +23,10 @@ interface AddRadioTabProps {
   stationToEdit?: RadioStation | null;
   onClearStationToEdit?: () => void;
   onReloadRadios?: () => void;
+  onNavigateToRadio?: () => void;
 }
 
-export default function AddRadioTab({ lang, stationToEdit, onClearStationToEdit, onReloadRadios }: AddRadioTabProps) {
+export default function AddRadioTab({ lang, stationToEdit, onClearStationToEdit, onReloadRadios, onNavigateToRadio }: AddRadioTabProps) {
   const isRTL = lang === "ar";
   
   // App State
@@ -143,6 +144,9 @@ export default function AddRadioTab({ lang, stationToEdit, onClearStationToEdit,
           clearForm();
           loadRadios();
           onReloadRadios?.();
+          setTimeout(() => {
+            onNavigateToRadio?.();
+          }, 800);
         } else {
           setStatus({ msg: `Error: ${data.error || 'Unknown'}`, type: 'error' });
         }
@@ -187,6 +191,9 @@ export default function AddRadioTab({ lang, stationToEdit, onClearStationToEdit,
             setStatus({ msg: isRTL ? "✅ تم التعديل!" : "✅ Station modified!", type: 'success' });
             loadRadios();
             onReloadRadios?.();
+            setTimeout(() => {
+              onNavigateToRadio?.();
+            }, 800);
           } else {
             const errData = await res.json().catch(() => ({}));
             setStatus({ msg: `Error: ${errData.message || 'Unknown'}`, type: 'error' });
@@ -240,6 +247,9 @@ export default function AddRadioTab({ lang, stationToEdit, onClearStationToEdit,
           setStatus({ msg: isRTL ? "✅ تم التعديل!" : "✅ Station modified!", type: 'success' });
           loadRadios();
           onReloadRadios?.();
+          setTimeout(() => {
+            onNavigateToRadio?.();
+          }, 800);
         } else {
           setStatus({ msg: "Error modifying station", type: 'error' });
         }
@@ -294,6 +304,9 @@ export default function AddRadioTab({ lang, stationToEdit, onClearStationToEdit,
         setJsonInput("");
         loadRadios();
         onReloadRadios?.();
+        setTimeout(() => {
+          onNavigateToRadio?.();
+        }, 800);
       } else {
         setStatus({ msg: `Error: ${result.error || 'Unknown'}`, type: 'error' });
       }

@@ -1049,6 +1049,7 @@ export default function App() {
                 stationToEdit={stationToEdit}
                 onClearStationToEdit={() => setStationToEdit(null)}
                 onReloadRadios={reloadWorkerRadios}
+                onNavigateToRadio={() => setActiveTab("radio")}
               />
             )}
 
