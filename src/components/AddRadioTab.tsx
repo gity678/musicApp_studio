@@ -140,13 +140,11 @@ export default function AddRadioTab({ lang, stationToEdit, onClearStationToEdit,
         });
         const data = await res.json();
         if (data.ok) {
-          setStatus({ msg: isRTL ? "✅ تم إضافة المحطة!" : "✅ Station added!", type: 'success' });
+          setStatus(null);
           clearForm();
           loadRadios();
           onReloadRadios?.();
-          setTimeout(() => {
-            onNavigateToRadio?.();
-          }, 800);
+          onNavigateToRadio?.();
         } else {
           setStatus({ msg: `Error: ${data.error || 'Unknown'}`, type: 'error' });
         }
@@ -188,12 +186,10 @@ export default function AddRadioTab({ lang, stationToEdit, onClearStationToEdit,
           });
 
           if (res.ok) {
-            setStatus({ msg: isRTL ? "✅ تم التعديل!" : "✅ Station modified!", type: 'success' });
+            setStatus(null);
             loadRadios();
             onReloadRadios?.();
-            setTimeout(() => {
-              onNavigateToRadio?.();
-            }, 800);
+            onNavigateToRadio?.();
           } else {
             const errData = await res.json().catch(() => ({}));
             setStatus({ msg: `Error: ${errData.message || 'Unknown'}`, type: 'error' });
@@ -244,12 +240,10 @@ export default function AddRadioTab({ lang, stationToEdit, onClearStationToEdit,
             }
           }
 
-          setStatus({ msg: isRTL ? "✅ تم التعديل!" : "✅ Station modified!", type: 'success' });
+          setStatus(null);
           loadRadios();
           onReloadRadios?.();
-          setTimeout(() => {
-            onNavigateToRadio?.();
-          }, 800);
+          onNavigateToRadio?.();
         } else {
           setStatus({ msg: "Error modifying station", type: 'error' });
         }
@@ -300,13 +294,11 @@ export default function AddRadioTab({ lang, stationToEdit, onClearStationToEdit,
       });
       const result = await res.json();
       if (result.ok) {
-        setStatus({ msg: isRTL ? `✅ تم استيراد ${validStations.length} محطة بنجاح!` : `✅ ${validStations.length} stations imported!`, type: 'success' });
+        setStatus(null);
         setJsonInput("");
         loadRadios();
         onReloadRadios?.();
-        setTimeout(() => {
-          onNavigateToRadio?.();
-        }, 800);
+        onNavigateToRadio?.();
       } else {
         setStatus({ msg: `Error: ${result.error || 'Unknown'}`, type: 'error' });
       }
