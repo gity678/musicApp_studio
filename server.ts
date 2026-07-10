@@ -651,6 +651,49 @@ app.get("/api/nowplaying", async (req, res) => {
   }
 });
 
+app.get("/api/radio-proxy", async (req, res) => {
+  const { url: targetUrl } = req.query;
+
+  if (!targetUrl || typeof targetUrl !== "string") {
+    return res.status(400).send("Missing url parameter");
+  }
+
+  if (!targetUrl.startsWith("http://") && !targetUrl.startsWith("https://")) {
+    return res.status(400).send("Invalid protocol. Only http:// and https:// are allowed.");
+  }
+
+  try {
+    const response = await fetch(targetUrl, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36",
+        "Accept": "*/*",
+      }
+    });
+
+    if (!response.body) {
+      return res.status(502).send("No response body from source");
+    }
+
+    const contentType = response.headers.get("content-type") || "audio/mpeg";
+
+    res.setHeader("Content-Type", contentType);
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Cache-Control", "no-cache, no-transform");
+    res.setHeader("Connection", "keep-alive");
+
+    const reader = response.body as any;
+    for await (const chunk of reader) {
+      res.write(chunk);
+    }
+    res.end();
+  } catch (error: any) {
+    console.error("Error in radio-proxy:", error);
+    if (!res.headersSent) {
+      res.status(500).send("Error fetching target stream: " + error.message);
+    }
+  }
+});
+
 app.get("/api/worker/radios", async (req, res) => {
   const { workerUrl } = req.query;
   if (!workerUrl) {
